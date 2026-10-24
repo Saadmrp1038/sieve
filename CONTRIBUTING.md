@@ -45,9 +45,8 @@ rules cover syntax errors and definite correctness issues; broader style and
 import cleanup can be introduced as the legacy modules are refactored.
 Generated build trees and local experiment scripts are excluded.
 
-pytest collects only `tests/`. Existing `unittest.TestCase` tests continue to
-work, and `uv run --locked python -m unittest discover -s tests -v` remains
-available. Controller workloads under `examples/` run through Sieve, not pytest.
+pytest collects only `tests/`. Controller workloads under `examples/` run
+through Sieve, not pytest.
 
 With Go installed, run:
 
@@ -64,16 +63,12 @@ Change runtime dependencies in `pyproject.toml` and development dependencies in
 ```sh
 uv lock
 uv sync --locked
-uv export --locked --no-dev --no-hashes --no-emit-project --output-file requirements.txt
 ```
 
-`requirements.txt` is a generated compatibility export for the existing pip
-build workflows. Its runtime dependencies come from `uv.lock`; edit the project
-declarations rather than this export. CI regenerates it and rejects drift.
-`experiments/secret-generator/requirements.txt` includes the same export.
-The lockfile retains artifact hashes; the pip export pins versions without
-including the development tools.
+`pyproject.toml` and `uv.lock` are the only Python dependency sources. Runtime
+jobs use `uv sync --locked --no-dev` and `uv run --locked --no-dev python ...`;
+development checks use the default environment with its development tools.
 
-When updating the uv version requirement, regenerate the lock/export and rerun
+When updating the uv version requirement, refresh the lockfile and rerun
 the checks. The setup-uv action reads the required version from `pyproject.toml`
 so CI and local development use the same tool version.

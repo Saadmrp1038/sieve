@@ -17,9 +17,7 @@ uv sync --locked
 ```
 
 Run the integration commands with `uv run --locked python`. Set `GOPATH` and
-`KUBECONFIG` as described in the main README. The compatibility requirements
-file remains available for existing pip environments. No registry push is
-required.
+`KUBECONFIG` as described in the main README. No registry push is required.
 
 ## kind v0.17.0 and Docker 29
 

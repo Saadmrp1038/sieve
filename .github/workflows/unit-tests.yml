@@ -26,10 +26,6 @@ jobs:
             sieve_instrumentation/go.sum
       - name: Install locked Python environment
         run: uv sync --locked
-      - name: Check pip compatibility export
-        run: |
-          uv export --locked --no-dev --no-hashes --no-emit-project --output-file requirements.txt
-          git diff --exit-code -- requirements.txt
       - name: Lint Python
         run: uv run --locked ruff check .
       - name: Check Python formatting

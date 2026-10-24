@@ -113,7 +113,7 @@ def check_kind_env():
 
 def check_sqlite_env():
     warn(
-        "sqlite3 version 3.32 and pysqlite3 are only required for learning mode, please ignore any failures below if you only want to reproduce the bugs"
+        "sqlite3 version 3.32 and Python SQLite support are only required for learning mode, please ignore any failures below if you only want to reproduce the bugs"
     )
     if os.system("sqlite3 -version > /dev/null 2>&1") != 0:
         fail(
@@ -142,11 +142,9 @@ def check_sqlite_env():
     try:
         import sqlite3
 
-        ok("python module pysqlite3 detected")
+        ok("python module sqlite3 detected")
     except Exception as err:
-        fail(
-            "python module pysqlite3 not detected, try to install it by `pip3 install pysqlite3`"
-        )
+        fail("Python's sqlite3 module is missing from the selected interpreter")
 
 
 def check_python_env():
@@ -155,36 +153,28 @@ def check_python_env():
 
         ok("python module kubernetes detected")
     except Exception as err:
-        fail(
-            "python module pysqlite3 not detected, try to install it by `pip3 install kubernetes`"
-        )
+        fail("python module kubernetes not detected; run `uv sync --locked`")
 
     try:
         import docker
 
         ok("python module docker detected")
     except Exception as err:
-        fail(
-            "python module docker not detected, try to install it by `pip3 install docker`"
-        )
+        fail("python module docker not detected; run `uv sync --locked`")
 
     try:
         import yaml
 
         ok("python module pyyaml detected")
     except Exception as err:
-        fail(
-            "python module pyyaml not detected, try to install it by `pip3 install pyyaml`"
-        )
+        fail("python module pyyaml not detected; run `uv sync --locked`")
 
     try:
         import deepdiff
 
         ok("python module deepdiff detected")
     except Exception as err:
-        fail(
-            "python module deepdiff not detected, try to install it by `pip3 install deepdiff`"
-        )
+        fail("python module deepdiff not detected; run `uv sync --locked`")
 
 
 if __name__ == "__main__":

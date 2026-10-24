@@ -47,7 +47,7 @@ We welcome any users who want to test their controllers using Sieve and we are m
 * [go](https://golang.org/doc/install) (preferably 1.19.1) installed and `$GOPATH` set
 * [kind](https://kind.sigs.k8s.io/) installed and `$KUBECONFIG` set (Sieve runs tests in a kind cluster)
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/) installed
-* Run repository Python commands with `uv run --locked python ...`; `requirements.txt` is a generated export for legacy pip workflows
+* Run repository Python commands with `uv run --locked python ...`
 
 You can run `uv run --locked python check_env.py` to check whether your environment meets the requirement.
 

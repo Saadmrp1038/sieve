@@ -10,9 +10,3 @@ DOCKER_TOOLS:
   - docker-ce
   - docker-ce-cli
   - containerd.io
-PYTHON_PACKAGES:
-  - kubernetes
-  - docker
-  - pyyaml
-  - py-cui
-  - deepdiff
