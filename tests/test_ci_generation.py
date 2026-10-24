@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-import runpy
 import tempfile
 import unittest
 
 import yaml
+from sieve_tool import ci
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +18,7 @@ class WorkflowGenerationTests(unittest.TestCase):
                 os.chdir(directory)
                 workflows = Path(".github/workflows")
                 workflows.mkdir(parents=True)
-                generated = runpy.run_path(str(ROOT / "gen_github_action.py"))
+                ci.generate_workflows(workflows)
                 for path in workflows.glob("*.yml"):
                     self.assertEqual(
                         yaml.safe_load(path.read_text()),
@@ -28,9 +28,7 @@ class WorkflowGenerationTests(unittest.TestCase):
                 regression = yaml.safe_load(
                     (workflows / "regression-testing.yml").read_text()
                 )
-                self.assertEqual(
-                    set(regression["jobs"]), set(generated["operators_for_CI"])
-                )
+                self.assertEqual(set(regression["jobs"]), set(ci.operators_for_CI))
                 for name, job in regression["jobs"].items():
                     with self.subTest(operator=name):
                         builds = [

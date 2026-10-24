@@ -3,10 +3,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
-
-with patch.dict(os.environ, {"GOPATH": os.environ.get("GOPATH", "/tmp/sieve-go-test")}):
-    import build
+from sieve_tool.build import kubernetes
 
 
 class KubernetesCheckoutTests(unittest.TestCase):
@@ -15,7 +12,7 @@ class KubernetesCheckoutTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             try:
                 os.chdir(directory)
-                checkout = Path("fakegopath/src/k8s.io/kubernetes")
+                checkout = Path(directory) / "kubernetes"
                 checkout.mkdir(parents=True)
 
                 def git(*args):
@@ -52,7 +49,7 @@ class KubernetesCheckoutTests(unittest.TestCase):
                 link.parent.mkdir()
                 link.symlink_to("../staging/src/sieve.client")
 
-                build.download_kubernetes("v1.24.10")
+                kubernetes.download_kubernetes("v1.24.10", checkout=checkout)
                 self.assertEqual(source.read_text(), "original")
                 self.assertEqual(output.read_text(), "cache")
                 self.assertFalse(dependency.exists())

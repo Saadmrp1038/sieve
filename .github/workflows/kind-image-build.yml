@@ -51,19 +51,19 @@ jobs:
         run: uv sync --locked --no-dev
       - name: Build Image for v1.18
         run: |
-          uv run --locked --no-dev python build.py -m vanilla -p -r $IMAGE_NAMESPACE
-          uv run --locked --no-dev python build.py -m learn -p -r $IMAGE_NAMESPACE
-          uv run --locked --no-dev python build.py -m test -p -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build -m vanilla --push -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build -m learn --push -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build -m test --push -r $IMAGE_NAMESPACE
           docker system prune -af
       # - name: Build Image for v1.23
       #   run: |
-      #     uv run --locked --no-dev python build.py -v v1.23.16 -m vanilla -p -r $IMAGE_NAMESPACE
-      #     uv run --locked --no-dev python build.py -v v1.23.16 -m learn -p -r $IMAGE_NAMESPACE
-      #     uv run --locked --no-dev python build.py -v v1.23.16 -m test -p -r $IMAGE_NAMESPACE
+      #     uv run --locked --no-dev sieve build --kubernetes-version v1.23.16 -m vanilla --push -r $IMAGE_NAMESPACE
+      #     uv run --locked --no-dev sieve build --kubernetes-version v1.23.16 -m learn --push -r $IMAGE_NAMESPACE
+      #     uv run --locked --no-dev sieve build --kubernetes-version v1.23.16 -m test --push -r $IMAGE_NAMESPACE
       #     docker system prune -af
       - name: Build Image for v1.24
         run: |
-          uv run --locked --no-dev python build.py -v v1.24.10 -m vanilla -p -r $IMAGE_NAMESPACE
-          uv run --locked --no-dev python build.py -v v1.24.10 -m learn -p -r $IMAGE_NAMESPACE
-          uv run --locked --no-dev python build.py -v v1.24.10 -m test -p -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build --kubernetes-version v1.24.10 -m vanilla --push -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build --kubernetes-version v1.24.10 -m learn --push -r $IMAGE_NAMESPACE
+          uv run --locked --no-dev sieve build --kubernetes-version v1.24.10 -m test --push -r $IMAGE_NAMESPACE
           docker system prune -af

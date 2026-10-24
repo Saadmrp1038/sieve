@@ -15,6 +15,16 @@ dependencies = [
     "setuptools",
 ]
 
+[project.scripts]
+sieve = "sieve_tool.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sieve_tool"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3,<10",
@@ -22,15 +32,12 @@ dev = [
 ]
 
 [tool.uv]
-# The existing repository scripts are migrated to a package in a later stage.
-package = false
 required-version = "==0.12.8"
 # Sieve's Docker/kind orchestration supports Linux and macOS, not Windows.
 environments = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
@@ -38,12 +45,8 @@ line-length = 88
 target-version = "py310"
 extend-exclude = [
     ".cache",
-    "app",
     "experiments",
-    "fakegopath",
     "runs",
-    "sieve_learn_results",
-    "sieve_test_results",
 ]
 
 [tool.ruff.lint]

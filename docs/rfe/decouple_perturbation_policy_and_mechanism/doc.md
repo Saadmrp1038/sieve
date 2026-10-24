@@ -33,7 +33,7 @@ Milestone 4 - Design and implement the interface for users to programmatically g
 
 ### Proposed way to run Sieve testing
 ```
-python3 sieve.py -c your-controller -s test -p test_plan.yaml
+uv run --locked sieve test -c your-controller -p test_plan.yaml
 ```
 
 ### Proposed test plan format

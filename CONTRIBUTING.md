@@ -1,74 +1,58 @@
 # Development
 
-Sieve uses one uv project for the Python harness and the existing Go workspace
-for its client, coordinator, and instrumenter. Full Kubernetes experiments run
-on an amd64 Linux machine; Python tests and style checks also run on macOS.
+The Python harness is an installed `src/` package managed by uv. The Go
+workspace contains three modules. Kubernetes experiments need an amd64 Linux
+host; unit and style checks also run on macOS without Docker.
 
-## Python environment
+## Setup and checks
 
-[Install uv](https://docs.astral.sh/uv/getting-started/installation/) using the
-version required by `[tool.uv].required-version` in `pyproject.toml`, then run
-these commands from the repository root:
+Install the uv version required by `pyproject.toml`, then run from the checkout:
 
 ```sh
 uv sync --locked
+uv run --locked sieve --help
 uv run --locked pytest
 uv run --locked ruff check .
 uv run --locked ruff format --check .
+uv build --wheel
+(cd go/client && go test -race ./...)
+(cd go/coordinator && go test ./...)
+(cd go/instrumenter && go test ./...)
 ```
 
-uv selects the Python version from `.python-version` and creates an ignored
-`.venv`. The current Python 3.10 baseline preserves the validated legacy SDK
-environment while the harness is modernized; it is not a new long-term Python
-support policy. Runtime versions are declared in `pyproject.toml`, and
-`uv.lock` records their resolved dependencies for Linux and macOS. Development
-tools live in the `dev` dependency group. The source is still run through its
-existing repository scripts; packaging and CLI reorganization are separate
-migration steps.
+`uv sync` installs the CLI and package in editable mode. pytest imports that
+package; it does not add the repository root to `sys.path`. Workloads under
+`controllers/` are integration programs, separate from pytest tests.
 
-Prefix existing Python commands with `uv run --locked`, for example:
+The current Python 3.10 and Go 1.19.13 baselines preserve the validated
+controller SDK environment. Runtime dependencies live in `pyproject.toml`;
+`uv.lock` records their Linux and macOS resolutions. To change dependencies,
+edit the project metadata, run `uv lock`, then repeat the checks. Runtime jobs
+use `uv sync --locked --no-dev` and `uv run --locked --no-dev sieve ...`.
+
+## Working on the harness
+
+See [architecture](docs/architecture.md) for package boundaries. Keep controller
+assets under `controllers/<name>/` and historical reference data under
+`fixtures/`. Do not write generated files into either directory. Downloads,
+controller checkouts, compiled binaries, and temporary configuration belong in
+`.cache/`; new run evidence belongs in `runs/`. Local settings belong in the
+ignored `configs/local.json`.
+
+The CLI discovers the checkout from the working directory or its editable
+installation. Use `sieve --repo /path/to/sieve ...` when installed from a wheel
+or when selecting another checkout. Paths supplied with `--output` are
+relative to the caller. Commands restore the caller's working directory even
+when setup fails.
+
+`./format.sh` formats Python with Ruff; `./format.sh --check` checks it.
+Regenerate the four generated workflows after changing `sieve_tool.ci`:
 
 ```sh
-uv run --locked python sieve.py --help
+uv run --locked sieve ci generate
 ```
 
-Builds and experiments still need Docker, Go, kind, kubectl, `GOPATH`, and
-`KUBECONFIG` as described in the main README. No Docker daemon is needed for the
-Python unit and style checks above. Keep generated workspaces, downloaded
-sources, and raw experiment evidence outside the committed source files.
-
-## Formatting and linting
-
-Ruff handles both formatting and linting. Run `./format.sh` to format the
-repository, or `./format.sh --check` to check formatting. The initial lint
-rules cover syntax errors and definite correctness issues; broader style and
-import cleanup can be introduced as the legacy modules are refactored.
-Generated build trees and local experiment scripts are excluded.
-
-pytest collects only `tests/`. Controller workloads under `examples/` run
-through Sieve, not pytest.
-
-With Go installed, run:
-
-```sh
-(cd sieve_client && go test -race ./...)
-(cd sieve_instrumentation && go test ./...)
-```
-
-## Dependency changes
-
-Change runtime dependencies in `pyproject.toml` and development dependencies in
-`[dependency-groups].dev`, then update the lockfile and run the checks above:
-
-```sh
-uv lock
-uv sync --locked
-```
-
-`pyproject.toml` and `uv.lock` are the only Python dependency sources. Runtime
-jobs use `uv sync --locked --no-dev` and `uv run --locked --no-dev python ...`;
-development checks use the default environment with its development tools.
-
-When updating the uv version requirement, refresh the lockfile and rerun
-the checks. The setup-uv action reads the required version from `pyproject.toml`
-so CI and local development use the same tool version.
+A new controller starts with `uv run --locked sieve controller init NAME`.
+Complete its profile, image build, deployment, and workload using the
+[porting guide](docs/port.md). Run image and fault validation on Linux, using
+fresh output directories so prior evidence is preserved.
