@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from sieve_tool.common.common import sieve_modes, os_system, rmtree_if_exists
 from sieve_tool.common.config import ControllerConfig
@@ -15,30 +16,32 @@ from .dependencies import (
 from .instrumenter import run_instrumenter
 
 
-def download_controller(
-    controller_config: ControllerConfig,
-):
-    """
-    Download the controller.
-
-    :param controller_config: the controller configuration
-    """
-    application_dir = os.path.join(
-        ".cache/controllers", controller_config.controller_name
+def download_controller(controller_config: ControllerConfig):
+    """Clone the pinned operator and apply profile patches with a local identity."""
+    application = (
+        repository_root() / ".cache/controllers" / controller_config.controller_name
     )
-    rmtree_if_exists(application_dir)
-    Path(application_dir).parent.mkdir(parents=True, exist_ok=True)
-    os_system(
-        "git clone {} {} >> /dev/null".format(
-            controller_config.github_link, application_dir
-        )
+    rmtree_if_exists(application)
+    application.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "clone", controller_config.github_link, str(application)], check=True
     )
-    os.chdir(application_dir)
-    os_system("git checkout {} >> /dev/null".format(controller_config.commit))
-    os_system("git checkout -b sieve >> /dev/null")
+    git = ["git", "-C", str(application)]
+    subprocess.run([*git, "checkout", controller_config.commit], check=True)
+    subprocess.run([*git, "checkout", "-b", "sieve"], check=True)
     for commit in controller_config.cherry_pick_commits:
-        os_system("git cherry-pick {}".format(commit))
-    os.chdir(repository_root())
+        subprocess.run(
+            [
+                *git,
+                "-c",
+                "user.name=Sieve",
+                "-c",
+                "user.email=sieve@localhost",
+                "cherry-pick",
+                commit,
+            ],
+            check=True,
+        )
 
 
 def install_lib_for_controller(controller_config: ControllerConfig):
