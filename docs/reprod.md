@@ -13,7 +13,7 @@ Sieve can consistently reproduce all the 31 intermediate-, stale-, and unobserva
 
 #### intermediate-state bug 1: [k8ssandra-cass-operator-1023](https://k8ssandra.atlassian.net/browse/K8SSAND-1023)
 ```
-python3 reproduce_bugs.py -c cass-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c cass-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -24,7 +24,7 @@ The bug was found in commit `dbd4f7a10533bb2298aed0d40ea20bfd8c133da2`.
 <!-- #### [datastax-cass-operator-412](https://github.com/datastax/cass-operator/issues/412) -->
 #### stale-state bug 1: [k8ssandra-cass-operator-559](https://k8ssandra.atlassian.net/browse/K8SSAND-559)
 ```
-python3 reproduce_bugs.py -c cass-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c cass-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -37,7 +37,7 @@ The bug was found in commit `dbd4f7a10533bb2298aed0d40ea20bfd8c133da2`.
 
 #### stale-state bug 1: [instaclustr-cassandra-operator-402](https://github.com/instaclustr/cassandra-operator/issues/402)
 ```
-python3 reproduce_bugs.py -c cassandra-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c cassandra-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -48,7 +48,7 @@ The bug was found in commit `fe8f91da3cd8aab47f21f7a3aad4abc5d4b6a0dd`.
 
 #### stale-state bug 2: [instaclustr-cassandra-operator-407](https://github.com/instaclustr/cassandra-operator/issues/407)
 ```
-python3 reproduce_bugs.py -c cassandra-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c cassandra-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -59,7 +59,7 @@ The bug was found in commit `fe8f91da3cd8aab47f21f7a3aad4abc5d4b6a0dd`.
 
 #### unobserved-state bug 1: [instaclustr-cassandra-operator-398](https://github.com/instaclustr/cassandra-operator/issues/398)
 ```
-python3 reproduce_bugs.py -c cassandra-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c cassandra-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -71,7 +71,7 @@ The bug was found in commit `fe8f91da3cd8aab47f21f7a3aad4abc5d4b6a0dd`.
 
 #### intermediate-state bug 1: [orange-opensource-casskop-370](https://github.com/Orange-OpenSource/casskop/issues/370)
 ```
-python3 reproduce_bugs.py -c casskop-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c casskop-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -82,7 +82,7 @@ The bug was found in commit `f87c8e05c1a2896732fc5f3a174f1eb99e936907`.
 
 #### stale-state bug 1: [orange-opensource-casskop-316](https://github.com/Orange-OpenSource/casskop/issues/316)
 ```
-python3 reproduce_bugs.py -c casskop-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c casskop-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -93,7 +93,7 @@ The bug was found in commit `f87c8e05c1a2896732fc5f3a174f1eb99e936907`.
 
 #### stale-state bug 2: [orange-opensource-casskop-321](https://github.com/Orange-OpenSource/casskop/issues/321)
 ```
-python3 reproduce_bugs.py -c casskop-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c casskop-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -104,7 +104,7 @@ The bug was found in commit `f87c8e05c1a2896732fc5f3a174f1eb99e936907`.
 
 #### unobserved-state bug 1: [orange-opensource-casskop-342](https://github.com/Orange-OpenSource/casskop/issues/342)
 ```
-python3 reproduce_bugs.py -c casskop-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c casskop-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -117,7 +117,7 @@ The bug was found in commit `f87c8e05c1a2896732fc5f3a174f1eb99e936907`.
 
 #### intermediate-state bug 1: [percona-server-mongodb-operator-578](https://jira.percona.com/browse/K8SPSMDB-578)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -127,7 +127,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### intermediate-state bug 2: [percona-server-mongodb-operator-579](https://jira.percona.com/browse/K8SPSMDB-579)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b intermediate-state-2
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b intermediate-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -137,7 +137,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### stale-state bug 1: [percona-server-mongodb-operator-430](https://jira.percona.com/browse/K8SPSMDB-430)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -148,7 +148,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### stale-state bug 2: [percona-server-mongodb-operator-433](https://jira.percona.com/browse/K8SPSMDB-433)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -159,7 +159,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### stale-state bug 3: [percona-server-mongodb-operator-438](https://jira.percona.com/browse/K8SPSMDB-438)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b stale-state-3
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b stale-state-3
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -170,7 +170,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### unobserved-state bug 1: [percona-server-mongodb-operator-585](https://jira.percona.com/browse/K8SPSMDB-585)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -182,7 +182,7 @@ The bug was found in commit `c12b69e2c41efc67336a890039394250420f60bb`.
 
 #### [orange-opensource-nifikop-130](https://github.com/Orange-OpenSource/nifikop/issues/130)
 ```
-python3 reproduce_bugs.py -c nifikop-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c nifikop-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -195,7 +195,7 @@ The bug was found in commit `1546e0242107bf2f2c1256db50f47c79956dd1c6`.
 
 #### intermediate-state bug 1: [rabbitmq-cluster-operator-782](https://github.com/rabbitmq/cluster-operator/issues/782)
 ```
-python3 reproduce_bugs.py -c rabbitmq-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c rabbitmq-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -206,7 +206,7 @@ The bug was found in commit `4f13b9a942ad34fece0171d2174aa0264b10e947`.
 
 #### stale-state bug 1: [rabbitmq-cluster-operator-648](https://github.com/rabbitmq/cluster-operator/issues/648)
 ```
-python3 reproduce_bugs.py -c rabbitmq-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c rabbitmq-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -217,7 +217,7 @@ The bug was found in commit `4f13b9a942ad34fece0171d2174aa0264b10e947`.
 
 #### stale-state bug 2: [rabbitmq-cluster-operator-653](https://github.com/rabbitmq/cluster-operator/issues/653)
 ```
-python3 reproduce_bugs.py -c rabbitmq-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c rabbitmq-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -228,7 +228,7 @@ The bug was found in commit `4f13b9a942ad34fece0171d2174aa0264b10e947`.
 
 #### unobserved-state bug 1: [rabbitmq-cluster-operator-758](https://github.com/rabbitmq/cluster-operator/issues/758)
 ```
-python3 reproduce_bugs.py -c rabbitmq-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c rabbitmq-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -240,7 +240,7 @@ The bug was found in commit `4f13b9a942ad34fece0171d2174aa0264b10e947`.
 
 #### intermediate-state bug 1: [percona-xtradb-cluster-operator-896](https://jira.percona.com/browse/K8SPXC-896)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b intermediate-state-1
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b intermediate-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -250,7 +250,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### intermediate-state bug 2: [percona-xtradb-cluster-operator-897](https://jira.percona.com/browse/K8SPXC-897)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b intermediate-state-2
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b intermediate-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -260,7 +260,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### stale-state bug 1: [percona-xtradb-cluster-operator-716](https://jira.percona.com/browse/K8SPXC-716)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -271,7 +271,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### stale-state bug 2: [percona-xtradb-cluster-operator-725](https://jira.percona.com/browse/K8SPXC-725)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -282,7 +282,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### stale-state bug 3: [percona-xtradb-cluster-operator-763](https://jira.percona.com/browse/K8SPXC-763)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b stale-state-3
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b stale-state-3
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -293,7 +293,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### unobserved-state bug 1: [percona-xtradb-cluster-operator-918](https://jira.percona.com/browse/K8SPXC-918)
 ```
-python3 reproduce_bugs.py -c xtradb-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c xtradb-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -306,7 +306,7 @@ The bug was found in commit `29092c9b145af6eaf5cbff534287483bec4167b6`.
 
 #### stale-state bug 1: [yugabyte-operator-35](https://github.com/yugabyte/yugabyte-operator/issues/35)
 ```
-python3 reproduce_bugs.py -c yugabyte-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c yugabyte-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -319,7 +319,7 @@ This bug was found in commit `966ef1978ed5d714119548b2c4343925fe49f882`.
 
 #### stale-state bug 2: [yugabyte-operator-36](https://github.com/yugabyte/yugabyte-operator/issues/36)
 ```
-python3 reproduce_bugs.py -c yugabyte-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c yugabyte-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -331,7 +331,7 @@ This bug was found in commit `966ef1978ed5d714119548b2c4343925fe49f882` with the
 
 #### unobserved-state bug 1 [yugabyte-operator-39](https://github.com/yugabyte/yugabyte-operator/issues/39)
 ```
-python3 reproduce_bugs.py -c yugabyte-operator -b unobserved-state-1
+uv run --locked python reproduce_bugs.py -c yugabyte-operator -b unobserved-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -343,7 +343,7 @@ This bug was found in commit `966ef1978ed5d714119548b2c4343925fe49f882`.
 
 #### stale-state bug 1: [pravega-zookeeper-operator-312](https://github.com/pravega/zookeeper-operator/issues/312)
 ```
-python3 reproduce_bugs.py -c zookeeper-operator -b stale-state-1
+uv run --locked python reproduce_bugs.py -c zookeeper-operator -b stale-state-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -353,7 +353,7 @@ The bug was found in commit `cda03d2f270bdfb51372192766123904f6d88278`.
 
 #### stale-state bug 2: [pravega-zookeeper-operator-314](https://github.com/pravega/zookeeper-operator/issues/314)
 ```
-python3 reproduce_bugs.py -c zookeeper-operator -b stale-state-2
+uv run --locked python reproduce_bugs.py -c zookeeper-operator -b stale-state-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -371,7 +371,7 @@ Note that Sieve does NOT guarantee to consistently reproduce the following indir
 
 #### indirect bug 1: [instaclustr-cassandra-operator-400](https://github.com/instaclustr/cassandra-operator/issues/400)
 ```
-python3 reproduce_bugs.py -c cassandra-operator -b indirect-1
+uv run --locked python reproduce_bugs.py -c cassandra-operator -b indirect-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -380,7 +380,7 @@ Error from the workload: error: hard timeout: cassandra-test-cluster-dc1-rack1-1
 
 #### indirect bug 2: [instaclustr-cassandra-operator-410](https://github.com/instaclustr/cassandra-operator/issues/410)
 ```
-python3 reproduce_bugs.py -c cassandra-operator -b indirect-2
+uv run --locked python reproduce_bugs.py -c cassandra-operator -b indirect-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -392,7 +392,7 @@ End state inconsistency - object field has a different value: statefulset/defaul
 
 #### indirect bug 1: [percona-server-mongodb-operator-434](https://jira.percona.com/browse/K8SPSMDB-434)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b indirect-1
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b indirect-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -401,7 +401,7 @@ Exception from controller: Observed a panic: "invalid memory address or nil poin
 
 #### indirect bug 2: [percona-server-mongodb-operator-590](https://jira.percona.com/browse/K8SPSMDB-590)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b indirect-2
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b indirect-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -417,7 +417,7 @@ e run, but 2 seen during testing run
 
 #### indirect bug 3: [percona-server-mongodb-operator-591](https://jira.percona.com/browse/K8SPSMDB-591)
 ```
-python3 reproduce_bugs.py -c mongodb-operator -b indirect-3
+uv run --locked python reproduce_bugs.py -c mongodb-operator -b indirect-3
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -429,7 +429,7 @@ End state inconsistency - fewer object fields than reference: perconaservermongo
 
 #### indirect bug 1: [yugabyte-operator-33](https://github.com/yugabyte/yugabyte-operator/issues/33)
 ```
-python3 reproduce_bugs.py -c yugabyte-operator -b indirect-1
+uv run --locked python reproduce_bugs.py -c yugabyte-operator -b indirect-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -439,7 +439,7 @@ Error from the workload: error: hard timeout: yb-tserver-ui does not become non-
 
 #### indirect bug 2: [yugabyte-operator-43](https://github.com/yugabyte/yugabyte-operator/issues/43)
 ```
-python3 reproduce_bugs.py -c yugabyte-operator -b indirect-2
+uv run --locked python reproduce_bugs.py -c yugabyte-operator -b indirect-2
 ```
 If reproduced, you will see errors reported by Sieve including
 ```
@@ -450,7 +450,7 @@ End state inconsistency - object field has a different value: pod/default/yb-mas
 
 #### indirect bug 1: [zookeeper-operator-410](https://github.com/pravega/zookeeper-operator/issues/410)
 ```
-python3 reproduce_bugs.py -c zookeeper-operator -b indirect-1
+uv run --locked python reproduce_bugs.py -c zookeeper-operator -b indirect-1
 ```
 If reproduced, you will see errors reported by Sieve including
 ```

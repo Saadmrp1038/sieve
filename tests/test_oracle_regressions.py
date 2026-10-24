@@ -10,7 +10,7 @@ from sieve_common.common import SIEVE_LEARN_VALUE_MASK
 from sieve_oracle.checker_common import (
     canonicalize_controller_related_list,
     second_pass_learn_trim,
-    test_run_validation,
+    test_run_validation as validate_test_run,
 )
 from sieve_oracle import liveness_checker
 
@@ -85,18 +85,21 @@ class OracleRegressionTests(unittest.TestCase):
             ),
             common_config=SimpleNamespace(field_key_mask={}, field_path_mask={}),
         )
-        with patch.object(
-            liveness_checker, "get_canonicalized_state", return_value=reference
-        ), patch.object(
-            liveness_checker, "get_testing_state", return_value=current
-        ), patch.object(
-            liveness_checker,
-            "get_reference_controller_related_list",
-            return_value=["pod/default/controller-a", "pod/default/controller-b"],
-        ), patch.object(
-            liveness_checker,
-            "get_current_controller_related_list",
-            return_value=["pod/default/controller-c"],
+        with (
+            patch.object(
+                liveness_checker, "get_canonicalized_state", return_value=reference
+            ),
+            patch.object(liveness_checker, "get_testing_state", return_value=current),
+            patch.object(
+                liveness_checker,
+                "get_reference_controller_related_list",
+                return_value=["pod/default/controller-a", "pod/default/controller-b"],
+            ),
+            patch.object(
+                liveness_checker,
+                "get_current_controller_related_list",
+                return_value=["pod/default/controller-c"],
+            ),
         ):
             self.assertEqual(liveness_checker.compare_states(context), [])
             del current["pod/default/operand-b"]
@@ -110,7 +113,7 @@ class OracleRegressionTests(unittest.TestCase):
             root = Path(directory)
             (root / "sieve-server.log").write_text(server)
             (root / "workload.log").write_text("FINISH-SIEVE-TEST\n")
-            return test_run_validation(
+            return validate_test_run(
                 SimpleNamespace(
                     result_dir=directory,
                     test_plan_content={"actions": actions},

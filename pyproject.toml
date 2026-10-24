@@ -1,21 +1,51 @@
-[tool.black]
+[project]
+name = "sieve-controller-testing"
+version = "0.1.0"
+description = "Reliability testing for Kubernetes controllers and operators"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-2-Clause"
+dependencies = [
+    "kubernetes==12.0.1",
+    "docker==5.0.2",
+    "requests==2.28.2",
+    "urllib3==1.26.20",
+    "PyYAML==6.0.3",
+    "deepdiff==5.5.0",
+    "setuptools",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<10",
+    "ruff>=0.14,<1",
+]
+
+[tool.uv]
+# The existing repository scripts are migrated to a package in a later stage.
+package = false
+required-version = "==0.12.8"
+# Sieve's Docker/kind orchestration supports Linux and macOS, not Windows.
+environments = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
 line-length = 88
-target-version = ['py36']
-include = '\.pyi?$'
-exclude = '''
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | fakegopath
-    | log
-    | app
-  )/
-'''
+target-version = "py310"
+extend-exclude = [
+    ".cache",
+    "app",
+    "experiments",
+    "fakegopath",
+    "runs",
+    "sieve_learn_results",
+    "sieve_test_results",
+]
+
+[tool.ruff.lint]
+# Start with syntax and definite correctness errors in the legacy code.
+select = ["E9", "F63", "F7", "F82"]

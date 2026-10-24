@@ -621,9 +621,9 @@ def save_previous_learn_results(test_context: TestContext):
     assert test_context.mode == sieve_modes.LEARN and test_context.build_oracle
     learn_res_dir = test_context.result_dir
     learn_prev_res_dir = first_pass_learn_result_dir(test_context.result_dir)
-    assert os.path.isdir(
-        learn_res_dir
-    ), "{} should exist after first pass of learn run".format(learn_res_dir)
+    assert os.path.isdir(learn_res_dir), (
+        "{} should exist after first pass of learn run".format(learn_res_dir)
+    )
     print(
         "Moving the first pass learn result from {} to {}...".format(
             learn_res_dir, learn_prev_res_dir
@@ -784,8 +784,10 @@ def run(
         os.path.isdir(oracle_dir)
         or (mode == sieve_modes.LEARN and build_oracle)
         or mode == sieve_modes.VANILLA
-    ), "The oracle dir: {} must exist unless (1) you are running vanilla mode or (2) build_oracle is enabled".format(
-        oracle_dir
+    ), (
+        "The oracle dir: {} must exist unless (1) you are running vanilla mode or (2) build_oracle is enabled".format(
+            oracle_dir
+        )
     )
     os.makedirs(oracle_dir, exist_ok=True)
     if mode == sieve_modes.TEST:

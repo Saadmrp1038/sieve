@@ -43,13 +43,13 @@ We welcome any users who want to test their controllers using Sieve and we are m
 ### Pre-requisites for use
 * Docker daemon must be running (please ensure you can run `docker` commands without sudo)
 * A docker repo that you have write access to
-* [python3](https://www.python.org/downloads/) installed
+* [uv](https://docs.astral.sh/uv/getting-started/installation/) installed; run `uv sync --locked` to install the pinned Python environment
 * [go](https://golang.org/doc/install) (preferably 1.19.1) installed and `$GOPATH` set
 * [kind](https://kind.sigs.k8s.io/) installed and `$KUBECONFIG` set (Sieve runs tests in a kind cluster)
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/) installed
-* python3 installed and dependency packages installed: run `pip3 install -r requirements.txt`
+* Run repository Python commands with `uv run --locked python ...`; `requirements.txt` is a generated export for legacy pip workflows
 
-You can run `python3 check_env.py` to check whether your environment meets the requirement.
+You can run `uv run --locked python check_env.py` to check whether your environment meets the requirement.
 
 ### Getting started
 Users need to port the controller before testing it with Sieve. Basically, users need to provide the steps to build and deploy the controller and necessary configuration files (e.g., CRD yaml files). We list the detailed porting steps [here](docs/port.md). We are actively working on simplify the porting process.
@@ -61,7 +61,7 @@ Sieve has found 46 bugs in 10 different controllers, which are listed [here](doc
 
 ### Contributing
 
-We welcome all feedback and [contributions](https://github.com/sieve-project/sieve/issues/93). Please use Github issues for user questions and bug reports.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for locked environment setup, tests, formatting, and dependency updates. We welcome all feedback and [contributions](https://github.com/sieve-project/sieve/issues/93). Please use Github issues for user questions and bug reports.
 
 ### Learn more
 You can learn more about Sieve from the following references:

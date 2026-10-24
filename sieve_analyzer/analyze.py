@@ -392,9 +392,9 @@ def generate_test_plans_from_learn_run(
     print("Sanity checking the sieve log {}...".format(log_path))
     sanity_check_sieve_server_log(log_path)
 
-    assert os.path.exists(
-        os.path.join(oracle_dir, "mask.json")
-    ), "cannot find mask.json"
+    assert os.path.exists(os.path.join(oracle_dir, "mask.json")), (
+        "cannot find mask.json"
+    )
 
     event_graph = build_controller_event_graph(test_context, log_path, oracle_dir)
     sieve_learn_result = {
