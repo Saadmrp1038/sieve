@@ -1,0 +1,7 @@
+# Keep VM metadata, local launchers and raw evidence out of the repository.
+*
+!.gitignore
+!.gitattributes
+!README.md
+!kind-docker29.patch
+!requirements.txt

@@ -1,5 +1,4 @@
 import os
-import shutil
 from sieve_common.common import *
 from sieve_oracle.checker_common import *
 from sieve_oracle.safety_checker import *
@@ -49,9 +48,10 @@ def create_differential_oracles(test_context: TestContext):
         "Copying controller family to the oracle dir...",
         bcolors.OKGREEN,
     )
-    shutil.copy(
-        os.path.join(test_context.result_dir, "controller_family.json"),
-        os.path.join(test_context.oracle_dir, "controller_family.json"),
+    dump_json_file(
+        test_context.oracle_dir,
+        canonicalize_controller_related_list(test_context),
+        "controller_family.json",
     )
 
 

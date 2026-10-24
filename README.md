@@ -54,6 +54,8 @@ You can run `python3 check_env.py` to check whether your environment meets the r
 ### Getting started
 Users need to port the controller before testing it with Sieve. Basically, users need to provide the steps to build and deploy the controller and necessary configuration files (e.g., CRD yaml files). We list the detailed porting steps [here](docs/port.md). We are actively working on simplify the porting process.
 
+For a small controller example, see the [Mittwald Secret Generator integration](examples/kubernetes-secret-generator/README.md), including its workload, instrumentation setup, and validated restart and missed-state schedules.
+
 ### Bugs found by Sieve
 Sieve has found 46 bugs in 10 different controllers, which are listed [here](docs/bugs.md). We also provide [steps](docs/reprod.md) to reproduce all the intermediate-state/unobserved-states/stale-state bugs found by Sieve. We would appreciate a lot if you mention Sieve and inform us when you report bugs found by Sieve.
 

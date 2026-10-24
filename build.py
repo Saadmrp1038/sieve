@@ -10,6 +10,7 @@ import stat
 import optparse
 import json
 import sys
+import subprocess
 from sieve_common.config import (
     CommonConfig,
     load_controller_config,
@@ -65,16 +66,66 @@ def download_kubernetes(version):
 
     :param version: the Kubernetes version that will be used to build kind node image
     """
-    rmtree_if_exists("fakegopath")
-    os.makedirs("fakegopath/src/k8s.io")
-    os_system(
-        "git clone --single-branch --branch {} https://github.com/kubernetes/kubernetes.git fakegopath/src/k8s.io/kubernetes >> /dev/null".format(
-            version
+    checkout = os.path.join("fakegopath", "src", "k8s.io", "kubernetes")
+    os.makedirs(os.path.dirname(checkout), exist_ok=True)
+    cached = (
+        subprocess.run(
+            ["git", "-C", checkout, "rev-parse", "--verify", version + "^{commit}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
         )
+        if os.path.isdir(os.path.join(checkout, ".git"))
+        else None
     )
-    os.chdir("fakegopath/src/k8s.io/kubernetes")
-    os_system("git checkout -b sieve >> /dev/null")
-    os.chdir(ORIGINAL_DIR)
+    if cached is not None and cached.returncode == 0:
+        revision = cached.stdout.strip()
+        print("Reusing Kubernetes checkout at {} ({})".format(version, revision))
+        subprocess.run(["git", "-C", checkout, "reset", "--hard", revision], check=True)
+        # Retain ignored build output while removing prior instrumentation.
+        subprocess.run(["git", "-C", checkout, "clean", "-fd"], check=True)
+        for relative in ("vendor/sieve.client", "staging/src/sieve.client"):
+            dependency = os.path.join(checkout, relative)
+            if os.path.islink(dependency):
+                os.unlink(dependency)
+            else:
+                rmtree_if_exists(dependency)
+    else:
+        # The release source is sufficient; fetching all Kubernetes history is
+        # slow and makes each node-image build vulnerable to long TLS failures.
+        for attempt in range(3):
+            rmtree_if_exists(checkout)
+            try:
+                subprocess.run(
+                    [
+                        "git",
+                        "-c",
+                        "http.version=HTTP/1.1",
+                        "clone",
+                        "--depth",
+                        "1",
+                        "--single-branch",
+                        "--branch",
+                        version,
+                        "https://github.com/kubernetes/kubernetes.git",
+                        checkout,
+                    ],
+                    check=True,
+                    timeout=300,
+                    stdout=subprocess.DEVNULL,
+                )
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                if attempt == 2:
+                    raise
+                print(
+                    "Kubernetes source download failed; retrying ({}/3)".format(
+                        attempt + 2
+                    )
+                )
+    subprocess.run(
+        ["git", "-C", checkout, "checkout", "-B", "sieve", version], check=True
+    )
 
 
 def install_lib_for_kubernetes(version):
@@ -130,6 +181,20 @@ def build_kubernetes(version, container_registry, image_tag):
     :param image_tag: the tag of the image
     """
     os.chdir("fakegopath/src/k8s.io/kubernetes")
+    # Older Kubernetes builders inspect a legacy Docker field removed in
+    # Docker 29. The rsync container uses the default bridge network; its
+    # per-network address is available on both old and current Docker engines.
+    build_common = "build/common.sh"
+    with open(build_common) as source:
+        script = source.read()
+    legacy_address = "{{ .NetworkSettings.IPAddress }}"
+    if legacy_address in script:
+        script = script.replace(
+            legacy_address,
+            '{{with index .NetworkSettings.Networks "bridge"}}{{.IPAddress}}{{end}}',
+        )
+        with open(build_common, "w") as source:
+            source.write(script)
     os_system(
         "GOPATH={}/fakegopath KUBE_GIT_VERSION={}-sieve-`git rev-parse HEAD` kind build node-image".format(
             ORIGINAL_DIR, version
@@ -666,8 +731,10 @@ if __name__ == "__main__":
         parser.error("invalid build mode option: {}".format(options.mode))
 
     if options.mode == sieve_modes.ALL and options.build_only:
-        parser.error("Building controller docker image for ALL mode not"
-                     " supported. Supported modes:  vanilla, learn and test")
+        parser.error(
+            "Building controller docker image for ALL mode not"
+            " supported. Supported modes:  vanilla, learn and test"
+        )
 
     if options.controller_config_dir is None:
         setup_kubernetes_wrapper(

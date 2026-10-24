@@ -301,6 +301,8 @@ def compare_states(test_context: TestContext):
     for resource_key in keys_in_testing_state.union(keys_in_reference_state):
         if kind_native_objects(resource_key):
             continue
+        if resource_key_should_be_masked(test_context, resource_key):
+            continue
         resource_type, namespace, name = parse_key(resource_key)
         if resource_type_should_be_masked_by_controller_config(
             test_context, resource_type

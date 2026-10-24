@@ -230,14 +230,18 @@ def start_sieve_server(test_context: TestContext):
         else sieve_modes.LEARN
     )
     os_system(
-        "docker exec kind-control-plane bash -c 'cd /sieve_server && ./sieve-server {} &> sieve-server.log &'".format(
+        "docker exec kind-control-plane bash -c 'cd /sieve_server || exit 1; "
+        "./sieve-server {} > sieve-server.log 2>&1 & echo $! > sieve-server.pid'".format(
             sieve_server_mode
         )
     )
 
 
 def stop_sieve_server():
-    os_system("docker exec kind-control-plane bash -c 'pkill sieve-server'")
+    os_system(
+        "docker exec kind-control-plane bash -c "
+        "'read -r pid < /sieve_server/sieve-server.pid; kill \"$pid\"'"
+    )
 
 
 def setup_kind_cluster(test_context: TestContext):
@@ -249,7 +253,10 @@ def setup_kind_cluster(test_context: TestContext):
         platform = "macos-"
     k8s_container_registry = test_context.container_registry
     k8s_image_tag = (
-        test_context.controller_config.kubernetes_version + "-" + platform + test_context.image_tag
+        test_context.controller_config.kubernetes_version
+        + "-"
+        + platform
+        + test_context.image_tag
     )
     retry_cnt = 0
     # Retry cluster creation for 5 times.
@@ -546,7 +553,7 @@ def run_workload(
 
     # Save the controller log as well mainly for debugging purpose.
     os_system(
-        "kubectl logs {} {} > {}/controller.log".format(
+        "kubectl logs --request-timeout=30s {} {} > {}/controller.log".format(
             pod_name, select_container_from_pod, test_context.result_dir
         )
     )
@@ -692,7 +699,8 @@ def run_test(test_context: TestContext) -> TestResult:
 
 
 def create_plan_for_test_mode(test_context: TestContext):
-    test_plan_content = yaml.load(open(test_context.original_test_plan))
+    with open(test_context.original_test_plan) as plan:
+        test_plan_content = yaml.safe_load(plan)
     # TODO: we should probably just add the annotatedReconcileStackFrame when generating the test plan.
     test_plan_content["annotatedReconcileStackFrame"] = [
         i for i in test_context.controller_config.annotated_reconcile_functions.values()

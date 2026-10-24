@@ -1,0 +1,184 @@
+diff --git a/pkg/build/nodeimage/internal/container/docker/archive.go b/pkg/build/nodeimage/internal/container/docker/archive.go
+index 11013df..5ab82f6 100644
+--- a/pkg/build/nodeimage/internal/container/docker/archive.go
++++ b/pkg/build/nodeimage/internal/container/docker/archive.go
+@@ -53,6 +53,27 @@ func GetArchiveTags(path string) ([]string, error) {
+ 		if err != nil {
+ 			return nil, err
+ 		}
++		// Docker's containerd image store exports manifest.json without the
++		// legacy repositories entry. Read its tags directly when available.
++		if hdr.Name == "manifest.json" {
++			var entries []metadataEntry
++			if err := json.NewDecoder(tr).Decode(&entries); err != nil {
++				return nil, err
++			}
++			var tags []string
++			seen := map[string]bool{}
++			for _, entry := range entries {
++				for _, tag := range entry.RepoTags {
++					if !seen[tag] {
++						tags = append(tags, tag)
++						seen[tag] = true
++					}
++				}
++			}
++			if len(tags) > 0 {
++				return tags, nil
++			}
++		}
+ 		if hdr.Name == "repositories" {
+ 			break
+ 		}
+@@ -104,6 +125,12 @@ func EditArchive(reader io.Reader, writer io.Writer, editRepositories func(strin
+ 			return err
+ 		}
+ 
++		// Retagging edits the Docker manifest below. An OCI index would keep
++		// stale image names and take precedence over that edited manifest.
++		if hdr.Name == "index.json" || hdr.Name == "oci-layout" {
++			continue
++		}
++
+ 		// edit the repostories and manifests files when we find them
+ 		if hdr.Name == "repositories" {
+ 			b, err = editRepositoriesFile(b, editRepositories)
+diff --git a/pkg/build/nodeimage/internal/container/docker/archive_test.go b/pkg/build/nodeimage/internal/container/docker/archive_test.go
+new file mode 100644
+index 0000000..ee9c752
+--- /dev/null
++++ b/pkg/build/nodeimage/internal/container/docker/archive_test.go
+@@ -0,0 +1,133 @@
++package docker
++
++import (
++	"archive/tar"
++	"bytes"
++	"encoding/json"
++	"io"
++	"os"
++	"path/filepath"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func TestArchiveTagsFromModernManifest(t *testing.T) {
++	path := filepath.Join(t.TempDir(), "image.tar")
++	f, err := os.Create(path)
++	if err != nil {
++		t.Fatal(err)
++	}
++	tw := tar.NewWriter(f)
++	entries := []struct{ name, body string }{
++		{"index.json", `{"schemaVersion":2}`},
++		{"oci-layout", `{"imageLayoutVersion":"1.0.0"}`},
++		{"manifest.json", `[{"RepoTags":["example-amd64:tag","example-amd64:tag"],"Config":"blobs/config","Layers":["blobs/layer"]}]`},
++		{"blobs/config", `{"architecture":"amd64","os":"linux"}`},
++		{"blobs/layer", "layer contents"},
++	}
++	for _, entry := range entries {
++		if err := tw.WriteHeader(&tar.Header{Name: entry.name, Size: int64(len(entry.body)), Mode: 0600}); err != nil {
++			t.Fatal(err)
++		}
++		if _, err := io.WriteString(tw, entry.body); err != nil {
++			t.Fatal(err)
++		}
++	}
++	if err := tw.Close(); err != nil {
++		t.Fatal(err)
++	}
++	if err := f.Close(); err != nil {
++		t.Fatal(err)
++	}
++	tags, err := GetArchiveTags(path)
++	if err != nil || !reflect.DeepEqual(tags, []string{"example-amd64:tag"}) {
++		t.Fatalf("tags=%v error=%v", tags, err)
++	}
++	input, err := os.Open(path)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer input.Close()
++	var output bytes.Buffer
++	if err := EditArchive(input, &output, func(s string) string { return strings.TrimSuffix(s, "-amd64") }, ""); err != nil {
++		t.Fatal(err)
++	}
++	tr := tar.NewReader(&output)
++	manifestFound, layerFound := false, false
++	for {
++		h, err := tr.Next()
++		if err == io.EOF {
++			break
++		}
++		if err != nil {
++			t.Fatal(err)
++		}
++		if h.Name == "index.json" || h.Name == "oci-layout" {
++			t.Fatalf("stale OCI descriptor retained: %s", h.Name)
++		}
++		b, err := io.ReadAll(tr)
++		if err != nil {
++			t.Fatal(err)
++		}
++		if h.Name == "manifest.json" {
++			var manifest []metadataEntry
++			if err := json.Unmarshal(b, &manifest); err != nil {
++				t.Fatal(err)
++			}
++			if manifest[0].RepoTags[0] != "example:tag" {
++				t.Fatal(manifest)
++			}
++			manifestFound = true
++		}
++		if h.Name == "blobs/layer" {
++			if string(b) != "layer contents" {
++				t.Fatal("layer payload changed")
++			}
++			layerFound = true
++		}
++	}
++	if !manifestFound || !layerFound {
++		t.Fatal("manifest or layer lost")
++	}
++}
++
++func TestActualKubernetesDocker29Archives(t *testing.T) {
++	directory := os.Getenv("SIEVE_KUBERNETES_IMAGE_ARCHIVES")
++	if directory == "" {
++		t.Skip("no built Kubernetes archive directory provided")
++	}
++	paths, err := filepath.Glob(filepath.Join(directory, "*.tar"))
++	if err != nil || len(paths) != 4 {
++		t.Fatalf("archives=%v error=%v", paths, err)
++	}
++	for _, path := range paths {
++		t.Run(filepath.Base(path), func(t *testing.T) {
++			tags, err := GetArchiveTags(path)
++			if err != nil || len(tags) != 1 {
++				t.Fatalf("tags=%v error=%v", tags, err)
++			}
++			input, err := os.Open(path)
++			if err != nil {
++				t.Fatal(err)
++			}
++			defer input.Close()
++			edited := filepath.Join(t.TempDir(), "edited.tar")
++			output, err := os.Create(edited)
++			if err != nil {
++				t.Fatal(err)
++			}
++			if err := EditArchive(input, output, func(s string) string { return strings.TrimSuffix(s, "-amd64") }, ""); err != nil {
++				t.Fatal(err)
++			}
++			if err := output.Close(); err != nil {
++				t.Fatal(err)
++			}
++			actual, err := GetArchiveTags(edited)
++			expected := strings.Replace(tags[0], "-amd64:", ":", 1)
++			if err != nil || !reflect.DeepEqual(actual, []string{expected}) {
++				t.Fatalf("edited=%v want=%s error=%v", actual, expected, err)
++			}
++		})
++	}
++}

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-secret-generator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      sievetag: kubernetes-secret-generator
+  template:
+    metadata:
+      labels:
+        sievetag: kubernetes-secret-generator
+    spec:
+      serviceAccountName: kubernetes-secret-generator
+      containers:
+      - name: manager
+        image: ${SIEVE-DR}/kubernetes-secret-generator:${SIEVE-DT}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: WATCH_NAMESPACE
+          value: default
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: kubernetes-secret-generator
+        - name: KUBERNETES_SERVICE_HOST
+          value: kind-control-plane
+        - name: KUBERNETES_SERVICE_PORT
+          value: "6443"
+        envFrom:
+        - configMapRef:
+            name: sieve-testing-global-config
