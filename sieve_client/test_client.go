@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"path"
+	"strings"
+	"sync"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 func NotifyTestBeforeControllerRecv(operationType string, object interface{}) int {
@@ -73,26 +77,80 @@ func NotifyTestAfterControllerRecv(recvID int, operationType string, object inte
 	checkResponse(response)
 }
 
-func NotifyTestBeforeCacheGet(key string, items []interface{}) {
-	if err := loadSieveConfigFromEnv(true); err != nil {
+// Cache identity is needed after deletion of its last object: an empty cache
+// still serves Get calls, and those reads must participate in pause injection.
+var cacheResourceTypes sync.Map
+
+func NotifyTestCacheObject(store interface{}, object interface{}) {
+	if store == nil || object == nil {
 		return
 	}
-	if err := initRPCClient(); err != nil {
+	if _, err := meta.Accessor(object); err != nil {
 		return
+	}
+	cacheResourceTypes.Store(store, getResourceTypeFromObj(object))
+}
+
+func cacheReadResourceKey(key string, items []interface{}, store interface{}) string {
+	if len(items) > 0 {
+		NotifyTestCacheObject(store, items[0])
+	}
+	resourceType, ok := cacheResourceTypes.Load(store)
+	if !ok {
+		return ""
+	}
+	return path.Join(resourceType.(string), key)
+}
+
+// pauseBy optionally confines a cache-read pause to one reconciliation
+// function. Other reconcilers can then produce the event that resumes it.
+func cacheReadMatchesPause(resource string, reconcileFun string, matchPrefix bool) bool {
+	for _, action := range actions["pauseController"] {
+		scope, _ := action["pauseScope"].(string)
+		if scope != "all" && scope != resource && !(matchPrefix && strings.HasPrefix(scope, resource)) {
+			continue
+		}
+		when, _ := action["pauseAt"].(string)
+		if when != "beforeControllerRead" && when != "afterControllerRead" {
+			continue
+		}
+		by, _ := action["pauseBy"].(string)
+		if by == "" || by == reconcileFun {
+			return true
+		}
+	}
+	return false
+}
+
+func NotifyTestBeforeCacheGet(key string, items []interface{}, store interface{}) string {
+	if err := loadSieveConfigFromEnv(true); err != nil {
+		return ""
+	}
+	if err := initRPCClient(); err != nil {
+		return ""
 	}
 	reconcileFun := getMatchedReconcileStackFrame()
 	if reconcileFun == UNKNOWN_RECONCILE_FUN {
-		return
+		return ""
 	}
-	if len(items) == 0 {
-		return
+	resourceKey := cacheReadResourceKey(key, items, store)
+	if resourceKey == "" {
+		return ""
 	}
-	resourceKey := path.Join(getResourceTypeFromObj(items[0]), key)
-	log.Printf("NotifyTestBeforeCacheGet %s", resourceKey)
+	if !cacheReadMatchesPause(resourceKey, reconcileFun, false) {
+		return ""
+	}
+	log.Printf("NotifyTestBeforeCacheGet %s by %s", resourceKey, reconcileFun)
 	NotifyTestBeforeCacheGetPause(resourceKey)
+	return resourceKey
 }
 
-func NotifyTestAfterCacheGet(key string, item interface{}, exists bool) {
+func NotifyTestAfterCacheGet(key string, item interface{}, exists bool, beforeResourceKey string) {
+	// The object may disappear while the before-read hook is paused. Pair the
+	// hooks using the original key even when the cache now returns NotFound.
+	if beforeResourceKey != "" {
+		defer NotifyTestAfterCacheGetPause(beforeResourceKey)
+	}
 	if err := loadSieveConfigFromEnv(true); err != nil {
 		return
 	}
@@ -112,7 +170,6 @@ func NotifyTestAfterCacheGet(key string, item interface{}, exists bool) {
 		printSerializationError(err)
 		return
 	}
-	defer NotifyTestAfterCacheGetPause(resourceKey)
 	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "afterControllerWrite", false) {
 		return
 	}
@@ -149,6 +206,9 @@ func NotifyTestBeforeCacheList(items []interface{}) {
 		return
 	}
 	resourceType := getResourceTypeFromObj(items[0])
+	if !cacheReadMatchesPause(resourceType+"/", reconcileFun, true) {
+		return
+	}
 	log.Printf("NotifyTestBeforeCacheList %s", resourceType)
 	NotifyTestBeforeCacheListPause(resourceType)
 }
@@ -176,7 +236,9 @@ func NotifyTestAfterCacheList(items []interface{}, listErr error) {
 		return
 	}
 	resourceType := getResourceTypeFromObj(items[0])
-	defer NotifyTestAfterCacheListPause(resourceType)
+	if cacheReadMatchesPause(resourceType+"/", reconcileFun, true) {
+		defer NotifyTestAfterCacheListPause(resourceType)
+	}
 	if !checkKVPairInTriggerObservationPoint(resourceType, "when", "afterControllerWrite", true) {
 		return
 	}
@@ -199,7 +261,7 @@ func NotifyTestAfterCacheList(items []interface{}, listErr error) {
 }
 
 func NotifyTestBeforeCacheGetPause(resourceKey string) {
-	if !checkKVPairInAction("pauseController", "pauseScope", resourceKey, false) {
+	if !checkKVPairInAction("pauseController", "pauseScope", resourceKey, false) && !checkKVPairInAction("pauseController", "pauseScope", "all", false) {
 		return
 	}
 	if !checkKVPairInAction("pauseController", "pauseAt", "beforeControllerRead", false) && !checkKVPairInAction("pauseController", "pauseAt", "afterControllerRead", false) {
@@ -220,7 +282,7 @@ func NotifyTestBeforeCacheGetPause(resourceKey string) {
 }
 
 func NotifyTestAfterCacheGetPause(resourceKey string) {
-	if !checkKVPairInAction("pauseController", "pauseScope", resourceKey, false) {
+	if !checkKVPairInAction("pauseController", "pauseScope", resourceKey, false) && !checkKVPairInAction("pauseController", "pauseScope", "all", false) {
 		return
 	}
 	if !checkKVPairInAction("pauseController", "pauseAt", "beforeControllerRead", false) && !checkKVPairInAction("pauseController", "pauseAt", "afterControllerRead", false) {
@@ -241,7 +303,7 @@ func NotifyTestAfterCacheGetPause(resourceKey string) {
 }
 
 func NotifyTestBeforeCacheListPause(resourceType string) {
-	if !checkKVPairInAction("pauseController", "pauseScope", resourceType, true) {
+	if !checkKVPairInAction("pauseController", "pauseScope", resourceType, true) && !checkKVPairInAction("pauseController", "pauseScope", "all", false) {
 		return
 	}
 	if !checkKVPairInAction("pauseController", "pauseAt", "beforeControllerRead", false) && !checkKVPairInAction("pauseController", "pauseAt", "afterControllerRead", false) {
@@ -262,7 +324,7 @@ func NotifyTestBeforeCacheListPause(resourceType string) {
 }
 
 func NotifyTestAfterCacheListPause(resourceType string) {
-	if !checkKVPairInAction("pauseController", "pauseScope", resourceType, true) {
+	if !checkKVPairInAction("pauseController", "pauseScope", resourceType, true) && !checkKVPairInAction("pauseController", "pauseScope", "all", false) {
 		return
 	}
 	if !checkKVPairInAction("pauseController", "pauseAt", "beforeControllerRead", false) && !checkKVPairInAction("pauseController", "pauseAt", "afterControllerRead", false) {
@@ -539,11 +601,12 @@ func NotifyTestAfterAnnotatedAPICall(invocationID int, moduleName string, filePa
 }
 
 func NotifyTestBeforeAPIServerRecv(eventType, key string, object interface{}) {
+	// Baseline objects may be created before the Sieve configuration arrives.
+	// Record them even though fault coordination is not initialized yet.
+	LogAPIEvent(eventType, key, object)
 	if err := loadSieveConfigFromConfigMap(eventType, key, object, true); err != nil {
 		return
 	}
-	// we should log the API event before initializing the client
-	LogAPIEvent(eventType, key, object)
 	if err := initRPCClient(); err != nil {
 		return
 	}

@@ -234,7 +234,7 @@ func instrumentRequestGoForAll(ifilepath, ofilepath, mode string) {
 		log.Printf("%T\n", typeDecl.Type)
 		if structType, ok := typeDecl.Type.(*dst.StructType); ok {
 			instrField := &dst.Field{
-				Names: []*dst.Ident{&dst.Ident{Name: "obj"}},
+				Names: []*dst.Ident{{Name: "obj"}},
 				Type:  &dst.Ident{Name: "interface{}"},
 			}
 			instrField.Decs.End.Append("//sieve")
@@ -422,10 +422,42 @@ func instrumentWatchCacheGoForAll(ifilepath, ofilepath, mode string, instrumentB
 
 func instrumentStoreGoForAll(ifilepath, ofilepath, mode string) {
 	f := parseSourceFile(ifilepath, "cache", map[string]string{})
+	if mode == "Test" {
+		instrumentCacheObjectTypes(f)
+	}
 	instrumentCacheGetForAll(f, mode)
 	instrumentCacheListForAll(f, mode)
 	instrumentCacheByIndexForAll(f, mode)
 	writeInstrumentedFile(ofilepath, "cache", f, map[string]string{})
+}
+
+func instrumentCacheObjectTypes(f *dst.File) {
+	for _, method := range []string{"Add", "Update", "Delete"} {
+		_, fun := findFuncDecl(f, method, "*cache")
+		if fun == nil {
+			panic("cannot find cache method " + method)
+		}
+		stmt := &dst.ExprStmt{X: &dst.CallExpr{
+			Fun:  &dst.Ident{Name: "NotifyTestCacheObject", Path: "sieve.client"},
+			Args: []dst.Expr{dst.NewIdent("c"), dst.NewIdent("obj")},
+		}}
+		stmt.Decs.End.Append("//sieve")
+		insertStmt(&fun.Body.List, 0, stmt)
+	}
+	_, replace := findFuncDecl(f, "Replace", "*cache")
+	if replace == nil {
+		panic("cannot find cache method Replace")
+	}
+	stmt := &dst.RangeStmt{
+		Key: dst.NewIdent("_"), Value: dst.NewIdent("sieveObject"),
+		Tok: token.DEFINE, X: dst.NewIdent("list"),
+		Body: &dst.BlockStmt{List: []dst.Stmt{&dst.ExprStmt{X: &dst.CallExpr{
+			Fun:  &dst.Ident{Name: "NotifyTestCacheObject", Path: "sieve.client"},
+			Args: []dst.Expr{dst.NewIdent("c"), dst.NewIdent("sieveObject")},
+		}}}},
+	}
+	stmt.Decs.End.Append("//sieve")
+	insertStmt(&replace.Body.List, 0, stmt)
 }
 
 func instrumentCacheGetForAll(f *dst.File, mode string) {
@@ -444,13 +476,32 @@ func instrumentCacheGetForAll(f *dst.File, mode string) {
 		},
 	}
 	instrumentationBeforeCacheGet.Decs.End.Append("//sieve")
-	insertStmt(&funcDecl.Body.List, 0, instrumentationBeforeCacheGet)
+	if mode == "Test" {
+		instrumentationBeforeCacheGet.X.(*dst.CallExpr).Args = append(
+			instrumentationBeforeCacheGet.X.(*dst.CallExpr).Args, dst.NewIdent("c"),
+		)
+		beforeWithKey := &dst.AssignStmt{
+			Lhs: []dst.Expr{&dst.Ident{Name: "sieveBeforeResourceKey"}},
+			Tok: token.DEFINE,
+			Rhs: []dst.Expr{instrumentationBeforeCacheGet.X},
+		}
+		beforeWithKey.Decs.End.Append("//sieve")
+		insertStmt(&funcDecl.Body.List, 0, beforeWithKey)
+	} else {
+		insertStmt(&funcDecl.Body.List, 0, instrumentationBeforeCacheGet)
+	}
 
 	instrumentationAfterCacheGet := &dst.ExprStmt{
 		X: &dst.CallExpr{
 			Fun:  &dst.Ident{Name: funNameAfter, Path: "sieve.client"},
 			Args: []dst.Expr{&dst.Ident{Name: "key"}, &dst.Ident{Name: "item"}, &dst.Ident{Name: "exists"}},
 		},
+	}
+	if mode == "Test" {
+		instrumentationAfterCacheGet.X.(*dst.CallExpr).Args = append(
+			instrumentationAfterCacheGet.X.(*dst.CallExpr).Args,
+			&dst.Ident{Name: "sieveBeforeResourceKey"},
+		)
 	}
 	instrumentationAfterCacheGet.Decs.End.Append("//sieve")
 	insertStmt(&funcDecl.Body.List, 2, instrumentationAfterCacheGet)

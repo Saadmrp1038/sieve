@@ -396,8 +396,10 @@ func NotifyLearnAfterAnnotatedAPICall(invocationID int, moduleName string, fileP
 }
 
 func NotifyLearnBeforeAPIServerRecv(eventType, key string, object interface{}) {
+	// End-state reconstruction also needs objects created before the plan's
+	// ConfigMap, such as the namespace root CA ConfigMap.
+	LogAPIEvent(eventType, key, object)
 	if err := loadSieveConfigFromConfigMap(eventType, key, object, false); err != nil {
 		return
 	}
-	LogAPIEvent(eventType, key, object)
 }

@@ -1,5 +1,6 @@
 from sieve_common.common import *
 import copy
+from collections import Counter
 from deepdiff import DeepDiff
 from sieve_common.k8s_event import (
     APIEventTypes,
@@ -35,6 +36,20 @@ def get_current_controller_related_list(test_context: TestContext):
     return json.load(
         open(os.path.join(test_context.result_dir, "controller_family.json"))
     )
+
+
+def canonicalize_controller_related_list(test_context: TestContext):
+    # The canonical reference retains object identities from the first pass;
+    # include controller-owned objects from both passes in its exclusion set.
+    directories = (
+        test_context.result_dir,
+        first_pass_learn_result_dir(test_context.result_dir),
+    )
+    related = set()
+    for directory in directories:
+        with open(os.path.join(directory, "controller_family.json")) as stream:
+            related.update(json.load(stream))
+    return sorted(related)
 
 
 def generate_controller_related_list(test_context: TestContext):
@@ -98,11 +113,15 @@ def second_pass_learn_trim(base_resources, twice_resources):
                 stored_learn, key.path(output_format="list"), SIEVE_LEARN_VALUE_MASK
             )
 
-    if "dictionary_item_added" in ddiff:
-        for key in ddiff["dictionary_item_added"]:
-            nested_set(
-                stored_learn, key.path(output_format="list"), SIEVE_LEARN_VALUE_MASK
-            )
+    # Learn varying fields in either direction, but retain resource identities
+    # from one baseline. Unioning random names from two runs doubles the
+    # expected object count (e.g. one controller Pod from each run).
+    for change in ("dictionary_item_added", "dictionary_item_removed"):
+        for key in ddiff.get(change, []):
+            path = key.path(output_format="list")
+            if len(path) == 1 and change == "dictionary_item_removed":
+                continue
+            nested_set(stored_learn, path, SIEVE_LEARN_VALUE_MASK)
 
     return stored_learn
 
@@ -148,6 +167,30 @@ def test_run_validation(test_context: TestContext):
     workload_completed = True
     if not is_injection_finished(server_log):
         injection_completed = False
+    # Finishing a pause/resume action sequence does not prove that a read was
+    # ever held. Do not report ineffective read-pause schedules as injected.
+    with open(server_log) as stream:
+        server_output = stream.read()
+    required = Counter()
+    for action in (test_context.test_plan_content or {}).get("actions") or []:
+        if action.get("actionType") == "pauseController" and action.get("pauseAt") in (
+            "beforeControllerRead",
+            "afterControllerRead",
+        ):
+            required[(action["pauseAt"], action.get("pauseScope", "all"))] += 1
+    for (pause_at, scope), count in required.items():
+        if (
+            server_output.count(": Pause controller at {} {}\n".format(pause_at, scope))
+            < count
+        ):
+            injection_completed = False
+        if (
+            server_output.count(
+                ": End pause controller at {} {}\n".format(pause_at, scope)
+            )
+            < count
+        ):
+            injection_completed = False
     if not is_test_workload_finished(workload_log):
         workload_completed = False
     return injection_completed, workload_completed
