@@ -13,7 +13,7 @@
 # 2. DOCKER_TOKEN          (required)
 #
 # Please see below for a description of each of these arguments and
-# https://github.com/sieve-project/sieve/blob/main/docs/port.md for details
+# https://github.com/Saadmrp1038/sieve/blob/main/docs/port.md for details
 # about generating the test files.
 #
 # The workflow does the following actions -
@@ -85,9 +85,9 @@ jobs:
              fi
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
-          repository: sieve-project/sieve
+          repository: Saadmrp1038/sieve
           ref: main
 
       - name: Setup Git
@@ -95,15 +95,16 @@ jobs:
               git config --global user.name "sieve"
               git config --global user.email "sieve@sieve.com"
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: '3.10'
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: '>=1.19.1'
+          go-version: '1.19.13'
 
       - name: Install tools needed (macOS)
         if: runner.os == 'macos'
@@ -126,8 +127,8 @@ jobs:
                tar -zxvf mage_1.15.0_Linux-64bit.tar.gz
                sudo mv mage /usr/local/bin/mage
 
-      - name: Install Sieve dependencies
-        run: pip3 install -r ./requirements.txt
+      - name: Install locked Python environment
+        run: uv sync --locked --no-dev
 
       - name: Setup Docker (macOS)
         if: runner.os == 'macos'
@@ -156,7 +157,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Run check_env
-        run: python3 check_env.py
+        run: uv run --locked --no-dev python check_env.py
 
       - name: Sieve CI config changes
         run: |
@@ -180,13 +181,13 @@ jobs:
               mv "/tmp/$REPO_NAME/${{ inputs.subdirectory }}/" "examples/${{ inputs.controller-name }}/"
 
       - name: Download controller image and build in learn mode
-        run: python3 ./build.py -c "examples/${{ inputs.controller-name }}/" -m learn
+        run: uv run --locked --no-dev python ./build.py -c "examples/${{ inputs.controller-name }}/" -m learn
 
       - name: Run sieve in learn mode
-        run: python3 sieve.py -c "examples/${{ inputs.controller-name }}/"  -w ${{ inputs.workload_name }} -m learn --build-oracle
+        run: uv run --locked --no-dev python sieve.py -c "examples/${{ inputs.controller-name }}/"  -w ${{ inputs.workload_name }} -m learn --build-oracle
 
       - name: Download controller image and build in test mode
-        run: python3 ./build.py -c "examples/${{ inputs.controller-name }}/" -m test
+        run: uv run --locked --no-dev python ./build.py -c "examples/${{ inputs.controller-name }}/" -m test
 
       - name: Run sieve in test mode
         run: |
@@ -196,6 +197,6 @@ jobs:
                 test_dir="${learn_results_dir}${test_class}/"
                 if [ -d "$test_dir" ]; then
                   echo "Test class $test_class"
-                  python3 sieve.py -c "examples/${{ inputs.controller-name }}/" -m test -p "$test_dir" --batch
+                  uv run --locked --no-dev python sieve.py -c "examples/${{ inputs.controller-name }}/" -m test -p "$test_dir" --batch
                 fi
               done

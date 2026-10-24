@@ -1,5 +1,5 @@
 ## Testing a new controller:
-To test a new controller using Sieve, please first run `python3 start_porting.py your-controller`.
+To test a new controller using Sieve, please first run `uv run --locked python start_porting.py your-controller`.
 It will create a folder like this
 ```
 examples/
@@ -34,7 +34,7 @@ After that, please specify following entries in `your-controller/config.json`:
 - `dockerfile_path`: the relative path from the cloned controller project to the Dockerfile in the project
 - `controller_image_name`: the name of the image built by `your-controller/build/build.sh` (e.g., your-controller/latest)
 
-Now run `python3 build.py -c your-controller -m learn`. This command will do the following:
+Now run `uv run --locked python build.py -c your-controller -m learn`. This command will do the following:
 1. download the controller project to `app/your-controller`
 2. download and instrument the `controller-runtime` and `client-go` libraries used by the controller
 3. copy the instrumented libraries to `app/your-controller/sieve-dependency`
@@ -73,29 +73,29 @@ Of course, if a bug gets triggered and prevents the controller's action forever,
 
 Now you are all set. To test your controllers, just build the images:
 ```
-python3 build.py -m all
-python3 build.py -c your-controller -m all
+uv run --locked python build.py -m all
+uv run --locked python build.py -c your-controller -m all
 ```
 First run Sieve learning stage
 ```
-python3 sieve.py -c your-controller -w your-test-workload-name -m learn --build-oracle
+uv run --locked python sieve.py -c your-controller -w your-test-workload-name -m learn --build-oracle
 ```
 Sieve will generate the test plans for intermediate-states, unobserved-states and stale-states testing patterns in `sieve_learn_results/your-controller/your-test-workload-name/learn/{intermediate-state, unobserved-states, stale-state}`.
 
 If you want to run one of the test plans:
 ```
-python3 sieve.py -c your-controller -m test -p path-to-the-test-plan
+uv run --locked python sieve.py -c your-controller -m test -p path-to-the-test-plan
 ```
 Sieve will report any bugs it find after the test case is finished.
 
 If you want to run all the test plans in a folder:
 ```
-python3 sieve.py -c your-controller -m test -p path-to-the-folder --batch
+uv run --locked python sieve.py -c your-controller -m test -p path-to-the-folder --batch
 ```
 All the test results will appear in `sieve_test_results` as json files.
 You can focus on the test results that indicate potential bugs by
 ```
-python3 report_bugs.py
+uv run --locked python report_bugs.py
 ```
 and it will report
 ```
@@ -132,5 +132,5 @@ and you might need to look into the controller to figure out the bug.
 
 To help diagnosis, you can reproduce the test failure by
 ```
-python3 sieve.py -c your-controller -m test -p path-to-the-test-plan
+uv run --locked python sieve.py -c your-controller -m test -p path-to-the-test-plan
 ```

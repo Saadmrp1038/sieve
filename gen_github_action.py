@@ -84,17 +84,17 @@ def job_template(self_hosted):
                 },
             },
             {
-                "name": "Setup Python",
-                "uses": "actions/setup-python@v6",
-                "with": {"python-version": "3.10"},
+                "name": "Install uv",
+                "uses": "astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e",  # v10.3.2
+                "with": {"enable-cache": True, "cache-dependency-glob": "uv.lock"},
             },
             {
                 "name": "Setup GitHub Package Registry",
                 "run": 'echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin',
             },
             {
-                "name": "Install Python Packages",
-                "run": "pip install -r requirements.txt",
+                "name": "Install locked Python environment",
+                "run": "uv sync --locked --no-dev",
             },
             {
                 "name": "Install Kind",
@@ -164,7 +164,7 @@ def generate_controller_image_build_jobs(self_hosted):
         build_image = [
             {
                 "name": "Build Image - %s" % (mode),
-                "run": "python3 build.py -c %s -m %s -p -r $IMAGE_NAMESPACE "
+                "run": "uv run --locked --no-dev python build.py -c %s -m %s -p -r $IMAGE_NAMESPACE "
                 % (manifest_map[operator], mode),
             }
             for mode in build_modes
@@ -183,7 +183,7 @@ def generate_oracle_build_jobs(self_hosted):
         sieve_learn = [
             {
                 "name": "Sieve Learn - %s %s" % (operator, workload),
-                "run": "python3 sieve.py -c %s -w %s -m learn --build-oracle -r $IMAGE_NAMESPACE"
+                "run": "uv run --locked --no-dev python sieve.py -c %s -w %s -m learn --build-oracle -r $IMAGE_NAMESPACE"
                 % (manifest_map[operator], workload),
             }
             for workload in sorted(workload_set)
@@ -208,7 +208,7 @@ def generate_bug_reproduction_jobs(self_hosted):
             sieve_test.append(
                 {
                     "name": "Sieve Test - %s %s" % (operator, bug),
-                    "run": "python3 reproduce_bugs.py -c %s -b %s -r $IMAGE_NAMESPACE"
+                    "run": "uv run --locked --no-dev python reproduce_bugs.py -c %s -b %s -r $IMAGE_NAMESPACE"
                     % (operator, bug),
                 }
             )
@@ -234,7 +234,7 @@ def generate_test_jobs(self_hosted):
         build_image = [
             {
                 "name": "Build Image - %s" % (mode),
-                "run": "python3 build.py -c %s -m %s -r $IMAGE_NAMESPACE"
+                "run": "uv run --locked --no-dev python build.py -c %s -m %s -r $IMAGE_NAMESPACE"
                 % (manifest_map[operator], mode),
             }
             for mode in build_modes
@@ -244,7 +244,7 @@ def generate_test_jobs(self_hosted):
             sieve_learn = [
                 {
                     "name": "Sieve Learn - %s %s" % (operator, workload),
-                    "run": "python3 sieve.py -c %s -w %s -m learn --build-oracle -r $IMAGE_NAMESPACE"
+                    "run": "uv run --locked --no-dev python sieve.py -c %s -w %s -m learn --build-oracle -r $IMAGE_NAMESPACE"
                     % (manifest_map[operator], workload),
                 }
                 for workload in sorted(workload_set)
@@ -256,7 +256,7 @@ def generate_test_jobs(self_hosted):
                 sieve_test.append(
                     {
                         "name": "Sieve Test - %s %s" % (operator, bug),
-                        "run": "python3 reproduce_bugs.py -c %s -b %s -r $IMAGE_NAMESPACE"
+                        "run": "uv run --locked --no-dev python reproduce_bugs.py -c %s -b %s -r $IMAGE_NAMESPACE"
                         % (operator, bug),
                     }
                 )

@@ -29,12 +29,12 @@ Run these commands from the repository root. The image namespace is a local
 tag prefix; these commands do not push images.
 
 ```sh
-python3 build.py -m learn -v v1.24.10 -r sieve-local
-python3 build.py -m test -v v1.24.10 -r sieve-local
-python3 build.py -c examples/kubernetes-secret-generator -m learn -r sieve-local
-python3 build.py -c examples/kubernetes-secret-generator -m test -r sieve-local
+uv run --locked python build.py -m learn -v v1.24.10 -r sieve-local
+uv run --locked python build.py -m test -v v1.24.10 -r sieve-local
+uv run --locked python build.py -c examples/kubernetes-secret-generator -m learn -r sieve-local
+uv run --locked python build.py -c examples/kubernetes-secret-generator -m test -r sieve-local
 
-python3 sieve.py -c examples/kubernetes-secret-generator -m learn \
+uv run --locked python sieve.py -c examples/kubernetes-secret-generator -m learn \
   -w create-update-recreate --build-oracle -r sieve-local
 ```
 
@@ -45,7 +45,7 @@ written under
 Run a plan with:
 
 ```sh
-python3 sieve.py -c examples/kubernetes-secret-generator -m test \
+uv run --locked python sieve.py -c examples/kubernetes-secret-generator -m test \
   -p path/to/plan.yaml -r sieve-local
 ```
 

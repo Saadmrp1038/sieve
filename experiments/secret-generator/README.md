@@ -10,16 +10,14 @@ experiment artifacts are kept outside the committed files.
 - amd64 Linux with Go 1.19.13, kubectl v1.24.10, and Docker 29.1.3.
 - kind v0.17.0 with the archive compatibility patch below; Docker Buildx must
   be installed and `docker buildx version` must succeed.
-- Python 3.10 with the dependencies in `requirements.txt`:
+- Python 3.10 with the locked dependencies from the repository root:
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r experiments/secret-generator/requirements.txt
-. .venv/bin/activate
+uv sync --locked
 ```
 
-Activate this environment before using the integration commands. Set `GOPATH`
-and `KUBECONFIG` as described in the main README. No registry push is required.
+Run the integration commands with `uv run --locked python`. Set `GOPATH` and
+`KUBECONFIG` as described in the main README. No registry push is required.
 
 ## kind v0.17.0 and Docker 29
 
@@ -80,10 +78,10 @@ does not establish correctness for other workloads or stale-state faults.
 
 ## Regression checks
 
-From the Sieve root with the Python environment active:
+From the Sieve root:
 
 ```sh
-python3 -m unittest discover -s tests -v
+uv run --locked pytest
 (cd sieve_client && go test -race ./...)
 (cd sieve_instrumentation && go test ./...)
 ```

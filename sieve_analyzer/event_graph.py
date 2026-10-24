@@ -318,9 +318,9 @@ class EventGraph:
                 controller_hear_vertex.content.id
                 not in self.controller_hear_id_to_vertices
             )
-            self.controller_hear_id_to_vertices[
-                controller_hear_vertex.content.id
-            ] = controller_hear_vertex
+            self.controller_hear_id_to_vertices[controller_hear_vertex.content.id] = (
+                controller_hear_vertex
+            )
 
     def add_sorted_reconciler_events(
         self,

@@ -1,12 +1,12 @@
 # Using GitHub Actions to run Sieve
 
-Sieve provides a [reusable workflow](https://github.com/sieve-project/sieve/blob/main/.github/workflows/run-sieve.yml)
+Sieve provides a [reusable workflow](https://github.com/Saadmrp1038/sieve/blob/main/.github/workflows/run-sieve.yml)
 to make it easy to use Sieve to test a controller with GitHub actions. This lets
 developers test out Sieve without having to set up a local environment and also
 integrate testing with Sieve into their CI/CD pipeline.
 
 Testing a controller with Sieve requires the test files laid out as described in
-the [porting guide](https://github.com/sieve-project/sieve/blob/main/docs/port.md).
+the [porting guide](https://github.com/Saadmrp1038/sieve/blob/main/docs/port.md).
 The workflow assumes that these files are available in order to test a controller.
 The workflow can run both on Ubuntu and MacOS runners. 
 
@@ -19,7 +19,7 @@ The workflow takes the following arguments as inputs:
    Name of the controller being tested. E.g. `rabbitmq-operator`
 
 3. `github-repo` &emsp;&emsp; (required)  
-   URL of the GitHub repository containing the test files (refer [porting guide](https://github.com/sieve-project/sieve/blob/main/docs/port.md))
+   URL of the GitHub repository containing the test files (refer [porting guide](https://github.com/Saadmrp1038/sieve/blob/main/docs/port.md))
 
 4. `github-ref` &emsp; &emsp; &nbsp;(optional)  
    The branch, tag or SHA to checkout. Defaults to the SHA or reference to the event triggering the workflow.
@@ -61,7 +61,7 @@ on:
 
 jobs:
   run-sieve:
-    uses: sieve-project/sieve/.github/workflows/run-sieve.yml@main
+    uses: Saadmrp1038/sieve/.github/workflows/run-sieve.yml@main
     with:
       platform-os: ubuntu-latest
       controller-name: kapp-controller

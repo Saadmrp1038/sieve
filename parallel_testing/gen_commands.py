@@ -29,9 +29,10 @@ if __name__ == "__main__":
     if args.patterns is None:
         args.patterns = patterns
 
-    with open(args.output, "w") as command_file, open(
-        "pull-commands.txt", "w"
-    ) as pull_command_file:
+    with (
+        open(args.output, "w") as command_file,
+        open("pull-commands.txt", "w") as pull_command_file,
+    ):
         # pull all k8s images
         pull_command_file.write(
             "docker pull {}/node:v1.18.9-test\n".format(args.docker)

@@ -1,3 +1,4 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
-python3 -m black .
+exec uv run --locked ruff format "$@" .
