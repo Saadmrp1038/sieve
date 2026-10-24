@@ -39,11 +39,11 @@ uv run --locked sieve build -m test
 uv run --locked sieve build -c rabbitmq-operator -m test --revision 4f13b9a942ad34fece0171d2174aa0264b10e947
 ```
 The above commands download Kubernetes and controller source code, instrument the source code and build the images.
-For Kubernetes, we use the branch `v1.18.9`. For the controller, we use `-s` to specify the commit id. 
+For Kubernetes, we use the branch `v1.18.9`. For the controller, we use `--revision` to specify the commit id. 
 
 Then run the test
 ```
-uv run --locked sieve test -c rabbitmq-operator -w recreate -p fixtures/reproductions/rabbitmq-operator-stale-state-1.yaml
+uv run --locked sieve test -c rabbitmq-operator -w recreate -p fixtures/reproductions/rabbitmq-operator-stale-state-1.yaml --oracle-root fixtures/oracles
 ```
 `-c rabbitmq-operator` specifies the controller that Sieve will test. We have already done some porting effort before testing rabbitmq-operator so Sieve can accept this option.
 
@@ -53,7 +53,7 @@ The workload simply does three things:
 2. it deletes the rabbitmq cluster
 3. it recreates the rabbitmq cluster
 
-`-p fixtures/reproductions/rabbitmq-operator-stale-state-1.yaml` is a test plan file that guides the failure testing. Triggering a stale-state bug requires lagging apiservers/restarting controllers with particular timing. The stale-state test plan encodes the particular timing so no manual intervention is required during testing.
+`-p fixtures/reproductions/rabbitmq-operator-stale-state-1.yaml --oracle-root fixtures/oracles` is a test plan file that guides the failure testing. Triggering a stale-state bug requires lagging apiservers/restarting controllers with particular timing. The stale-state test plan encodes the particular timing so no manual intervention is required during testing.
 
 By typing the above command, Sieve will:
 1. run the `recreate` workload against the kind kubernetes cluster;
