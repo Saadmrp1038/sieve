@@ -2,8 +2,11 @@
 name: Controller Image Build
 'on':
   workflow_dispatch: null
+permissions:
+  contents: read
+  packages: write
 env:
-  IMAGE_NAMESPACE: ghcr.io/sieve-project/action
+  IMAGE_NAMESPACE: ghcr.io/saadmrp1038/sieve
 jobs:
   cassandra-operator:
     runs-on: ubuntu-22.04

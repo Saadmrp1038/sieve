@@ -12,8 +12,11 @@ on:
           - 'macos-latest'
   # schedule:
   #   - cron: '0 5 * * *'
+permissions:
+  contents: read
+  packages: write
 env:
-  IMAGE_NAMESPACE: ghcr.io/sieve-project/action
+  IMAGE_NAMESPACE: ghcr.io/saadmrp1038/sieve
 jobs:
   build:
     runs-on: ${{ inputs.platform-os }}

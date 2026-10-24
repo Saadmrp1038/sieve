@@ -199,7 +199,6 @@ def generate_bug_reproduction_jobs(self_hosted):
         job["steps"].extend(sieve_test)
         job["steps"].append(collect_log_step(operator))
         job["steps"].append(remove_cluster_step())
-        job["steps"].append(persistent_data_step(operator))
         job["steps"].append(clean_images_step())
         jobs[operator] = job
     return jobs
@@ -263,7 +262,8 @@ def workflow_definitions():
         "example-controller-image-build.yml": {
             "name": "Controller Image Build",
             "on": {"workflow_dispatch": None},
-            "env": {"IMAGE_NAMESPACE": "ghcr.io/sieve-project/action"},
+            "permissions": {"contents": "read", "packages": "write"},
+            "env": {"IMAGE_NAMESPACE": "ghcr.io/saadmrp1038/sieve"},
             "jobs": generate_controller_image_build_jobs(False),
         },
         "oracle-generation.yml": {
