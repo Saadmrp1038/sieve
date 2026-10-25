@@ -1,3 +1,11 @@
+from sieve_tool.plans import (
+    APICallCondition,
+    FaultPlan,
+    RestartControllerAction,
+    single_trigger,
+    write_plan,
+)
+from sieve_tool.faults.common import object_condition
 import json
 import os
 from typing import List
@@ -94,86 +102,53 @@ def no_error_write_filtering_pass(event_vertices: List[EventVertex]):
 
 
 def generate_intermediate_state_test_plan_for_controller_write(
-    test_context: TestContext, controller_write: ControllerWrite
-):
-    resource_key = generate_key(
-        controller_write.rtype, controller_write.namespace, controller_write.name
-    )
-    condition = {}
-    if controller_write.etype == ControllerWriteTypes.CREATE:
-        condition["conditionType"] = "onObjectCreate"
-        condition["resourceKey"] = resource_key
-        condition["occurrence"] = controller_write.signature_counter
-    elif controller_write.etype == ControllerWriteTypes.DELETE:
-        condition["conditionType"] = "onObjectDelete"
-        condition["resourceKey"] = resource_key
-        condition["occurrence"] = controller_write.signature_counter
-    else:
-        condition["conditionType"] = "onObjectUpdate"
-        condition["resourceKey"] = resource_key
-        condition["prevStateDiff"] = json.dumps(
-            controller_write.slim_prev_obj_map, sort_keys=True
-        )
-        condition["curStateDiff"] = json.dumps(
-            controller_write.slim_cur_obj_map, sort_keys=True
-        )
-        condition["occurrence"] = controller_write.signature_counter
-    return {
-        "workload": test_context.test_workload,
-        "actions": [
-            {
-                "actionType": "restartController",
-                "controllerLabel": test_context.controller_config.controller_pod_label,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger1",
-                            "condition": condition,
-                            "observationPoint": {
-                                "when": "afterControllerWrite",
-                                "by": controller_write.reconcile_fun,
-                            },
-                        }
-                    ],
-                    "expression": "trigger1",
-                },
-            }
+    test_context: TestContext,
+    controller_write: ControllerWrite,
+) -> FaultPlan:
+    return FaultPlan(
+        workload=test_context.test_workload,
+        actions=[
+            RestartControllerAction(
+                action_type="restartController",
+                controller_label=test_context.controller_config.controller_pod_label,
+                trigger=single_trigger(
+                    "trigger1",
+                    object_condition(controller_write),
+                    "afterControllerWrite",
+                    controller_write.reconcile_fun,
+                ),
+            )
         ],
-    }
+    )
 
 
 def generate_intermediate_state_test_plan_for_annotated_api_invocation(
-    test_context: TestContext, api_invocation: ControllerNonK8sWrite
-):
-    return {
-        "workload": test_context.test_workload,
-        "actions": [
-            {
-                "actionType": "restartController",
-                "controllerLabel": test_context.controller_config.controller_pod_label,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger1",
-                            "condition": {
-                                "conditionType": "onAnnotatedAPICall",
-                                "module": api_invocation.module,
-                                "filePath": api_invocation.file_path,
-                                "receiverType": api_invocation.recv_type,
-                                "funName": api_invocation.fun_name,
-                                "occurrence": api_invocation.signature_counter,
-                            },
-                            "observationPoint": {
-                                "when": "afterAnnotatedAPICall",
-                                "by": api_invocation.reconcile_fun,
-                            },
-                        }
-                    ],
-                    "expression": "trigger1",
-                },
-            }
+    test_context: TestContext,
+    api_invocation: ControllerNonK8sWrite,
+) -> FaultPlan:
+    condition = APICallCondition(
+        condition_type="onAnnotatedAPICall",
+        module=api_invocation.module,
+        file_path=api_invocation.file_path,
+        receiver_type=api_invocation.recv_type,
+        fun_name=api_invocation.fun_name,
+        occurrence=api_invocation.signature_counter,
+    )
+    return FaultPlan(
+        workload=test_context.test_workload,
+        actions=[
+            RestartControllerAction(
+                action_type="restartController",
+                controller_label=test_context.controller_config.controller_pod_label,
+                trigger=single_trigger(
+                    "trigger1",
+                    condition,
+                    "afterAnnotatedAPICall",
+                    api_invocation.reconcile_fun,
+                ),
+            )
         ],
-    }
+    )
 
 
 def intermediate_state_analysis(
@@ -222,7 +197,7 @@ def intermediate_state_analysis(
             path, "intermediate-state-test-plan-{}.yaml".format(str(i))
         )
         if test_context.common_config.persist_test_plans_enabled:
-            dump_to_yaml(intermediate_state_test_plan, file_name)
+            write_plan(intermediate_state_test_plan, file_name)
 
     for vertex in candidate_annotated_api_invocation_vertices:
         annotated_api_invocation = vertex.content
@@ -236,7 +211,7 @@ def intermediate_state_analysis(
             path, "intermediate-state-test-plan-{}.yaml".format(str(i))
         )
         if test_context.common_config.persist_test_plans_enabled:
-            dump_to_yaml(intermediate_state_test_plan, file_name)
+            write_plan(intermediate_state_test_plan, file_name)
     cprint(
         "Generated {} intermediate-state test plan(s) in {}".format(i, path),
         bcolors.OKGREEN,

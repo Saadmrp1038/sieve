@@ -1,0 +1,562 @@
+family: intermediate
+event: Create
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: intermediate
+event: Delete
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: intermediate
+event: Update
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: intermediate
+event: Patch
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: intermediate
+event: StatusUpdate
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: intermediate
+event: StatusPatch
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 2
+        observationPoint:
+          when: afterControllerWrite
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: annotated
+plan:
+  workload: exercise
+  actions:
+  - actionType: restartController
+    controllerLabel: operator
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onAnnotatedAPICall
+          module: example/api
+          filePath: client.go
+          receiverType: '*Client'
+          funName: Create
+          occurrence: 2
+        observationPoint:
+          when: afterAnnotatedAPICall
+          by: example.(*Reconciler).Reconcile
+      expression: trigger1
+---
+family: unobserved
+event: Added
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    avoidOngoingRead: true
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: beforeControllerRecv
+          by: informer
+      expression: trigger1
+  - actionType: resumeController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      - triggerName: trigger3
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      expression: trigger2|trigger3
+---
+family: stale
+event: Added
+timing: before
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: beforeAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3
+---
+family: stale
+event: Added
+timing: after
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3
+---
+family: unobserved
+event: Deleted
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    avoidOngoingRead: true
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: beforeControllerRecv
+          by: informer
+      expression: trigger1
+  - actionType: resumeController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      - triggerName: trigger3
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      expression: trigger2|trigger3
+---
+family: stale
+event: Deleted
+timing: before
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: beforeAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3
+---
+family: stale
+event: Deleted
+timing: after
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 2
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3
+---
+family: unobserved
+event: Updated
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    avoidOngoingRead: true
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 2
+        observationPoint:
+          when: beforeControllerRecv
+          by: informer
+      expression: trigger1
+  - actionType: resumeController
+    pauseAt: beforeControllerRead
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onAnyFieldModification
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "after"}}'
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      - triggerName: trigger3
+        condition:
+          conditionType: onObjectDelete
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterControllerRecv
+          by: informer
+      expression: trigger2|trigger3
+---
+family: stale
+event: Updated
+timing: before
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          convertStateToAPIForm: true
+          occurrence: 2
+        observationPoint:
+          when: beforeAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3
+---
+family: stale
+event: Updated
+timing: after
+plan:
+  workload: exercise
+  actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger1
+        condition:
+          conditionType: onObjectUpdate
+          resourceKey: secret/default/generated
+          prevStateDiff: '{"data": {"value": "before"}}'
+          curStateDiff: '{"data": {"value": "after"}}'
+          convertStateToAPIForm: true
+          occurrence: 2
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane3
+      expression: trigger1
+  - actionType: reconnectController
+    controllerLabel: operator
+    reconnectAPIServer: kind-control-plane3
+    async: true
+    waitBefore: 10
+    trigger:
+      definitions:
+      - triggerName: trigger2
+        condition:
+          conditionType: onObjectCreate
+          resourceKey: secret/default/generated
+          occurrence: 1
+        observationPoint:
+          when: afterAPIServerRecv
+          by: kind-control-plane
+      expression: trigger2
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane3
+    pauseScope: secret/default/generated
+    trigger:
+      definitions:
+      - triggerName: trigger3
+        condition:
+          conditionType: onTimeout
+          timeoutValue: 20
+      expression: trigger3

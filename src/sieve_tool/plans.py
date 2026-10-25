@@ -262,3 +262,18 @@ def load_plan(path: str | Path) -> FaultPlan:
 def write_plan(value: object, path: str | Path) -> None:
     plan = value if isinstance(value, FaultPlan) else FaultPlan.model_validate(value)
     Path(path).write_text(yaml.safe_dump(plan.to_dict(), sort_keys=False))
+
+
+def single_trigger(
+    name: str, condition: Condition, when: Observation, by: str
+) -> Trigger:
+    return Trigger(
+        definitions=[
+            TriggerDefinition(
+                trigger_name=name,
+                condition=condition,
+                observation_point=ObservationPoint(when=when, by=by),
+            )
+        ],
+        expression=name,
+    )

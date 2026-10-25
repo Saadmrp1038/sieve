@@ -1,3 +1,4 @@
+from sieve_tool.plans import ObjectCondition, UpdateCondition
 import json
 import os
 from sieve_tool.common.event_delta import *
@@ -111,3 +112,32 @@ def nondeterministic_key(
     elif end_state[event.key] == "SIEVE-IGNORE":
         return True
     return False
+
+
+def object_condition(
+    event: ControllerHear | ControllerWrite, *, convert_state: bool = False
+) -> ObjectCondition | UpdateCondition:
+    """Describe an observed object change without changing occurrence counting."""
+    resource = generate_key(event.rtype, event.namespace, event.name)
+    if event.etype in {ControllerHearTypes.ADDED, ControllerWriteTypes.CREATE}:
+        return ObjectCondition(
+            condition_type="onObjectCreate",
+            resource_key=resource,
+            occurrence=event.signature_counter,
+        )
+    if event.etype in {ControllerHearTypes.DELETED, ControllerWriteTypes.DELETE}:
+        return ObjectCondition(
+            condition_type="onObjectDelete",
+            resource_key=resource,
+            occurrence=event.signature_counter,
+        )
+    condition = UpdateCondition(
+        condition_type="onObjectUpdate",
+        resource_key=resource,
+        occurrence=event.signature_counter,
+        prev_state_diff=json.dumps(event.slim_prev_obj_map, sort_keys=True),
+        cur_state_diff=json.dumps(event.slim_cur_obj_map, sort_keys=True),
+    )
+    if convert_state:
+        return condition.model_copy(update={"convert_state_to_api_form": True})
+    return condition
