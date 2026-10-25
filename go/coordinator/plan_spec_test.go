@@ -118,3 +118,19 @@ func TestTriggerExpressionValidation(t *testing.T) {
 		}
 	}
 }
+
+func FuzzPlanDecoding(f *testing.F) {
+	for _, path := range []string{"../../fixtures/plans/restart.yaml", "../../fixtures/plans/missed-state.yaml"} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			f.Fatal(err)
+		}
+		f.Add(data)
+	}
+	f.Add([]byte("workload: no-fault\nactions: null\n"))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		// Invalid schedules must return an error, including malformed YAML;
+		// callers should never need to recover from a decoder panic.
+		_, _ = decodePlan(data)
+	})
+}
