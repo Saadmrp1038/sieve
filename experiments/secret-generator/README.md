@@ -1,7 +1,7 @@
 # Secret Generator validation
 
 The reusable integration is in
-[`examples/kubernetes-secret-generator`](../../examples/kubernetes-secret-generator/README.md).
+[`controllers/kubernetes-secret-generator`](../../controllers/kubernetes-secret-generator/README.md).
 VM metadata, SSH configuration, launch scripts, generated oracles, and raw
 experiment artifacts are kept outside the committed files.
 
@@ -16,7 +16,7 @@ experiment artifacts are kept outside the committed files.
 uv sync --locked
 ```
 
-Run the integration commands with `uv run --locked python`. Set `GOPATH` and
+Run the integration commands with `uv run --locked sieve`. Set
 `KUBECONFIG` as described in the main README. No registry push is required.
 
 ## kind v0.17.0 and Docker 29
@@ -42,7 +42,7 @@ go build -o kind .
 Put the resulting binary on `PATH`. The patched base commit is
 `b5bed7e9f115a19e8d9f300be66c462039937d57`. This is a compatibility patch for
 that version, not a claim that newer kind releases require it. Sieve's
-`build.py` also adjusts the old Kubernetes builder's Docker bridge address
+`sieve build` also adjusts the old Kubernetes builder's Docker bridge address
 lookup and reuses a reset source checkout while retaining ignored build output.
 
 ## Verified run: 2026-10-24
@@ -82,6 +82,6 @@ From the Sieve root:
 
 ```sh
 uv run --locked pytest
-(cd sieve_client && go test -race ./...)
-(cd sieve_instrumentation && go test ./...)
+(cd go/client && go test -race ./...)
+(cd go/instrumenter && go test ./...)
 ```

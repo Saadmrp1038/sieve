@@ -1,0 +1,33 @@
+{
+    "name": "cassandra-operator",
+    "github_link": "https://github.com/instaclustr/cassandra-operator.git",
+    "commit": "fe8f91da3cd8aab47f21f7a3aad4abc5d4b6a0dd",
+    "cherry_pick_commits": [
+        "bd8077a478997f63862848d66d4912c59e4c46ff"
+    ],
+    "kubernetes_version": "v1.18.9",
+    "client_go_version": "v0.0.0-20190918160344-1fbdaa4c8d90",
+    "dockerfile_path": "docker/cassandra-operator/Dockerfile",
+    "controller_image_name": "cassandra-operator:latest",
+    "test_command": "python3 controllers/cassandra-operator/workloads/workload.py",
+    "custom_resource_definitions": [
+        "cassandradatacenter",
+        "cassandracluster",
+        "cassandrabackup"
+    ],
+    "annotated_reconcile_functions": {
+        "pkg/controller/cassandradatacenter/cassandradatacenter_controller.go": "github.com/instaclustr/cassandra-operator/pkg/controller/cassandradatacenter.(*ReconcileCassandraDataCenter).Reconcile"
+    },
+    "controller_pod_label": "cassandra-operator",
+    "controller_deployment_file_path": "controllers/cassandra-operator/deploy/bundle.yaml",
+    "end_state_checker_mask": {
+        "*": {
+            "configmap/default/cassandra-test-cluster-dc1-rack-config-rack1": [
+                [
+                    "data",
+                    "cassandra_rackdc_properties"
+                ]
+            ]
+        }
+    }
+}

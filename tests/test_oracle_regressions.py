@@ -6,13 +6,13 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from sieve_common.common import SIEVE_LEARN_VALUE_MASK
-from sieve_oracle.checker_common import (
+from sieve_tool.common.common import SIEVE_LEARN_VALUE_MASK
+from sieve_tool.oracle.checker_common import (
     canonicalize_controller_related_list,
     second_pass_learn_trim,
     test_run_validation as validate_test_run,
 )
-from sieve_oracle import liveness_checker
+from sieve_tool.oracle import liveness_checker
 
 
 class OracleRegressionTests(unittest.TestCase):

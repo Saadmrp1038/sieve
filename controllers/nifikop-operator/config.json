@@ -1,0 +1,53 @@
+{
+    "name": "nifikop-operator",
+    "github_link": "https://github.com/Orange-OpenSource/nifikop.git",
+    "commit": "1546e0242107bf2f2c1256db50f47c79956dd1c6",
+    "kubernetes_version": "v1.18.9",
+    "client_go_version": "v0.20.2",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "orangeopensource/nifikop-operator:latest",
+    "test_command": "python3 controllers/nifikop-operator/workloads/workload.py",
+    "custom_resource_definitions": [
+        "nificluster"
+    ],
+    "annotated_reconcile_functions": {
+        "controllers/nificluster_controller.go": "github.com/Orange-OpenSource/nifikop/controllers.(*NifiClusterReconciler).Reconcile"
+    },
+    "controller_pod_label": "nifikop-operator",
+    "controller_deployment_file_path": "controllers/nifikop-operator/deploy/values.yaml",
+    "end_state_checker_mask": {
+        "*": {
+            "nificluster/default/simplenifi": [
+                [
+                    "status",
+                    "state"
+                ],
+                [
+                    "status",
+                    "prometheusReportingTask",
+                    "version"
+                ]
+            ],
+            "lease/default/f1c5ece8.example.com": [
+                [
+                    "spec",
+                    "leaseTransitions"
+                ]
+            ],
+            "pod/default/zookeeper-0": [
+                [
+                    "status",
+                    "containerStatuses",
+                    "*",
+                    "lastTerminationState"
+                ],
+                [
+                    "status",
+                    "containerStatuses",
+                    "*",
+                    "restartCount"
+                ]
+            ]
+        }
+    }
+}

@@ -22,8 +22,8 @@ jobs:
         with:
           go-version: "1.19.13"
           cache-dependency-path: |
-            sieve_client/go.sum
-            sieve_instrumentation/go.sum
+            go/client/go.sum
+            go/instrumenter/go.sum
       - name: Install locked Python environment
         run: uv sync --locked
       - name: Lint Python
@@ -33,8 +33,13 @@ jobs:
       - name: Python regressions
         run: uv run --locked pytest
       - name: Client race checks
-        working-directory: sieve_client
+        working-directory: go/client
         run: go test -race ./...
       - name: Instrumentation checks
-        working-directory: sieve_instrumentation
+        working-directory: go/instrumenter
         run: go test ./...
+      - name: Coordinator checks
+        working-directory: go/coordinator
+        run: go test ./...
+      - name: Build package
+        run: uv build --wheel

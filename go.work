@@ -1,7 +1,7 @@
 go 1.19
 
 use (
-	./sieve_client
-	./sieve_server
-	./sieve_instrumentation
+	./go/client
+	./go/coordinator
+	./go/instrumenter
 )
