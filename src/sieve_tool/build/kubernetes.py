@@ -28,6 +28,7 @@ def download_kubernetes(version, *, checkout=None):
         run(
             ["git", "-C", checkout, "rev-parse", "--verify", version + "^{commit}"],
             capture_output=True,
+            check=False,
             operation="download kubernetes",
             category="network",
         )
