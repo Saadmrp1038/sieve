@@ -9,18 +9,17 @@ from sieve_tool.common.common import (
     first_pass_learn_result_dir,
     sieve_modes,
 )
-from sieve_tool.common.k8s_event import (
-    SIEVE_API_EVENT_MARK,
+from sieve_tool.events import (
     APIEventTypes,
     extract_generate_name,
     is_generated_random_name,
-    parse_api_event,
 )
 from sieve_tool.oracle.checker_common import (
     generate_alarm,
     get_current_controller_related_list,
     second_pass_learn_trim,
 )
+from sieve_tool.trace import iter_api_events
 
 
 def masked_resource_key_for_state_update_summary_checker(
@@ -59,10 +58,7 @@ api_event_empty_entry = {
 def generate_history(test_context: TestContext):
     api_log_path = os.path.join(test_context.result_dir, "apiserver1.log")
     history = []
-    for line in open(api_log_path).readlines():
-        if SIEVE_API_EVENT_MARK not in line:
-            continue
-        api_event = parse_api_event(line)
+    for api_event in iter_api_events(api_log_path):
         api_event_dict = {}
         api_event_dict["number"] = len(history)
         api_event_dict["etype"] = api_event.etype
@@ -76,10 +72,7 @@ def generate_history_digest(test_context: TestContext):
     log_dir = test_context.result_dir
     api_log_path = os.path.join(log_dir, "apiserver1.log")
     state_update_summary = {}
-    for line in open(api_log_path).readlines():
-        if SIEVE_API_EVENT_MARK not in line:
-            continue
-        api_event = parse_api_event(line)
+    for api_event in iter_api_events(api_log_path):
         key = api_event.key
         if (
             api_event.etype

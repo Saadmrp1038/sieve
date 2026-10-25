@@ -8,7 +8,7 @@ from sieve_tool.analysis.event_graph import (
 )
 from sieve_tool.common.common import TestContext, bcolors, cprint
 from sieve_tool.common.event_delta import same_key
-from sieve_tool.common.k8s_event import (
+from sieve_tool.events import (
     ALLOWED_ERROR_TYPE,
     ControllerHear,
     ControllerHearTypes,

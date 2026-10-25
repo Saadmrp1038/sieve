@@ -3,7 +3,7 @@ import os
 from typing import Dict, Optional, Union
 
 from sieve_tool.common.common import TestContext
-from sieve_tool.common.k8s_event import (
+from sieve_tool.events import (
     EVENT_NONE_TYPE,
     APIEventTypes,
     ControllerHear,

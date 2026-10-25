@@ -7,7 +7,7 @@ from sieve_tool.analysis.event_graph import (
 )
 from sieve_tool.common.common import TestContext, bcolors, cprint
 from sieve_tool.common.event_delta import diff_event
-from sieve_tool.common.k8s_event import (
+from sieve_tool.events import (
     ALLOWED_ERROR_TYPE,
     ControllerNonK8sWrite,
     ControllerWrite,

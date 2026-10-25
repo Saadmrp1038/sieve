@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Set, Union
 
 from sieve_tool.common.event_delta import diff_event
-from sieve_tool.common.k8s_event import (
+from sieve_tool.events import (
     EVENT_NONE_TYPE,
     ControllerHear,
     ControllerNonK8sWrite,

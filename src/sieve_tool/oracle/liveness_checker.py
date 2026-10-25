@@ -13,11 +13,9 @@ from sieve_tool.common.common import (
     match_mask_regex,
     sieve_modes,
 )
-from sieve_tool.common.k8s_event import (
-    SIEVE_API_EVENT_MARK,
+from sieve_tool.events import (
     APIEventTypes,
     get_mask_by_resource_key,
-    parse_api_event,
     parse_key,
 )
 from sieve_tool.oracle.checker_common import (
@@ -27,18 +25,14 @@ from sieve_tool.oracle.checker_common import (
     kind_native_objects,
     second_pass_learn_trim,
 )
+from sieve_tool.trace import iter_api_events
 
 
 def generate_state(test_context: TestContext):
     end_state = {}
     deleted = set()
     api_log_path = os.path.join(test_context.result_dir, "apiserver1.log")
-    lines = open(api_log_path).readlines()
-    lines.reverse()
-    for line in lines:
-        if SIEVE_API_EVENT_MARK not in line:
-            continue
-        api_event = parse_api_event(line)
+    for api_event in reversed(list(iter_api_events(api_log_path))):
         if api_event.key in deleted or api_event.key in end_state:
             continue
         if api_event.etype == APIEventTypes.DELETED:

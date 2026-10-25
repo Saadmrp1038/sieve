@@ -11,12 +11,10 @@ import yaml
 from sieve_tool.analysis.analyze import (
     build_controller_event_graph,
     generate_test_plans,
-    parse_receiver_events,
-    parse_reconciler_events,
-    sanity_check_sieve_server_log,
 )
-from sieve_tool.common import k8s_event as events
+from sieve_tool.analysis.trace import assemble_trace
 from sieve_tool.common.config import get_common_config, load_controller_config
+from sieve_tool.trace import TraceError, read_trace
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = (
@@ -51,19 +49,6 @@ FIELDS = (
     "recv_type",
     "fun_name",
 )
-DECODERS = {
-    events.SIEVE_BEFORE_HEAR_MARK: events.parse_controller_hear,
-    events.SIEVE_AFTER_HEAR_MARK: events.parse_controller_hear_id_only,
-    events.SIEVE_BEFORE_REST_WRITE_MARK: events.parse_controller_write_id_only,
-    events.SIEVE_AFTER_REST_WRITE_MARK: events.parse_controller_write,
-    events.SIEVE_AFTER_REST_READ_MARK: events.parse_controller_read,
-    events.SIEVE_AFTER_CACHE_READ_MARK: events.parse_controller_cache_read,
-    events.SIEVE_BEFORE_RECONCILE_MARK: events.parse_reconcile,
-    events.SIEVE_AFTER_RECONCILE_MARK: events.parse_reconcile,
-    events.SIEVE_BEFORE_ANNOTATED_API_INVOCATION_MARK: events.parse_controller_non_k8s_write_id_only,
-    events.SIEVE_AFTER_ANNOTATED_API_INVOCATION_MARK: events.parse_controller_non_k8s_write,
-    events.SIEVE_API_EVENT_MARK: events.parse_api_event,
-}
 
 
 def normalize(value):
@@ -101,21 +86,19 @@ def snapshot(case, output, compress=True, loosen=False):
         controller_config=controller,
         test_workload="fixture",
     )
-    records = []
-    for index, line in enumerate(trace.read_text().splitlines(keepends=True)):
-        for marker, decoder in DECODERS.items():
-            if marker in line:
-                records.append(
-                    {
-                        "position": index,
-                        "marker": marker,
-                        "event": event_snapshot(decoder(line)),
-                    }
-                )
-                break
-    sanity_check_sieve_server_log(trace)
-    receipts = parse_receiver_events(trace)
-    reconciles = parse_reconciler_events(context, trace)
+    parsed = read_trace(trace)
+    records = [
+        {
+            "position": r.position,
+            "marker": r.marker.value,
+            "event": event_snapshot(r.event),
+        }
+        for r in parsed.records
+    ]
+    projection = assemble_trace(
+        parsed, compress_trivial=compress, loosen_boundary=loosen
+    )
+    receipts, reconciles = projection.hears, projection.reconciles
     graph = build_controller_event_graph(context, trace, case)
     groups = {
         kind: getattr(graph, kind + "_vertices")
@@ -185,11 +168,9 @@ def test_trace_interpretation_matches_the_original_engine(
 
 def test_annotated_writes_inside_reconciliation_are_currently_unsupported():
     case = ROOT / "fixtures/traces/annotated"
-    context = SimpleNamespace(
-        common_config=get_common_config(),
-        controller_config=load_controller_config(
-            ROOT / "controllers/kubernetes-secret-generator"
-        ),
-    )
-    with pytest.raises(AttributeError, match="set_range"):
-        parse_reconciler_events(context, case / "unsupported-in-reconcile.log")
+    with pytest.raises(TraceError, match="range semantics"):
+        assemble_trace(
+            read_trace(case / "unsupported-in-reconcile.log"),
+            compress_trivial=True,
+            loosen_boundary=False,
+        )
