@@ -1,4 +1,5 @@
 from sieve_tool.plans import load_plan
+from sieve_tool.results import TestResult
 
 """Execute workloads and apply analysis/oracles; no CLI or import-time I/O."""
 
@@ -18,7 +19,6 @@ import yaml
 from sieve_tool.analysis import analyze
 from sieve_tool.common.common import (
     TestContext,
-    TestResult,
     first_pass_learn_result_dir,
     rmtree_if_exists,
     sieve_modes,
@@ -65,16 +65,7 @@ def save_run_result(
                 test_context.mode: {
                     test_context.original_test_plan: {
                         "duration": time.time() - start_time,
-                        "injection_completed": test_result.injection_completed,
-                        "workload_completed": test_result.workload_completed,
-                        "number_errors": len(test_result.common_errors)
-                        + len(test_result.end_state_errors)
-                        + len(test_result.history_errors),
-                        "detected_errors": test_result.common_errors
-                        + test_result.end_state_errors
-                        + test_result.history_errors,
-                        "no_exception": test_result.no_exception,
-                        "exception_message": test_result.exception_message,
+                        **test_result.to_dict(),
                         "test_plan_content": open(
                             test_context.original_test_plan
                         ).read()

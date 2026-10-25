@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 from collections import Counter
 
@@ -9,7 +8,6 @@ from deepdiff import DeepDiff
 from sieve_tool.common.common import (
     SIEVE_LEARN_VALUE_MASK,
     TestContext,
-    TestResult,
     bcolors,
     cprint,
     first_pass_learn_result_dir,
@@ -19,6 +17,8 @@ from sieve_tool.events import (
     ControllerWriteTypes,
     parse_key,
 )
+from sieve_tool.oracle.artifacts import read_family, read_outcome
+from sieve_tool.results import TestResult
 from sieve_tool.trace import iter_api_events
 
 
@@ -38,15 +38,11 @@ def kind_native_objects(key: str):
 
 
 def get_reference_controller_related_list(test_context: TestContext):
-    return json.load(
-        open(os.path.join(test_context.oracle_dir, "controller_family.json"))
-    )
+    return read_family(os.path.join(test_context.oracle_dir, "controller_family.json"))
 
 
 def get_current_controller_related_list(test_context: TestContext):
-    return json.load(
-        open(os.path.join(test_context.result_dir, "controller_family.json"))
-    )
+    return read_family(os.path.join(test_context.result_dir, "controller_family.json"))
 
 
 def canonicalize_controller_related_list(test_context: TestContext):
@@ -58,8 +54,7 @@ def canonicalize_controller_related_list(test_context: TestContext):
     )
     related = set()
     for directory in directories:
-        with open(os.path.join(directory, "controller_family.json")) as stream:
-            related.update(json.load(stream))
+        related.update(read_family(os.path.join(directory, "controller_family.json")))
     return sorted(related)
 
 
@@ -210,11 +205,11 @@ def test_run_validation(test_context: TestContext):
         workload_completed = False
     outcome = os.path.join(test_context.result_dir, "process-outcome.json")
     if os.path.isfile(outcome):
-        process = json.load(open(outcome))
+        process = read_outcome(outcome)
         workload_completed = (
             workload_completed
-            and process.get("status") == "completed"
-            and process.get("returncode") == 0
+            and process.status == "completed"
+            and process.returncode == 0
         )
     return injection_completed, workload_completed
 

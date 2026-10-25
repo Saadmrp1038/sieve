@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 from pathlib import PurePath
 
@@ -18,6 +17,7 @@ from sieve_tool.events import (
     get_mask_by_resource_key,
     parse_key,
 )
+from sieve_tool.oracle.artifacts import read_state
 from sieve_tool.oracle.checker_common import (
     generate_alarm,
     get_current_controller_related_list,
@@ -45,13 +45,9 @@ def generate_state(test_context: TestContext):
 def canonicalize_state(test_context: TestContext):
     assert test_context.mode == sieve_modes.LEARN and test_context.build_oracle
     second_pass_learn_dir = test_context.result_dir
-    cur_state = json.loads(
-        open(os.path.join(second_pass_learn_dir, "state.json")).read()
-    )
+    cur_state = read_state(os.path.join(second_pass_learn_dir, "state.json"))
     first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    prev_state = json.loads(
-        open(os.path.join(first_pass_learn_dir, "state.json")).read()
-    )
+    prev_state = read_state(os.path.join(first_pass_learn_dir, "state.json"))
     canonicalized_state = second_pass_learn_trim(prev_state, cur_state)
     return canonicalized_state
 
@@ -121,30 +117,26 @@ def equal_path(template, value):
 
 
 def get_canonicalized_state(test_context: TestContext):
-    canonicalized_state = json.load(
-        open(os.path.join(test_context.oracle_dir, "state.json"))
+    canonicalized_state = read_state(
+        os.path.join(test_context.oracle_dir, "state.json")
     )
     return canonicalized_state
 
 
 def get_learning_once_state(test_context: TestContext):
     first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    learning_once_state = json.load(
-        open(os.path.join(first_pass_learn_dir, "state.json"))
-    )
+    learning_once_state = read_state(os.path.join(first_pass_learn_dir, "state.json"))
     return learning_once_state
 
 
 def get_learning_twice_state(test_context: TestContext):
     second_pass_learn_dir = test_context.result_dir
-    learning_twice_state = json.load(
-        open(os.path.join(second_pass_learn_dir, "state.json"))
-    )
+    learning_twice_state = read_state(os.path.join(second_pass_learn_dir, "state.json"))
     return learning_twice_state
 
 
 def get_testing_state(test_context: TestContext):
-    testing_state = json.load(open(os.path.join(test_context.result_dir, "state.json")))
+    testing_state = read_state(os.path.join(test_context.result_dir, "state.json"))
     return testing_state
 
 

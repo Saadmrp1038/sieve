@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 from pathlib import PurePath
 
@@ -14,6 +13,7 @@ from sieve_tool.events import (
     extract_generate_name,
     is_generated_random_name,
 )
+from sieve_tool.oracle.artifacts import read_digest, read_history
 from sieve_tool.oracle.checker_common import (
     generate_alarm,
     get_current_controller_related_list,
@@ -92,13 +92,9 @@ def generate_history_digest(test_context: TestContext):
 def canonicalize_history_digest(test_context: TestContext):
     assert test_context.mode == sieve_modes.LEARN and test_context.build_oracle
     second_pass_learn_dir = test_context.result_dir
-    cur_history_digest = json.loads(
-        open(os.path.join(second_pass_learn_dir, "event.json")).read()
-    )
+    cur_history_digest = read_digest(os.path.join(second_pass_learn_dir, "event.json"))
     first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    prev_history_digest = json.loads(
-        open(os.path.join(first_pass_learn_dir, "event.json")).read()
-    )
+    prev_history_digest = read_digest(os.path.join(first_pass_learn_dir, "event.json"))
     can_history_digest = second_pass_learn_trim(prev_history_digest, cur_history_digest)
 
     def remove_ignored_value(event_map):
@@ -119,54 +115,54 @@ def canonicalize_history_digest(test_context: TestContext):
 
 
 def get_canonicalized_history_digest(test_context: TestContext):
-    can_history_digest = json.load(
-        open(os.path.join(test_context.oracle_dir, "event.json"))
+    can_history_digest = read_digest(
+        os.path.join(test_context.oracle_dir, "event.json")
     )
     return can_history_digest
 
 
 def get_learning_once_history_digest(test_context: TestContext):
     first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    learning_once_history_digest = json.load(
-        open(os.path.join(first_pass_learn_dir, "event.json"))
+    learning_once_history_digest = read_digest(
+        os.path.join(first_pass_learn_dir, "event.json")
     )
     return learning_once_history_digest
 
 
 def get_learning_twice_history_digest(test_context: TestContext):
     second_pass_learn_dir = test_context.result_dir
-    learning_twice_history_digest = json.load(
-        open(os.path.join(second_pass_learn_dir, "event.json"))
+    learning_twice_history_digest = read_digest(
+        os.path.join(second_pass_learn_dir, "event.json")
     )
     return learning_twice_history_digest
 
 
 def get_testing_history_digest(test_context: TestContext):
-    testing_history_digest = json.load(
-        open(os.path.join(test_context.result_dir, "event.json"))
+    testing_history_digest = read_digest(
+        os.path.join(test_context.result_dir, "event.json")
     )
     return testing_history_digest
 
 
 def get_learning_once_history(test_context: TestContext):
     first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    learning_once_history = json.load(
-        open(os.path.join(first_pass_learn_dir, "history.json"))
+    learning_once_history = read_history(
+        os.path.join(first_pass_learn_dir, "history.json")
     )
     return learning_once_history
 
 
 def get_learning_twice_history(test_context: TestContext):
     second_pass_learn_dir = test_context.result_dir
-    learning_twice_history = json.load(
-        open(os.path.join(second_pass_learn_dir, "history.json"))
+    learning_twice_history = read_history(
+        os.path.join(second_pass_learn_dir, "history.json")
     )
     return learning_twice_history
 
 
 def get_testing_history(test_context: TestContext):
-    testing_history = json.load(
-        open(os.path.join(test_context.result_dir, "history.json"))
+    testing_history = read_history(
+        os.path.join(test_context.result_dir, "history.json")
     )
     return testing_history
 

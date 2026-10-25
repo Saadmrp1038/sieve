@@ -129,26 +129,6 @@ class TestContext:
                 self.num_workers = 0
 
 
-class TestResult:
-    def __init__(
-        self,
-        injection_completed,
-        workload_completed,
-        common_errors,
-        end_state_errors,
-        history_errors,
-        no_exception,
-        exception_message,
-    ):
-        self.injection_completed = injection_completed
-        self.workload_completed = workload_completed
-        self.common_errors = common_errors
-        self.end_state_errors = end_state_errors
-        self.history_errors = history_errors
-        self.no_exception = no_exception
-        self.exception_message = exception_message
-
-
 def match_mask_regex(val):
     if type(val) is str:
         for reg in MASK_REGS:

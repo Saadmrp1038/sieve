@@ -2,7 +2,6 @@ import os
 
 from sieve_tool.common.common import (
     TestContext,
-    TestResult,
     bcolors,
     cprint,
     dump_json_file,
@@ -28,6 +27,7 @@ from sieve_tool.oracle.safety_checker import (
     generate_history,
     generate_history_digest,
 )
+from sieve_tool.results import TestResult
 
 
 def save_history(test_context: TestContext):
