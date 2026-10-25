@@ -1,15 +1,15 @@
 import json
 import os
-from typing import Dict, Optional, Union
 
 from sieve_tool.common.common import TestContext
-from sieve_tool.common.k8s_event import (
+from sieve_tool.events import (
     EVENT_NONE_TYPE,
     APIEventTypes,
     ControllerHear,
     ControllerHearTypes,
     ControllerWrite,
     ControllerWriteTypes,
+    Object,
     detectable_controller_hear_types,
     detectable_controller_write_types,
     extract_generate_name,
@@ -30,7 +30,7 @@ def convert_deltafifo_etype_to_API_etype(etype: str) -> str:
         return APIEventTypes.MODIFIED
 
 
-def event_diff_validation_check(prev_etype: str, cur_etype: str):
+def event_diff_validation_check(prev_etype: str, cur_etype: str) -> None:
     if prev_etype == cur_etype and (
         prev_etype == ControllerHearTypes.ADDED
         or prev_etype == ControllerHearTypes.DELETED
@@ -55,8 +55,8 @@ def event_diff_validation_check(prev_etype: str, cur_etype: str):
 
 def detectable_event_diff(
     recv_event: bool,
-    diff_prev_obj: Optional[Dict],
-    diff_cur_obj: Optional[Dict],
+    diff_prev_obj: Object | None,
+    diff_cur_obj: Object | None,
     prev_etype: str,
     cur_etype: str,
     signature_counter: int,
@@ -105,8 +105,8 @@ def detectable_event_diff(
 
 
 def nondeterministic_key(
-    test_context: TestContext, event: Union[ControllerHear, ControllerWrite]
-):
+    test_context: TestContext, event: ControllerHear | ControllerWrite
+) -> bool:
     generate_name = extract_generate_name(event.obj_map)
     end_state = json.load(
         open(

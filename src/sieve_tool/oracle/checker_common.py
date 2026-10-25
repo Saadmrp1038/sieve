@@ -14,13 +14,12 @@ from sieve_tool.common.common import (
     cprint,
     first_pass_learn_result_dir,
 )
-from sieve_tool.common.k8s_event import (
-    SIEVE_API_EVENT_MARK,
+from sieve_tool.events import (
     APIEventTypes,
     ControllerWriteTypes,
-    parse_api_event,
     parse_key,
 )
+from sieve_tool.trace import iter_api_events
 
 
 def kind_native_objects(key: str):
@@ -70,10 +69,7 @@ def generate_controller_related_list(test_context: TestContext):
     api_event_list = []
     controller_related_list = []
     controller_related_uid_set = set()
-    for line in open(api_log_path).readlines():
-        if SIEVE_API_EVENT_MARK not in line:
-            continue
-        api_event = parse_api_event(line)
+    for api_event in iter_api_events(api_log_path):
         api_event_list.append(api_event)
     for api_event in api_event_list:
         if api_event.rtype == "pod":
