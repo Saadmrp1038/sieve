@@ -53,7 +53,10 @@ Use `sieve --config /path/to/settings.json ...` for global overrides, for exampl
 
 `workload_command_wait_timeout` remains the per-command budget for the built-in
 workload driver; `workload_conditional_wait_timeout` controls its condition waits.
-They are independent of the whole-workload deadline. Limits must be finite and
+They are independent of the whole-workload deadline. A particular step can use
+`.cmd(["kubectl", "rollout", "status", "statefulset/example", "--timeout=180s"],
+timeout=190)` so its supervising deadline leaves time for the tool’s own error
+message. This does not raise the limits on unrelated commands. Limits must be finite and
 positive. Unknown process policies fail before execution.
 
 A controller can override execution policies for one workload in its profile:
@@ -94,7 +97,8 @@ A host lock prevents overlapping Sieve experiments. A pre-existing `kind`
 cluster is refused rather than replaced. The run records its cluster in
 `resources.json`. Deployment assets are copied and rendered into the result
 directory; tracked source manifests remain untouched. Available diagnostics are
-collected before cluster deletion. Cleanup failures are retained alongside the
+collected before cluster deletion, including pod/PVC/workload-resource status
+and namespace events. Cleanup failures are retained alongside the
 original error.
 
 An incomplete vanilla/learning workload stops the run before another baseline
@@ -102,3 +106,7 @@ or oracle generation. A test batch stops after a harness failure, incomplete
 workload or workload timeout; it preserves the result and does not retry the
 fault workload. Completed runs with oracle alarms remain available for bug
 review. Process failures alone do not establish an operator bug.
+
+For healthy RabbitMQ scaling validation, use `scaleup`. The pinned historical
+operator rejects scale-down; `scaleup-scaledown` remains available as a historical
+reproduction workload and is not a clean positive baseline.

@@ -238,3 +238,54 @@ def test_sdk_wall_deadline_stops_a_trickling_response(tmp_path):
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+def test_diagnostics_preserve_status_and_events_before_cluster_deletion(
+    tmp_path, monkeypatch
+):
+    import sys
+    from sieve_tool.runtime.workload import collect_diagnostics
+
+    command = tmp_path / "bin/kubectl"
+    command.parent.mkdir()
+    command.write_text(
+        "#!"
+        + sys.executable
+        + '\nimport json,sys\nprint(json.dumps({"kind":"List","items":[]}) if sys.argv[1]=="get" else "controller log")\n'
+    )
+    command.chmod(0o755)
+    monkeypatch.setenv(
+        "PATH", str(command.parent) + ":" + __import__("os").environ["PATH"]
+    )
+    result = tmp_path / "result"
+    result.mkdir()
+    (result / "apiserver1.log").write_text("original streamed evidence")
+    context = SimpleNamespace(
+        result_dir=str(result),
+        num_apiservers=1,
+        mode="vanilla",
+        controller="operator",
+        common_config=SimpleNamespace(namespace="default"),
+    )
+    with execution(log_dir=tmp_path / "commands"):
+        collect_diagnostics(context)
+    assert (result / "apiserver1.log").read_text() == "original streamed evidence"
+    assert (
+        json.loads((result / "resources-snapshot.json").read_text())["kind"] == "List"
+    )
+    assert json.loads((result / "events-snapshot.json").read_text())["kind"] == "List"
+    assert json.loads((result / "diagnostics.json").read_text())["failures"] == []
+
+
+def test_explicit_workload_step_budget_preserves_unrelated_defaults(tmp_path):
+    import sys
+    from sieve_tool.testing.driver import new_built_in_workload, common_config
+
+    original = common_config.workload_command_wait_timeout
+    workload = new_built_in_workload().cmd(
+        [sys.executable, "-c", "import time;time.sleep(0.15)"], timeout=1
+    )
+    with execution(log_dir=tmp_path):
+        assert workload.work_list[0].run() == (0, "")
+    assert workload.work_list[0].timeout == 1
+    assert common_config.workload_command_wait_timeout == original

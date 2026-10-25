@@ -21,6 +21,7 @@ import json
 from sieve_tool.paths import repository_root
 from sieve_tool.process import (
     run as run_process,
+    validate_timeouts,
     ProcessError,
     ProcessTimeout,
     deadline,
@@ -155,6 +156,7 @@ def get_custom_resource(custom_resource_type, resource_name, namespace):
 
 class TestCmd:
     def __init__(self, cmd, timeout):
+        validate_timeouts({"command": timeout})
         self.cmd = cmd
         self.timeout = timeout
 
@@ -489,8 +491,13 @@ class BuiltInWorkLoad:
         self.work_list = []
         self.final_grace_period = final_grace_period
 
-    def cmd(self, cmd):
-        test_cmd = TestCmd(cmd, timeout=common_config.workload_command_wait_timeout)
+    def cmd(self, cmd, *, timeout=None):
+        test_cmd = TestCmd(
+            cmd,
+            timeout=common_config.workload_command_wait_timeout
+            if timeout is None
+            else timeout,
+        )
         self.work_list.append(test_cmd)
         return self
 

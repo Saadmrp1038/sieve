@@ -57,6 +57,29 @@ def collect_diagnostics(context):
                     "collect coordinator log",
                 )
             )
+        namespace = context.common_config.namespace
+        commands.extend(
+            [
+                (
+                    [
+                        "kubectl",
+                        "get",
+                        "pods,persistentvolumeclaims,statefulsets,deployments",
+                        "-n",
+                        namespace,
+                        "-o",
+                        "json",
+                    ],
+                    directory / "resources-snapshot.json",
+                    "collect resource status",
+                ),
+                (
+                    ["kubectl", "get", "events", "-n", namespace, "-o", "json"],
+                    directory / "events-snapshot.json",
+                    "collect namespace events",
+                ),
+            ]
+        )
         commands.append(
             (
                 [

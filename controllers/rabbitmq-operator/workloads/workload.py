@@ -4,6 +4,38 @@ from sieve_tool.testing.driver import new_built_in_workload
 from sieve_tool.common.common import RUNNING, TERMINATED
 
 test_cases = {
+    "scaleup": new_built_in_workload()
+    .cmd(
+        [
+            "kubectl",
+            "apply",
+            "-f",
+            "controllers/rabbitmq-operator/workloads/rmqc-1.yaml",
+        ]
+    )
+    .wait_for_pod_status("rabbitmq-cluster-server-0", RUNNING)
+    .cmd(
+        [
+            "kubectl",
+            "patch",
+            "RabbitmqCluster",
+            "rabbitmq-cluster",
+            "--type",
+            "merge",
+            '-p={"spec":{"replicas":3}}',
+        ]
+    )
+    .wait_for_pod_status("rabbitmq-cluster-server-2", RUNNING)
+    .cmd(
+        [
+            "kubectl",
+            "rollout",
+            "status",
+            "statefulset/rabbitmq-cluster-server",
+            "--timeout=180s",
+        ],
+        timeout=190,
+    ),
     "recreate": new_built_in_workload()
     .cmd(
         [
@@ -25,6 +57,7 @@ test_cases = {
         ]
     )
     .wait_for_pod_status("rabbitmq-cluster-server-0", RUNNING),
+    # Historical reproduction: this pinned operator explicitly rejects scale-down.
     "scaleup-scaledown": new_built_in_workload(70)
     .cmd(
         [
