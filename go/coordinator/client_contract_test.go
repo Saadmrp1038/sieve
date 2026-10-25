@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net"
 	"net/rpc"
+	"os"
+	"os/exec"
 	"reflect"
 	"runtime"
 	"testing"
@@ -30,6 +32,16 @@ func (s *ClientContractServer) NotifyTestAfterControllerReadPause(r *sieve.Notif
 // The injected module has no Kubernetes imports; exercise its public hooks
 // against real typed and unstructured objects supplied by the current SDK.
 func TestInjectedClientAcceptsKubernetesObjects(t *testing.T) {
+	// A real operator loads its hook configuration once per process. Isolate
+	// that global state so repeated test runs exercise the same lifecycle.
+	if os.Getenv("SIEVE_CLIENT_CONTRACT_CHILD") != "1" {
+		command := exec.Command(os.Args[0], "-test.run=^TestInjectedClientAcceptsKubernetesObjects$")
+		command.Env = append(os.Environ(), "SIEVE_CLIENT_CONTRACT_CHILD=1")
+		if output, err := command.CombinedOutput(); err != nil {
+			t.Fatalf("client contract failed: %v\n%s", err, output)
+		}
+		return
+	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -41,14 +53,25 @@ func TestInjectedClientAcceptsKubernetesObjects(t *testing.T) {
 		t.Fatal(err)
 	}
 	done := make(chan struct{})
+	connections := make(chan net.Conn, 1)
 	go func() {
 		defer close(done)
 		connection, err := listener.Accept()
 		if err == nil {
+			connections <- connection
 			defer connection.Close()
 			server.ServeConn(connection)
 		}
 	}()
+	t.Cleanup(func() {
+		listener.Close()
+		select {
+		case connection := <-connections:
+			connection.Close()
+		case <-done:
+		}
+		<-done
+	})
 	frame := runtime.FuncForPC(reflect.ValueOf(TestInjectedClientAcceptsKubernetesObjects).Pointer()).Name()
 	config := map[string]interface{}{"sieveServerAddr": listener.Addr().String(), "annotatedReconcileStackFrame": []string{frame}, "actions": []interface{}{map[string]interface{}{
 		"actionType": "pauseController", "pauseAt": "beforeControllerRead", "pauseScope": "all",
@@ -79,5 +102,4 @@ func TestInjectedClientAcceptsKubernetesObjects(t *testing.T) {
 			t.Fatal("read hook emitted no notification")
 		}
 	}
-	_ = done
 }
