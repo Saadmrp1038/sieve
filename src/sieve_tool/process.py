@@ -81,6 +81,7 @@ def request_timeout():
 def execution(timeouts=None, log_dir=None):
     inherited, inherited_dir = settings()
     policy = validate_timeouts({**inherited, **(timeouts or {})})
+    cleanup_token = _cleanup_end.set(None)
     token = _settings.set(
         (policy, Path(log_dir) if log_dir is not None else inherited_dir)
     )
@@ -88,6 +89,7 @@ def execution(timeouts=None, log_dir=None):
         yield
     finally:
         _settings.reset(token)
+        _cleanup_end.reset(cleanup_token)
 
 
 @contextmanager
@@ -172,6 +174,7 @@ class ManagedProcess:
         cwd=None,
         env=None,
         output=None,
+        input=None,
     ):
         if isinstance(argv, (str, bytes)) or not argv:
             raise TypeError("Commands require a nonempty argument list")
@@ -191,17 +194,39 @@ class ManagedProcess:
         )
         self.err_path = self.log.with_suffix(".stderr.log")
         self.out_path.parent.mkdir(parents=True, exist_ok=True)
-        self.out = self.err = None
+        self.out = self.err = self.input_file = None
         try:
             self.out = self.out_path.open("wb")
             self.err = self.err_path.open("wb")
+            if input is not None:
+                self.input_file = tempfile.TemporaryFile()
+                self.input_file.write(
+                    input.encode() if isinstance(input, str) else input
+                )
+                self.input_file.seek(0)
+            inherited_session = os.environ.get("SIEVE_MANAGED_SESSION")
+            self.owns_session = not (
+                inherited_session
+                and inherited_session.isdigit()
+                and int(inherited_session) == os.getsid(0)
+            )
+            arguments = [os.fspath(arg) for arg in argv]
+            if self.owns_session:
+                # exec keeps the session leader PID; nested Sieve commands can
+                # then create groups without escaping the owned session.
+                bootstrap = "import os,sys;os.environ['SIEVE_MANAGED_SESSION']=str(os.getsid(0));os.execvpe(sys.argv[1],sys.argv[1:],os.environ)"
+                arguments = [sys.executable, "-c", bootstrap, *arguments]
             self.proc = subprocess.Popen(
-                [os.fspath(arg) for arg in argv],
+                arguments,
                 cwd=cwd,
                 env={**os.environ, **env} if env is not None else None,
+                stdin=self.input_file
+                if self.input_file is not None
+                else subprocess.DEVNULL,
                 stdout=self.out,
                 stderr=self.err,
-                start_new_session=True,
+                start_new_session=self.owns_session,
+                process_group=None if self.owns_session else 0,
             )
             print(
                 f"[sieve] {operation}: started (limit {self.timeout:g}s; logs {self.log})",
@@ -230,37 +255,76 @@ class ManagedProcess:
         with self.events.open("a") as stream:
             stream.write(json.dumps(data) + "\n")
 
-    def group_alive(self):
+    def groups(self):
+        # Only the process boundary uses ps. It is bounded independently so an
+        # expired workload deadline cannot prevent descendant discovery.
+        rows = subprocess.run(
+            ["/bin/ps", "-axo", "pid=,ppid=,pgid="],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=True,
+        ).stdout
+        processes = [
+            tuple(map(int, line.split())) for line in rows.splitlines() if line.strip()
+        ]
+        selected = {self.proc.pid}
+        if self.owns_session:
+            groups = {self.proc.pid}
+            for pid, _, group in processes:
+                try:
+                    if os.getsid(pid) == self.proc.pid:
+                        groups.add(group)
+                except ProcessLookupError:
+                    pass
+            return groups - {os.getpgrp()}
+        while True:
+            descendants = {pid for pid, parent, _ in processes if parent in selected}
+            if descendants <= selected:
+                break
+            selected.update(descendants)
+        return {group for pid, _, group in processes if pid in selected} | {
+            self.proc.pid
+        }
+
+    def group_alive(self, group):
         try:
-            os.killpg(self.proc.pid, 0)
+            os.killpg(group, 0)
             return True
         except ProcessLookupError:
             return False
         except PermissionError:
-            # Darwin can report EPERM for a group whose leader just exited.
-            # Live owned descendants still keep that group signalable.
             return self.proc.poll() is None
+
+    def signal_groups(self, groups, signum):
+        for group in groups:
+            try:
+                os.killpg(group, signum)
+            except ProcessLookupError:
+                pass
+            except PermissionError:
+                if self.group_alive(group):
+                    # Darwin has a short interval where an exiting child is
+                    # unsignalable but has not become waitable yet.
+                    self.proc.wait(timeout=2)
 
     def terminate(self):
         if self.proc is None:
             return
-        try:
-            os.killpg(self.proc.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
+        groups = self.groups()
+        self.signal_groups(groups, signal.SIGTERM)
         end = time.monotonic() + remaining(limit("terminate"))
         self.proc.poll()
-        while self.group_alive() and time.monotonic() < end:
+        while (
+            any(self.group_alive(group) for group in groups) and time.monotonic() < end
+        ):
             self.proc.poll()
+            if self.owns_session:
+                discovered = self.groups()
+                self.signal_groups(discovered - groups, signal.SIGTERM)
+                groups.update(discovered)
             time.sleep(min(0.05, max(0, end - time.monotonic())))
-        try:
-            os.killpg(self.proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        except PermissionError:
-            # A Darwin process can be exiting but not yet waitable.
-            if self.proc.poll() is None:
-                self.proc.wait(timeout=2)
+        self.signal_groups(groups, signal.SIGKILL)
         self.proc.wait(timeout=2)
 
     def close(self, status="stopped"):
@@ -275,7 +339,7 @@ class ManagedProcess:
                 raise
             primary.add_note(f"Process cleanup also failed: {error}")
         finally:
-            for stream in (self.out, self.err):
+            for stream in (self.out, self.err, self.input_file):
                 if stream is not None:
                     stream.close()
             try:
@@ -327,5 +391,22 @@ class ManagedProcess:
 
 
 def run(argv, *, check=True, capture_output=False, **kwargs):
-    with ManagedProcess(argv, **kwargs) as child:
+    with cancellation_signals(), ManagedProcess(argv, **kwargs) as child:
         return child.wait(check=check, capture_output=capture_output)
+
+
+_cleanup_end = ContextVar("sieve_cleanup_deadline", default=None)
+
+
+def reset_cleanup_budget():
+    _cleanup_end.set(None)
+
+
+@contextmanager
+def cleanup_budget():
+    end = _cleanup_end.get()
+    if end is None:
+        end = time.monotonic() + limit("cleanup")
+        _cleanup_end.set(end)
+    with deadline(max(0, end - time.monotonic()), fresh=True):
+        yield

@@ -3,19 +3,19 @@
 import os
 from pathlib import Path
 import shutil
-import subprocess
+from sieve_tool.process import run, bounded, ProcessError, ProcessTimeout
 import sys
-
 from sieve_tool.common.common import rmtree_if_exists
 from sieve_tool.paths import cache_path, repository_root
-
 from .instrumenter import run_instrumenter
+from .resources import docker_build_scope
 
 
 def kubernetes_source():
     return cache_path("kubernetes", "src", "k8s.io", "kubernetes")
 
 
+@bounded("network")
 def download_kubernetes(version, *, checkout=None):
     """
     Download Kubernetes into the build cache and check out the specified version.
@@ -25,11 +25,11 @@ def download_kubernetes(version, *, checkout=None):
     checkout = Path(checkout) if checkout is not None else kubernetes_source()
     os.makedirs(os.path.dirname(checkout), exist_ok=True)
     cached = (
-        subprocess.run(
+        run(
             ["git", "-C", checkout, "rev-parse", "--verify", version + "^{commit}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
+            capture_output=True,
+            operation="download kubernetes",
+            category="network",
         )
         if os.path.isdir(os.path.join(checkout, ".git"))
         else None
@@ -37,9 +37,18 @@ def download_kubernetes(version, *, checkout=None):
     if cached is not None and cached.returncode == 0:
         revision = cached.stdout.strip()
         print("Reusing Kubernetes checkout at {} ({})".format(version, revision))
-        subprocess.run(["git", "-C", checkout, "reset", "--hard", revision], check=True)
-        # Retain ignored build output while removing prior instrumentation.
-        subprocess.run(["git", "-C", checkout, "clean", "-fd"], check=True)
+        run(
+            ["git", "-C", checkout, "reset", "--hard", revision],
+            check=True,
+            operation="download kubernetes",
+            category="network",
+        )
+        run(
+            ["git", "-C", checkout, "clean", "-fd"],
+            check=True,
+            operation="download kubernetes",
+            category="network",
+        )
         for relative in ("vendor/sieve.client", "staging/src/sieve.client"):
             dependency = os.path.join(checkout, relative)
             if os.path.islink(dependency):
@@ -47,12 +56,10 @@ def download_kubernetes(version, *, checkout=None):
             else:
                 rmtree_if_exists(dependency)
     else:
-        # The release source is sufficient; fetching all Kubernetes history is
-        # slow and makes each node-image build vulnerable to long TLS failures.
         for attempt in range(3):
             rmtree_if_exists(checkout)
             try:
-                subprocess.run(
+                run(
                     [
                         "git",
                         "-c",
@@ -68,10 +75,11 @@ def download_kubernetes(version, *, checkout=None):
                     ],
                     check=True,
                     timeout=300,
-                    stdout=subprocess.DEVNULL,
+                    operation="download kubernetes",
+                    category="network",
                 )
                 break
-            except subprocess.CalledProcessError, subprocess.TimeoutExpired:
+            except ProcessError, ProcessTimeout:
                 if attempt == 2:
                     raise
                 print(
@@ -79,8 +87,11 @@ def download_kubernetes(version, *, checkout=None):
                         attempt + 2
                     )
                 )
-    subprocess.run(
-        ["git", "-C", checkout, "checkout", "-B", "sieve", version], check=True
+    run(
+        ["git", "-C", checkout, "checkout", "-B", "sieve", version],
+        check=True,
+        operation="download kubernetes",
+        category="network",
     )
 
 
@@ -95,6 +106,7 @@ def install_client(version):
     (checkout / "vendor/sieve.client").symlink_to("../staging/src/sieve.client")
 
 
+@bounded("build")
 def build_node(version, mode, registry, push):
     download_kubernetes(version)
     install_client(version)
@@ -110,25 +122,42 @@ def build_node(version, mode, registry, push):
             '{{with index .NetworkSettings.Networks "bridge"}}{{.IPAddress}}{{end}}',
         )
     )
-    revision = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=checkout, text=True
-    ).strip()
-    subprocess.run(
-        ["kind", "build", "node-image"],
+    revision = run(
+        ["git", "rev-parse", "HEAD"],
         cwd=checkout,
-        env={
-            **os.environ,
-            "GOPATH": str(cache_path("kubernetes")),
-            "GOWORK": "off",
-            "KUBE_GIT_VERSION": f"{version}-sieve-{revision}",
-        },
-        check=True,
-    )
+        capture_output=True,
+        operation="build node",
+        category="build",
+    ).stdout.strip()
+    with docker_build_scope() as environment:
+        run(
+            ["kind", "build", "node-image"],
+            cwd=checkout,
+            env={
+                **environment,
+                "GOPATH": str(cache_path("kubernetes")),
+                "GOWORK": "off",
+                "KUBE_GIT_VERSION": f"{version}-sieve-{revision}",
+            },
+            check=True,
+            operation="build node",
+            category="build",
+        )
     platform = "macos-" if sys.platform == "darwin" else ""
     image = f"{registry}/node:{version}-{platform}{mode}"
-    subprocess.run(["docker", "image", "tag", "kindest/node:latest", image], check=True)
+    run(
+        ["docker", "image", "tag", "kindest/node:latest", image],
+        check=True,
+        operation="build node",
+        category="build",
+    )
     if push:
-        subprocess.run(["docker", "push", image], check=True)
+        run(
+            ["docker", "push", image],
+            check=True,
+            operation="build node",
+            category="build",
+        )
 
 
 def build_nodes(version, mode, registry, push=False):

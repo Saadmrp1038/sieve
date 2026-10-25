@@ -155,3 +155,56 @@ def test_deadline_is_shared_and_invalid_limits_fail_closed(tmp_path):
                 operation="parent budget",
                 timeout=60,
             )
+
+
+def test_outer_timeout_reaches_nested_managed_groups(tmp_path):
+    marker = tmp_path / "nested.pid"
+    nested = """import sys
+from sieve_tool.process import run,execution
+with execution({'terminate':0.1},sys.argv[2]):
+ run([sys.executable,'-c','import os,signal,sys,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);open(sys.argv[1],"w").write(str(os.getpid()));time.sleep(60)',sys.argv[1]],operation='nested group',timeout=60)
+"""
+    with execution({"terminate": 0.2}, tmp_path / "outer"):
+        with pytest.raises(ProcessTimeout):
+            run(
+                [sys.executable, "-c", nested, str(marker), str(tmp_path / "inner")],
+                operation="whole workload",
+                timeout=1.5,
+            )
+    assert marker.exists()
+    pid = int(marker.read_text())
+    end = time.monotonic() + 2
+    while running(pid) and time.monotonic() < end:
+        time.sleep(0.02)
+    assert not running(pid)
+
+
+def test_quiet_work_and_stdin_are_supported(tmp_path):
+    with execution(log_dir=tmp_path):
+        result = run(
+            [
+                sys.executable,
+                "-c",
+                "import sys,time;time.sleep(0.3);print(sys.stdin.read())",
+            ],
+            operation="quiet command",
+            timeout=2,
+            input="literal $() input",
+            capture_output=True,
+        )
+    assert result.stdout.strip() == "literal $() input"
+
+
+def test_successful_parent_cannot_leave_background_work(tmp_path):
+    marker = tmp_path / "pid"
+    code = """import subprocess,sys,time
+p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])
+open(sys.argv[1],'w').write(str(p.pid))
+"""
+    with execution({"terminate": 0.1}, tmp_path / "logs"):
+        run([sys.executable, "-c", code, str(marker)], operation="background leak")
+    pid = int(marker.read_text())
+    end = time.monotonic() + 2
+    while running(pid) and time.monotonic() < end:
+        time.sleep(0.02)
+    assert not running(pid)
