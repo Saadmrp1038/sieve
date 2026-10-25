@@ -62,7 +62,7 @@ def job_template(self_hosted):
                 "name": "Setup Go environment",
                 "uses": "actions/setup-go@v6",
                 "with": {
-                    "go-version": "1.19.13",
+                    "go-version-file": "go.work",
                     "cache-dependency-path": "**/go.sum",
                 },
             },
@@ -81,15 +81,11 @@ def job_template(self_hosted):
             },
             {
                 "name": "Install Kind",
-                "run": 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0\nkind',
+                "run": 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0\nkind',
             },
-            # {
-            #     "name": "Install Mage",
-            #     "run": "go get -u github.com/magefile/mage\nmage -h",
-            # },
             {
                 "name": "Install Helm",
-                "run": "wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz\ntar -zxvf helm-v3.6.0-linux-amd64.tar.gz\nsudo mv linux-amd64/helm /usr/local/bin/helm\nhelm",
+                "run": "wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz\ntar -zxvf helm-v4.3.1-linux-amd64.tar.gz\nsudo mv linux-amd64/helm /usr/local/bin/helm\nhelm",
             },
             {
                 "name": "Sieve CI config generate",

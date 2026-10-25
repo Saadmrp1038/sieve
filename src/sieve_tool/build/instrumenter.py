@@ -1,6 +1,7 @@
 """Build and invoke the Go instrumenter without generated files in source."""
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ def run_instrumenter(config):
     subprocess.run(
         ["go", "build", "-o", str(binary), "."],
         cwd=repository_root() / "go/instrumenter",
+        env={**os.environ, "GOWORK": "off"},
         check=True,
     )
     directory = cache_path("instrumenter")

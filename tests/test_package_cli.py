@@ -169,3 +169,16 @@ def test_workload_child_receives_selected_configuration(tmp_path):
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_configmap_carries_json_without_changing_the_yaml_plan(tmp_path):
+    import yaml
+    from sieve_tool.runtime.cluster import create_configmap
+
+    plan = tmp_path / "plan.yaml"
+    text = "actions: []\nannotatedReconcileStackFrame: []\ncrdList: [stringsecret]\n"
+    plan.write_text(text)
+    manifest = yaml.safe_load(Path(create_configmap(str(plan))).read_text())
+    payload = json.loads(manifest["data"]["sieveTestPlan"])
+    assert payload == yaml.safe_load(text)
+    assert plan.read_text() == text

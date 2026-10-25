@@ -15,7 +15,7 @@ from sieve_tool.paths import repository_root, cache_path
 
 
 def create_configmap(test_plan):
-    test_plan_content = open(test_plan).read()
+    test_plan_content = json.dumps(yaml.safe_load(Path(test_plan).read_text()))
     configmap = {}
     configmap["apiVersion"] = "v1"
     configmap["kind"] = "ConfigMap"
@@ -100,7 +100,13 @@ def prepare_coordinator(test_context: TestContext):
     subprocess.run(
         ["go", "build", "-o", str(workspace / "sieve-coordinator"), "."],
         cwd=repository_root() / "go/coordinator",
-        env={**os.environ, "GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "0"},
+        env={
+            **os.environ,
+            "GOOS": "linux",
+            "GOARCH": "amd64",
+            "CGO_ENABLED": "0",
+            "GOWORK": "off",
+        },
         check=True,
     )
     if test_context.mode == sieve_modes.TEST:

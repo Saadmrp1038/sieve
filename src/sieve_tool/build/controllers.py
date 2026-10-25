@@ -7,12 +7,7 @@ from pathlib import Path
 from sieve_tool.common.common import sieve_modes, os_system, rmtree_if_exists
 from sieve_tool.common.config import ControllerConfig
 from sieve_tool.paths import repository_root
-from .dependencies import (
-    DEFAULT_K8S_VERSION,
-    k8s_version_to_apimachinery_version,
-    update_sieve_client_go_mod_with_version,
-    install_module,
-)
+from .dependencies import install_module
 from .instrumenter import run_instrumenter
 
 
@@ -67,16 +62,6 @@ def install_lib_for_controller(controller_config: ControllerConfig):
             "sieve.client",
         ),
     )
-    if controller_config.kubernetes_version != DEFAULT_K8S_VERSION:
-        update_sieve_client_go_mod_with_version(
-            os.path.join(sieve_dep_src_dir, "sieve.client", "go.mod"),
-            k8s_version_to_apimachinery_version(controller_config.kubernetes_version),
-        )
-    elif controller_config.apimachinery_version is not None:
-        update_sieve_client_go_mod_with_version(
-            os.path.join(sieve_dep_src_dir, "sieve.client", "go.mod"),
-            controller_config.apimachinery_version,
-        )
 
     # download client-go
     install_module(
@@ -200,20 +185,6 @@ def install_lib_for_controller_with_vendor(controller_config: ControllerConfig):
         "go/client",
         os.path.join(application_dir, controller_config.vendored_sieve_client_path),
     )
-    if controller_config.kubernetes_version != DEFAULT_K8S_VERSION:
-        update_sieve_client_go_mod_with_version(
-            os.path.join(
-                application_dir, controller_config.vendored_sieve_client_path, "go.mod"
-            ),
-            k8s_version_to_apimachinery_version(controller_config.kubernetes_version),
-        )
-    elif controller_config.apimachinery_version is not None:
-        update_sieve_client_go_mod_with_version(
-            os.path.join(
-                application_dir, controller_config.vendored_sieve_client_path, "go.mod"
-            ),
-            controller_config.apimachinery_version,
-        )
     os.chdir(application_dir)
     os_system("git add -A >> /dev/null")
     os_system(
