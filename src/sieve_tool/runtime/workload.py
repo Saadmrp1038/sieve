@@ -1,4 +1,7 @@
+from dataclasses import asdict
+import json
 import os
+from pathlib import Path
 import subprocess
 import signal
 import kubernetes
@@ -76,7 +79,13 @@ def run_workload(
         test_context.test_workload,
         os.path.join(test_context.result_dir, "workload.log"),
     )
-    process = subprocess.Popen(test_command, shell=True)
+    settings = Path(test_context.result_dir).resolve() / "harness-config.json"
+    settings.write_text(json.dumps(asdict(test_context.common_config), indent=2) + "\n")
+    process = subprocess.Popen(
+        test_command,
+        shell=True,
+        env={**os.environ, "SIEVE_HARNESS_CONFIG": str(settings)},
+    )
     process.wait()
 
     pod_name = (

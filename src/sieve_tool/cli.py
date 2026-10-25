@@ -247,7 +247,12 @@ def _dispatch(arguments, root):
         )
         output = arguments.output or root / "runs/test" / identifier
         return run(
-            arguments.controller, arguments.bug, registry, arguments.skip, output
+            arguments.controller,
+            arguments.bug,
+            registry,
+            arguments.skip,
+            output,
+            common,
         )
     if arguments.command == "report":
         from sieve_tool.report import report

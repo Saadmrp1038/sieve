@@ -237,7 +237,7 @@ reprod_map = {
 }
 
 
-def reproduce_single_bug(controller, bug, registry, skip, output):
+def reproduce_single_bug(controller, bug, registry, skip, output, common_config):
     entry = reprod_map[controller][bug]
     before = entry[2] if len(entry) >= 3 else None
     after = entry[3] if len(entry) >= 4 else None
@@ -258,6 +258,7 @@ def reproduce_single_bug(controller, bug, registry, skip, output):
                 False,
                 False,
                 oracle_root=str(root / "fixtures/oracles"),
+                common_config=common_config,
             )
             runner.save_run_result(context, result, started)
         finally:
@@ -276,7 +277,7 @@ def reproduce_single_bug(controller, bug, registry, skip, output):
     }
 
 
-def reproduce_bug(controller, bug, registry, skip, output):
+def reproduce_bug(controller, bug, registry, skip, output, common_config):
     if bug == "all":
         names = [
             name for name in reprod_map[controller] if not name.startswith("indirect")
@@ -286,17 +287,20 @@ def reproduce_bug(controller, bug, registry, skip, output):
     else:
         names = [bug]
     return {
-        name: reproduce_single_bug(controller, name, registry, skip, output)
+        name: reproduce_single_bug(
+            controller, name, registry, skip, output, common_config
+        )
         for name in names
     }
 
 
-def run(controller, bug, registry, skip, output):
+def run(controller, bug, registry, skip, output, common_config):
     controllers = list(reprod_map) if controller == "all" else [controller]
     if any(name not in reprod_map for name in controllers):
         raise ValueError(f"No historical reproductions for {controller}")
     results = {
-        name: reproduce_bug(name, bug, registry, skip, output) for name in controllers
+        name: reproduce_bug(name, bug, registry, skip, output, common_config)
+        for name in controllers
     }
     rows = ["controller\tbug\treproduced\ttest-result-file"]
     for name, cases in results.items():

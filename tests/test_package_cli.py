@@ -150,3 +150,22 @@ def test_all_controller_profiles_point_to_moved_assets():
 def test_missing_explicit_config_fails(tmp_path):
     with pytest.raises(FileNotFoundError):
         get_common_config(tmp_path / "missing.json")
+
+
+def test_workload_child_receives_selected_configuration(tmp_path):
+    settings = tmp_path / "harness-config.json"
+    settings.write_text(
+        '{"workload_command_wait_timeout": 123, "generate_debugging_information_enabled": false}'
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from sieve_tool.common.config import get_common_config; c = get_common_config(); assert c.workload_command_wait_timeout == 123; assert c.generate_debugging_information_enabled is False",
+        ],
+        cwd=tmp_path,
+        env={**os.environ, "SIEVE_HARNESS_CONFIG": str(settings)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr

@@ -35,6 +35,8 @@ class CommonConfig:
 
 
 def get_common_config(override=None):
+    if override is None:
+        override = os.environ.get("SIEVE_HARNESS_CONFIG")
     data = json.loads(
         files("sieve_tool.resources").joinpath("defaults.json").read_text()
     )
