@@ -32,6 +32,7 @@ class CommonConfig:
     field_path_mask: dict
     state_update_summary_checker_mask: list
     update_oracle_file_enabled: bool
+    process_timeouts: dict
 
 
 def get_common_config(override=None):
@@ -57,6 +58,9 @@ def get_common_config(override=None):
     for name, kind in expected.items():
         if type(data.get(name)) is not kind:
             raise ValueError(f"Setting {name} must be {kind.__name__}")
+    from sieve_tool.process import validate_timeouts
+
+    validate_timeouts(data["process_timeouts"])
     return CommonConfig(**data)
 
 
