@@ -109,11 +109,11 @@ func deepCopyMap(src map[string]interface{}) map[string]interface{} {
 	}
 	jsonStr, err := json.Marshal(src)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err)
 	}
 	err = json.Unmarshal(jsonStr, &dest)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err)
 	}
 	return dest
 }

@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 func isCRD(rType string, crds []string) bool {
@@ -23,8 +20,8 @@ func triggerReconcile(object interface{}) bool {
 	if isCRD(rType, crds) {
 		return true
 	}
-	if o, err := meta.Accessor(object); err == nil {
-		for _, ref := range o.GetOwnerReferences() {
+	if o, ok := metadataForObject(object); ok {
+		for _, ref := range ownerReferencesForObject(object) {
 			if isCRD(strings.ToLower(ref.Kind), crds) {
 				taintMap.Store(o.GetNamespace()+"-"+rType+"-"+o.GetName(), "")
 				return true
@@ -136,7 +133,7 @@ func NotifyLearnBeforeCacheGet(key string, items []interface{}) {
 }
 
 func NotifyLearnAfterCacheGet(key string, item interface{}, exists bool) {
-	if err := loadSieveConfigFromEnv(true); err != nil {
+	if err := loadSieveConfigFromEnv(false); err != nil {
 		return
 	}
 	if err := initRPCClient(); err != nil {
@@ -183,7 +180,7 @@ func NotifyLearnBeforeCacheList(items []interface{}) {
 }
 
 func NotifyLearnAfterCacheList(items []interface{}, listErr error) {
-	if err := loadSieveConfigFromEnv(true); err != nil {
+	if err := loadSieveConfigFromEnv(false); err != nil {
 		return
 	}
 	if err := initRPCClient(); err != nil {
@@ -296,7 +293,7 @@ func NotifyLearnAfterRestCall(controllerOperationID int, verb string, pathPrefix
 	}
 	errorString := NO_ERROR
 	if respErr != nil {
-		errorString = string(errors.ReasonForError(respErr))
+		errorString = reasonForError(respErr)
 	}
 	controllerOperationType := HttpVerbToControllerOperation(verb, resourceName, subresource)
 	if controllerOperationType == UNKNOWN {

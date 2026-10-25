@@ -15,20 +15,37 @@ uv run --locked pytest
 uv run --locked ruff check .
 uv run --locked ruff format --check .
 uv build --wheel
-(cd go/client && go test -race ./...)
-(cd go/coordinator && go test ./...)
-(cd go/instrumenter && go test ./...)
+uv run --locked pip-audit --local --skip-editable
+(cd go/client && GOWORK=off go test -race ./...)
+(cd go/coordinator && GOWORK=off go test ./...)
+(cd go/instrumenter && GOWORK=off go test ./...)
 ```
 
 `uv sync` installs the CLI and package in editable mode. pytest imports that
 package; it does not add the repository root to `sys.path`. Workloads under
 `controllers/` are integration programs, separate from pytest tests.
 
-The current Python 3.10 and Go 1.19.13 baselines preserve the validated
-controller SDK environment. Runtime dependencies live in `pyproject.toml`;
+The host harness uses Python 3.14.9, uv 0.13.5, and Go 1.27.3.
+The Go toolchain is selected by `go.work`; CI reads that file too.
+Controller Dockerfiles retain their experiment-specific compilers and SDKs.
+The injected client has no third-party dependencies and retains a Go 1.13
+language floor so adding hooks does not force a test subject upgrade.
+Runtime dependencies live in `pyproject.toml`;
 `uv.lock` records their Linux and macOS resolutions. To change dependencies,
 edit the project metadata, run `uv lock`, then repeat the checks. Runtime jobs
 use `uv sync --locked --no-dev` and `uv run --locked --no-dev sieve ...`.
+
+Audit Go modules independently with `GOWORK=off govulncheck ./...` in each
+module. CI pins the scanner version and verifies that `go/client` has no
+third-party modules. Do not add a Kubernetes SDK to that module; cover metadata
+adaptations with the real-object contract test in `go/coordinator`.
+
+For changes to SDKs, serialization or oracle dependencies, build new vanilla,
+learn and test images on Linux. Check the no-fault workload, learn two fresh
+baselines, and replay known schedules against those baselines. Inspect actual
+pod restarts or blocked/released reads and raw alarms in the saved evidence.
+Also replay retained successful and failed runs: a green build or a new set
+of masks alone does not validate an upgrade.
 
 ## Working on the harness
 

@@ -15,7 +15,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -27,13 +27,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -69,7 +69,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -81,13 +81,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -125,7 +125,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -137,13 +137,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -185,7 +185,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -197,13 +197,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -237,7 +237,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -249,13 +249,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -293,7 +293,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -305,13 +305,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -355,7 +355,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -367,13 +367,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 
@@ -409,7 +409,7 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
-        go-version: 1.19.13
+        go-version-file: go.work
         cache-dependency-path: '**/go.sum'
     - name: Install uv
       uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -421,13 +421,13 @@ jobs:
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
     - name: Install Kind
-      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.13.0
+      run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
         kind'
     - name: Install Helm
-      run: 'wget https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz
+      run: 'wget https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
 
-        tar -zxvf helm-v3.6.0-linux-amd64.tar.gz
+        tar -zxvf helm-v4.3.1-linux-amd64.tar.gz
 
         sudo mv linux-amd64/helm /usr/local/bin/helm
 

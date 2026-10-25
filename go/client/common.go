@@ -11,10 +11,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
-
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const LEARN string = "learn"
@@ -45,9 +41,9 @@ const NO_ERROR string = "NoError"
 
 var config map[string]interface{} = nil
 var configLoadingLock sync.Mutex
-var triggerDefinitionsByResourceKey map[string][]map[interface{}]interface{} = make(map[string][]map[interface{}]interface{})
-var triggerDefinitionsByAnnotatedAPI map[string][]map[interface{}]interface{} = make(map[string][]map[interface{}]interface{})
-var actions map[string][]map[interface{}]interface{} = make(map[string][]map[interface{}]interface{})
+var triggerDefinitionsByResourceKey map[string][]map[string]interface{} = make(map[string][]map[string]interface{})
+var triggerDefinitionsByAnnotatedAPI map[string][]map[string]interface{} = make(map[string][]map[string]interface{})
+var actions map[string][]map[string]interface{} = make(map[string][]map[string]interface{})
 var annotatedReconcileFunctions = make(map[string]interface{})
 var sieveServerAddr string = ""
 var crds []string
@@ -127,7 +123,7 @@ func checkKVPairInAnnotatedAPICallTriggerCondition(apiKey string) bool {
 	}
 }
 
-func checkKVPairInTriggerContent(content map[interface{}]interface{}, key, val string) bool {
+func checkKVPairInTriggerContent(content map[string]interface{}, key, val string) bool {
 	if valInTestPlan, ok := content[key]; ok {
 		if valInTestPlanStr, ok := valInTestPlan.(string); ok {
 			if val == valInTestPlanStr {
@@ -143,7 +139,7 @@ func checkKVPairInTriggerCondition(resourceKey, key, val string, onlyMatchType b
 		if triggerResourceKey == resourceKey || (onlyMatchType && strings.HasPrefix(triggerResourceKey, resourceKey+"/")) {
 			for _, trigger := range triggers {
 				if triggerCondition, ok := trigger["condition"]; ok {
-					if triggerConditionMap, ok := triggerCondition.(map[interface{}]interface{}); ok {
+					if triggerConditionMap, ok := triggerCondition.(map[string]interface{}); ok {
 						if checkKVPairInTriggerContent(triggerConditionMap, key, val) {
 							return true
 						}
@@ -160,7 +156,7 @@ func checkKVPairInTriggerObservationPoint(resourceKey, key, val string, onlyMatc
 		if triggerResourceKey == resourceKey || (onlyMatchType && strings.HasPrefix(triggerResourceKey, resourceKey+"/")) {
 			for _, trigger := range triggers {
 				if triggerObservationPoint, ok := trigger["observationPoint"]; ok {
-					if triggerObservationPointMap, ok := triggerObservationPoint.(map[interface{}]interface{}); ok {
+					if triggerObservationPointMap, ok := triggerObservationPoint.(map[string]interface{}); ok {
 						if checkKVPairInTriggerContent(triggerObservationPointMap, key, val) {
 							return true
 						}
@@ -172,23 +168,23 @@ func checkKVPairInTriggerObservationPoint(resourceKey, key, val string, onlyMatc
 	return false
 }
 
-func loadTriggerDefinitions(trigger map[interface{}]interface{}) error {
+func loadTriggerDefinitions(trigger map[string]interface{}) error {
 	definitions, ok := trigger["definitions"].([]interface{})
 	if !ok {
 		return fmt.Errorf("cannot convert trigger[\"definitions\"] to []interface{}")
 	}
 	for idx, definitionRaw := range definitions {
-		definition, ok := definitionRaw.(map[interface{}]interface{})
+		definition, ok := definitionRaw.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("cannot convert trigger[\"definitions\"][%d] to map[interface{}]interface{}", idx)
+			return fmt.Errorf("cannot convert trigger[\"definitions\"][%d] to map[string]interface{}", idx)
 		}
 		conditionRaw, ok := definition["condition"]
 		if !ok {
 			return fmt.Errorf("cannot find condition in trigger[\"definitions\"][%d]", idx)
 		}
-		condition, ok := conditionRaw.(map[interface{}]interface{})
+		condition, ok := conditionRaw.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("cannot convert trigger[\"definitions\"][%d][\"condition\"] to map[interface{}]interface{}", idx)
+			return fmt.Errorf("cannot convert trigger[\"definitions\"][%d][\"condition\"] to map[string]interface{}", idx)
 		}
 		conditionTypeRaw, ok := condition["conditionType"]
 		if !ok {
@@ -219,7 +215,7 @@ func loadTriggerDefinitions(trigger map[interface{}]interface{}) error {
 			}
 			apiKey := receiverType + funName
 			if _, ok := triggerDefinitionsByAnnotatedAPI[apiKey]; !ok {
-				triggerDefinitionsByAnnotatedAPI[apiKey] = []map[interface{}]interface{}{}
+				triggerDefinitionsByAnnotatedAPI[apiKey] = []map[string]interface{}{}
 			}
 			triggerDefinitionsByAnnotatedAPI[apiKey] = append(triggerDefinitionsByAnnotatedAPI[apiKey], definition)
 		} else {
@@ -232,7 +228,7 @@ func loadTriggerDefinitions(trigger map[interface{}]interface{}) error {
 				return fmt.Errorf("cannot convert trigger[\"definitions\"][%d][\"condition\"][\"resourceKey\"] to string", idx)
 			}
 			if _, ok := triggerDefinitionsByResourceKey[resourceKey]; !ok {
-				triggerDefinitionsByResourceKey[resourceKey] = []map[interface{}]interface{}{}
+				triggerDefinitionsByResourceKey[resourceKey] = []map[string]interface{}{}
 			}
 			triggerDefinitionsByResourceKey[resourceKey] = append(triggerDefinitionsByResourceKey[resourceKey], definition)
 		}
@@ -240,13 +236,13 @@ func loadTriggerDefinitions(trigger map[interface{}]interface{}) error {
 	return nil
 }
 
-func loadActions(action map[interface{}]interface{}) error {
+func loadActions(action map[string]interface{}) error {
 	actionType, ok := action["actionType"].(string)
 	if !ok {
 		return fmt.Errorf("cannot convert action[\"actionType\"] to string")
 	}
 	if _, ok := actions[actionType]; !ok {
-		actions[actionType] = []map[interface{}]interface{}{}
+		actions[actionType] = []map[string]interface{}{}
 	}
 	actions[actionType] = append(actions[actionType], action)
 	return nil
@@ -293,7 +289,7 @@ func loadTestPlan(testPlan map[string]interface{}) error {
 		return fmt.Errorf("cannot convert testPlan[\"actions\"] to []interface{}")
 	}
 	for idx, val := range actions {
-		action, ok := val.(map[interface{}]interface{})
+		action, ok := val.(map[string]interface{})
 		err := loadActions(action)
 		if err != nil {
 			return nil
@@ -301,7 +297,7 @@ func loadTestPlan(testPlan map[string]interface{}) error {
 		if !ok {
 			return fmt.Errorf("cannot convert testPlan[\"actions\"][%d] to []interface{}", idx)
 		}
-		trigger, ok := action["trigger"].(map[interface{}]interface{})
+		trigger, ok := action["trigger"].(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("cannot convert testPlan[\"actions\"][%d][\"trigger\"] to []interface{}", idx)
 		}
@@ -358,7 +354,7 @@ func loadSieveConfigFromEnv(testMode bool) error {
 	if _, ok := os.LookupEnv("sieveTestPlan"); ok {
 		configFromEnv := make(map[string]interface{})
 		data := os.Getenv("sieveTestPlan")
-		err := yaml.Unmarshal([]byte(data), &configFromEnv)
+		err := json.Unmarshal([]byte(data), &configFromEnv)
 		if err != nil {
 			printSerializationError(err)
 			return fmt.Errorf("fail to load from env")
@@ -407,19 +403,22 @@ func loadSieveConfigFromConfigMap(eventType, key string, object interface{}, tes
 					return fmt.Errorf("fail to load from configmap")
 				}
 				configMapObject := make(map[string]interface{})
-				err = yaml.Unmarshal(jsonObject, &configMapObject)
+				err = json.Unmarshal(jsonObject, &configMapObject)
 				if err != nil {
 					printSerializationError(err)
 					return fmt.Errorf("fail to load from configmap")
 				}
 				configFromConfigMapData := make(map[string]interface{})
-				configMapData, ok := configMapObject["Data"].(map[interface{}]interface{})
+				configMapData, ok := configMapObject["data"].(map[string]interface{})
 				if !ok {
-					log.Printf("cannot convert configMapObject[\"Data\"] to map[interface{}]interface{}")
+					configMapData, ok = configMapObject["Data"].(map[string]interface{})
+				}
+				if !ok {
+					log.Printf("cannot convert configMapObject[\"Data\"] to map[string]interface{}")
 					return fmt.Errorf("fail to load from configmap")
 				}
 				if str, ok := configMapData["sieveTestPlan"].(string); ok {
-					err = yaml.Unmarshal([]byte(str), &configFromConfigMapData)
+					err = json.Unmarshal([]byte(str), &configFromConfigMapData)
 					if err != nil {
 						printSerializationError(err)
 						return fmt.Errorf("fail to load from configmap")
@@ -515,7 +514,7 @@ func pluralToSingular(plural string) string {
 
 func generateResourceKeyFromRestCall(verb, resourceType, namespace, name string, object interface{}) string {
 	if verb == HTTP_POST {
-		if o, err := meta.Accessor(object); err == nil {
+		if o, ok := metadataForObject(object); ok {
 			return generateResourceKey(pluralToSingular(resourceType), namespace, o.GetName())
 		} else {
 			return generateResourceKey(pluralToSingular(resourceType), namespace, name)
@@ -526,18 +525,19 @@ func generateResourceKeyFromRestCall(verb, resourceType, namespace, name string,
 }
 
 func getResourceTypeFromObj(object interface{}) string {
-	objectUnstructured, ok := object.(*unstructured.Unstructured)
-	if ok {
-		return strings.ToLower(fmt.Sprint(objectUnstructured.Object["kind"]))
-	} else {
-		resourceType := reflect.TypeOf(object).String()
-		tokens := strings.Split(resourceType, ".")
-		return strings.ToLower(tokens[len(tokens)-1])
+	if kind, ok := object.(interface{ GetKind() string }); ok {
+		return strings.ToLower(kind.GetKind())
 	}
+	if object == nil {
+		return ""
+	}
+	resourceType := reflect.TypeOf(object).String()
+	tokens := strings.Split(resourceType, ".")
+	return strings.ToLower(tokens[len(tokens)-1])
 }
 
 func extractNameNamespaceFromObj(object interface{}) (string, string) {
-	if o, err := meta.Accessor(object); err == nil {
+	if o, ok := metadataForObject(object); ok {
 		return o.GetName(), o.GetNamespace()
 	}
 	return "", ""

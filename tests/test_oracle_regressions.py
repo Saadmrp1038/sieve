@@ -44,6 +44,31 @@ class OracleRegressionTests(unittest.TestCase):
         state = {"secret/default/example": {"data": {"marker": "expected"}}}
         self.assertEqual(second_pass_learn_trim(state, state), state)
 
+    def test_sparse_dictionaries_are_learned_per_field(self):
+        first = {"secret/default/example": {"data": {"first": "a"}}}
+        second = {"secret/default/example": {"data": {"second": "b"}}}
+        expected = {
+            "secret/default/example": {
+                "data": {
+                    "first": SIEVE_LEARN_VALUE_MASK,
+                    "second": SIEVE_LEARN_VALUE_MASK,
+                }
+            }
+        }
+        self.assertEqual(second_pass_learn_trim(first, second), expected)
+
+    def test_list_positions_are_learned_when_values_swap(self):
+        first = {"service/default/example": {"spec": {"ports": [80, 443]}}}
+        second = {"service/default/example": {"spec": {"ports": [443, 80]}}}
+        self.assertEqual(
+            second_pass_learn_trim(first, second),
+            {
+                "service/default/example": {
+                    "spec": {"ports": [SIEVE_LEARN_VALUE_MASK, SIEVE_LEARN_VALUE_MASK]}
+                }
+            },
+        )
+
     def test_random_names_do_not_double_the_reference_count(self):
         first = {"pod/default/random-a": {"uid": "a"}}
         second = {"pod/default/random-b": {"uid": "b"}}

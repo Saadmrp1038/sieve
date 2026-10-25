@@ -8,14 +8,14 @@ import (
 	"regexp"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v3"
 )
 
-func getConfig() map[interface{}]interface{} {
+func getConfig() map[string]interface{} {
 
 	data, err := ioutil.ReadFile("server.yaml")
 	checkError(err)
-	m := make(map[interface{}]interface{})
+	m := make(map[string]interface{})
 
 	err = yaml.Unmarshal([]byte(data), &m)
 	checkError(err)

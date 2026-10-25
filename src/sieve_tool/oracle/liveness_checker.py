@@ -392,7 +392,14 @@ def compare_states(test_context: TestContext):
                 )
             )
 
-    tdiff = DeepDiff(reference_state, testing_state, ignore_order=False, view="tree")
+    tdiff = DeepDiff(
+        reference_state,
+        testing_state,
+        ignore_order=False,
+        view="tree",
+        threshold_to_diff_deeper=0,
+        zip_ordered_iterables=True,
+    )
     resource_map = {}
 
     for delta_type in tdiff:

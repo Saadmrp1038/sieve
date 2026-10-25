@@ -6,7 +6,7 @@
 
   tasks:
     - name: install kind
-      shell: "/usr/local/go/bin/go get sigs.k8s.io/kind@v0.11.1"
+      shell: "/usr/local/go/bin/go install sigs.k8s.io/kind@v0.33.0"
       environment:
         GO111MODULE: "on"
 

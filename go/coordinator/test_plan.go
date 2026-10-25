@@ -525,12 +525,12 @@ type TestPlan struct {
 	actions []Action
 }
 
-func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
-	condition := raw["condition"].(map[interface{}]interface{})
+func parseTriggerDefinition(raw map[string]interface{}) TriggerDefinition {
+	condition := raw["condition"].(map[string]interface{})
 	conditionType := condition["conditionType"].(string)
 	switch conditionType {
 	case onObjectCreate:
-		observationPoint := raw["observationPoint"].(map[interface{}]interface{})
+		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectCreateTrigger{
 			name:              raw["triggerName"].(string),
 			resourceKey:       condition["resourceKey"].(string),
@@ -540,7 +540,7 @@ func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
 			observedBy:        observationPoint["by"].(string),
 		}
 	case onObjectDelete:
-		observationPoint := raw["observationPoint"].(map[interface{}]interface{})
+		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectDeleteTrigger{
 			name:              raw["triggerName"].(string),
 			resourceKey:       condition["resourceKey"].(string),
@@ -567,7 +567,7 @@ func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
 				curStateDiff = strToMap(condition["curStateDiff"].(string))
 			}
 		}
-		observationPoint := raw["observationPoint"].(map[interface{}]interface{})
+		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectUpdateTrigger{
 			name:                  raw["triggerName"].(string),
 			resourceKey:           condition["resourceKey"].(string),
@@ -590,7 +590,7 @@ func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
 		} else {
 			prevStateDiff = strToMap(condition["prevStateDiff"].(string))
 		}
-		observationPoint := raw["observationPoint"].(map[interface{}]interface{})
+		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &AnyFieldModificationTrigger{
 			name:                  raw["triggerName"].(string),
 			resourceKey:           condition["resourceKey"].(string),
@@ -607,7 +607,7 @@ func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
 			timeoutValue: condition["timeoutValue"].(int),
 		}
 	case onAnnotatedAPICall:
-		observationPoint := raw["observationPoint"].(map[interface{}]interface{})
+		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &AnnotatedAPICallTrigger{
 			name:              raw["triggerName"].(string),
 			module:            condition["module"].(string),
@@ -625,8 +625,8 @@ func parseTriggerDefinition(raw map[interface{}]interface{}) TriggerDefinition {
 	}
 }
 
-func parseAction(raw map[interface{}]interface{}) Action {
-	trigger := raw["trigger"].(map[interface{}]interface{})
+func parseAction(raw map[string]interface{}) Action {
+	trigger := raw["trigger"].(map[string]interface{})
 
 	expression := trigger["expression"].(string)
 	infix := expressionToInfixTokens(expression)
@@ -638,7 +638,7 @@ func parseAction(raw map[interface{}]interface{}) Action {
 	definitions := trigger["definitions"].([]interface{})
 	triggerDefinitions := map[string]TriggerDefinition{}
 	for _, definition := range definitions {
-		triggerDefinition := parseTriggerDefinition(definition.(map[interface{}]interface{}))
+		triggerDefinition := parseTriggerDefinition(definition.(map[string]interface{}))
 		triggerDefinitions[triggerDefinition.getTriggerName()] = triggerDefinition
 	}
 
@@ -735,11 +735,11 @@ func parseAction(raw map[interface{}]interface{}) Action {
 	}
 }
 
-func parseTestPlan(raw map[interface{}]interface{}) *TestPlan {
+func parseTestPlan(raw map[string]interface{}) *TestPlan {
 	if actionsInTestPlan, ok := raw["actions"].([]interface{}); ok {
 		actions := []Action{}
 		for _, rawAction := range actionsInTestPlan {
-			actionInTestPlan := rawAction.(map[interface{}]interface{})
+			actionInTestPlan := rawAction.(map[string]interface{})
 			action := parseAction(actionInTestPlan)
 			actions = append(actions, action)
 		}

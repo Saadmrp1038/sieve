@@ -105,7 +105,14 @@ def second_pass_learn_trim(base_resources, twice_resources):
         dic[keys[-1]] = value
 
     stored_learn = copy.deepcopy(base_resources)
-    ddiff = DeepDiff(twice_resources, base_resources, ignore_order=False, view="tree")
+    ddiff = DeepDiff(
+        twice_resources,
+        base_resources,
+        ignore_order=False,
+        view="tree",
+        threshold_to_diff_deeper=0,
+        zip_ordered_iterables=True,
+    )
 
     if "values_changed" in ddiff:
         for key in ddiff["values_changed"]:

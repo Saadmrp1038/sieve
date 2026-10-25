@@ -8,11 +8,7 @@ import sys
 
 from sieve_tool.common.common import rmtree_if_exists
 from sieve_tool.paths import cache_path, repository_root
-from .dependencies import (
-    DEFAULT_K8S_VERSION,
-    k8s_version_to_apimachinery_version,
-    update_sieve_client_go_mod_with_version,
-)
+
 from .instrumenter import run_instrumenter
 
 
@@ -75,7 +71,7 @@ def download_kubernetes(version, *, checkout=None):
                     stdout=subprocess.DEVNULL,
                 )
                 break
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            except subprocess.CalledProcessError, subprocess.TimeoutExpired:
                 if attempt == 2:
                     raise
                 print(
@@ -96,10 +92,6 @@ def install_client(version):
         )
     destination = checkout / "staging/src/sieve.client"
     shutil.copytree(repository_root() / "go/client", destination)
-    if version != DEFAULT_K8S_VERSION:
-        update_sieve_client_go_mod_with_version(
-            destination / "go.mod", k8s_version_to_apimachinery_version(version)
-        )
     (checkout / "vendor/sieve.client").symlink_to("../staging/src/sieve.client")
 
 
@@ -127,6 +119,7 @@ def build_node(version, mode, registry, push):
         env={
             **os.environ,
             "GOPATH": str(cache_path("kubernetes")),
+            "GOWORK": "off",
             "KUBE_GIT_VERSION": f"{version}-sieve-{revision}",
         },
         check=True,

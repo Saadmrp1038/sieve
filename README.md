@@ -44,7 +44,7 @@ We welcome any users who want to test their controllers using Sieve and we are m
 * Docker daemon must be running (please ensure you can run `docker` commands without sudo)
 * An image namespace for local tags; registry write access is needed only with `--push`
 * [uv](https://docs.astral.sh/uv/getting-started/installation/) installed; run `uv sync --locked` to install the pinned Python environment
-* [Go](https://go.dev/doc/install) 1.19.13 installed (the pinned controller build baseline)
+* [Go](https://go.dev/doc/install) 1.27.3 installed (the host toolchain; operator builders are pinned separately)
 * [kind](https://kind.sigs.k8s.io/) installed and `$KUBECONFIG` set (Sieve runs tests in a kind cluster)
 * [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/) installed
 * Run harness commands with `uv run --locked sieve ...`

@@ -75,3 +75,31 @@ batch at a time per host. Independent VMs can process different directories.
 Use external job scheduling for those VMs and copy complete result directories
 back for review. The obsolete hardcoded SSH/GNU parallel scripts have been
 removed; the CLI does not prune unrelated images or erase earlier results.
+
+## Host dependencies and experiment dependencies
+
+The host package uses Python 3.14 and current Docker/Kubernetes SDKs. Go 1.27.3
+builds the coordinator and AST instrumenter. They are built with `GOWORK=off`
+so each module uses its declared graph.
+
+`go/client` is copied into operators and Kubernetes API servers. It uses only
+the Go standard library: object metadata is read through interfaces and narrow
+reflection adapters, and configuration arrives as JSON in the existing
+`sieveTestPlan` ConfigMap entry. Human-authored plans and the coordinator's
+`server.yaml` remain YAML; Python converts the payload when creating the
+ConfigMap. Typed and unstructured Kubernetes objects are covered by a contract
+test using the current SDK.
+
+Adding the injected module no longer replaces `apimachinery` according to the
+cluster version. The operator's own dependency graph controls that choice.
+Pinned operator commits, compiler images, and Kubernetes releases describe
+the experiment being tested; they are independent of the host SDK versions.
+Existing profiles are historical targets, not a claim of support for current
+Kubernetes API-server/informer internals. Porting those hooks to a new target
+requires separate source and fault validation.
+
+DeepDiff comparisons explicitly use field-level dictionary changes and
+positional list comparisons. Dependency upgrades must keep the oracle's
+ability to detect missing operands, ownership changes, and other real failures.
+CI audits the installed lockfile environment and reachable Go packages, and
+checks that the injected client remains free of third-party modules.

@@ -9,8 +9,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type ReadPauseTestServer struct {
@@ -34,7 +32,7 @@ func TestEmptyCacheReadStillNotifies(t *testing.T) {
 	store, otherStore := new(int), new(int)
 	defer cacheResourceTypes.Delete(store)
 	defer cacheResourceTypes.Delete(otherStore)
-	object := &unstructured.Unstructured{Object: map[string]interface{}{
+	object := &testObject{Object: map[string]interface{}{
 		"kind": "Secret", "metadata": map[string]interface{}{"name": "example", "namespace": "default"},
 	}}
 	// Delete/Replace instrumentation remembers the type even if no successful
@@ -61,7 +59,7 @@ func TestEmptyCacheReadStillNotifies(t *testing.T) {
 		config, actions, rpcClient, annotatedReconcileFunctions = previousConfig, previousActions, previousClient, previousReconciles
 	}()
 	config = map[string]interface{}{}
-	actions = map[string][]map[interface{}]interface{}{
+	actions = map[string][]map[string]interface{}{
 		"pauseController": {{"pauseScope": "secret/default/example", "pauseAt": "beforeControllerRead"}},
 	}
 	rpcClient = client
@@ -103,7 +101,7 @@ func TestEmptyCacheReadStillNotifies(t *testing.T) {
 func TestAPIServerRecordsEventsBeforeConfiguration(t *testing.T) {
 	previousConfig, previousWriter := config, log.Writer()
 	defer func() { config = previousConfig; log.SetOutput(previousWriter) }()
-	object := &unstructured.Unstructured{Object: map[string]interface{}{
+	object := &testObject{Object: map[string]interface{}{
 		"kind": "ConfigMap", "metadata": map[string]interface{}{"name": "kube-root-ca.crt", "namespace": "default"},
 	}}
 	for _, hook := range []struct {
@@ -143,7 +141,7 @@ func TestMissingCacheObjectReleasesOnlyItsPairedRead(t *testing.T) {
 	previousConfig, previousActions, previousClient := config, actions, rpcClient
 	defer func() { config, actions, rpcClient = previousConfig, previousActions, previousClient }()
 	config = map[string]interface{}{}
-	actions = map[string][]map[interface{}]interface{}{
+	actions = map[string][]map[string]interface{}{
 		"pauseController": {{"pauseScope": resourceKey, "pauseAt": "beforeControllerRead"}},
 	}
 	rpcClient = client

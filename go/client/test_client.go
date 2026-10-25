@@ -6,8 +6,6 @@ import (
 	"path"
 	"strings"
 	"sync"
-
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 func NotifyTestBeforeControllerRecv(operationType string, object interface{}) int {
@@ -85,7 +83,7 @@ func NotifyTestCacheObject(store interface{}, object interface{}) {
 	if store == nil || object == nil {
 		return
 	}
-	if _, err := meta.Accessor(object); err != nil {
+	if _, ok := metadataForObject(object); !ok {
 		return
 	}
 	cacheResourceTypes.Store(store, getResourceTypeFromObj(object))
