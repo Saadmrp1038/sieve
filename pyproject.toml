@@ -55,7 +55,15 @@ extend-exclude = [
 select = ["E9", "F", "B", "I"]
 
 [tool.mypy]
-files = ["src/sieve_tool/plans.py", "src/sieve_tool/common/config.py", "src/sieve_tool/paths.py"]
+files = [
+    "src/sieve_tool/plans.py",
+    "src/sieve_tool/common/config.py",
+    "src/sieve_tool/paths.py",
+    "src/sieve_tool/events.py",
+    "src/sieve_tool/trace.py",
+    "src/sieve_tool/analysis",
+    "src/sieve_tool/faults",
+]
 strict = true
 follow_imports = "silent"
 plugins = ["pydantic.mypy"]

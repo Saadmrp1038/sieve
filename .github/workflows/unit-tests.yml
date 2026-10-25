@@ -30,7 +30,7 @@ jobs:
         run: uv run --locked ruff check .
       - name: Check Python formatting
         run: uv run --locked ruff format --check .
-      - name: Check typed plan and configuration boundaries
+      - name: Check typed harness boundaries
         run: uv run --locked mypy
       - name: Python regressions
         run: uv run --locked pytest

@@ -98,8 +98,8 @@ check emitted source and execute it against the actual injected client offline.
 Their README describes deliberate snapshot updates.
 
 CI enforces explicit imports, Pyflakes, Bugbear, import ordering and formatting
-through Ruff. Mypy checks plan/configuration/path boundaries strictly; the older
-analysis and oracle internals are not yet fully typed. All three Go modules run
+through Ruff. Mypy checks plans, configuration, paths, event records, trace decoding, analysis
+and fault generators strictly. Oracle internals are not yet fully typed. All three Go modules run
 race checks and `go vet`. Extend the typed boundary checks when moving another
 module to a complete typed interface; avoid blanket suppressions.
 
@@ -112,3 +112,12 @@ Ordinary restarts wait for Ready pods. A reconnect to a paused API retains the
 Running milestone, so it can finish and allow the schedule's resume trigger.
 Intentional pauses have no additional timeout; cancellation remains tied to the
 experiment's lifecycle.
+
+Trace contracts live in `fixtures/traces/`. Their snapshots were captured from
+the preceding engine, including interval endpoints, causality edges, differences,
+counters, pruning counts and complete plans. Compare them after parser or graph
+changes; do not regenerate expectations to hide a change in interpretation.
+Trace failures should identify the source line and operation. Preserve valid
+interrupted histories, opaque reconciliation IDs and line-position ordering.
+See [trace interpretation](docs/architecture.md#trace-interpretation) for the
+supported shapes and existing limitations.

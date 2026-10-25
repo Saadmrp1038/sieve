@@ -15,7 +15,11 @@ source-directory paths as controller identifiers.
 | `runtime.cluster` | Create kind clusters, deploy the coordinator and controller |
 | `runtime.workload` | Execute the workload and collect logs |
 | `runtime.runner` | Orchestrate baselines/tests, postprocess, and save results |
-| `analysis` | Build an event graph and select candidate schedules |
+| `events` | Typed observations and resource comparisons, without log I/O |
+| `trace` | Decode existing Go log records and retain their source locations |
+| `analysis.trace` | Pair operations and assign reconciliation intervals |
+| `analysis.event_graph` | Build typed vertices, causality edges and differences |
+| `analysis.analyze` | Connect the trace, graph and schedule generators |
 | `faults` | Generate intermediate, missed, and stale-state schedules |
 | `oracle` | Learn masks/reference states and compare fault runs |
 | `testing` | Workload driver and convergence helpers |
@@ -109,3 +113,49 @@ External execution is centralized in `process`, with finite deadlines and owned
 process sessions. Builds track Docker helper containers separately. Workloads
 record process outcomes alongside raw alarms, and failed baselines cannot create
 oracles. See [process execution](process-execution.md) for defaults and overrides.
+
+## Trace interpretation
+
+The Go hooks and coordinator still emit the same tab-delimited records. Python
+reads those records through `sieve_tool.trace`; analysis and oracle consumers
+share that decoder. Oracle readers select only API-server records, so unrelated
+controller records do not affect their input. A malformed selected record raises
+`TraceError` with the source file, line, marker and available operation ID. Raw
+logs are never rewritten. Kubernetes object bodies remain schema-independent
+maps; the surrounding event fields have concrete types.
+
+A record's position is its zero-based physical line number, including ordinary
+log lines. Analysis uses that position for ordering and interval endpoints. The
+existing `start_timestamp` and `end_timestamp` names do not represent wall-clock
+time. Receipt/write IDs identify pairs; their numeric order is irrelevant.
+Reconciliation IDs remain opaque strings, including leading zeros.
+
+`analysis.trace.assemble_trace` creates an independent projection, leaving decoded
+records unchanged. It preserves these existing rules:
+
+- An unfinished receipt ends at the trace's line count. An unfinished write or
+  annotated call produces no completed write. A reconciliation can remain open
+  at EOF; interrupted runs are not automatically malformed.
+- Each reconciler function has one active worker. Different reconcilers can
+  interleave. Read keys/types are shared across those active reconcilers and
+  cleared when no reconciliation remains active.
+- Trivial-reconciliation compression and relaxed boundaries follow the profile's
+  existing switches. They do not reorder observations or change pruning rules.
+- Duplicate/unmatched receipt and write pairs and overlapping workers are harness
+  input errors. Null Get results and null/empty List results remain valid reads.
+  Graph differences still require object payloads; a null payload at that stage
+  is an unsupported input, not an operator alarm.
+
+Two existing limitations are deliberately preserved. The decoded `from_cache`
+flag remains false for both cache and REST records because the previous decoder
+compared a boolean with a string; `TraceRecord.marker` retains the actual source.
+Annotated writes inside reconciliation remain unsupported because their previous
+implementation called a missing range-setting method. They now report a located
+error. Adding range semantics or changing read provenance in analysis requires a
+separate behavior change and validation.
+
+`fixtures/traces/` freezes decoded fields, intervals, graph contents, derived
+values, pruning counts and full plan contents from the engine before this
+refactor. It includes real Secret Generator and RabbitMQ traces plus interleaved
+and interrupted synthetic histories. See its README for sanitization and capture
+provenance. These expectations are reviewed evidence, not generated test output.
