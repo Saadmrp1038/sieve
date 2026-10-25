@@ -1,6 +1,7 @@
 # Architecture and execution
 
 Sieve has one installed CLI, `sieve`. `python -m sieve_tool` uses the same CLI.
+Repository selection changes no process working directory.
 Controller names select profiles under `controllers/`; callers do not pass
 source-directory paths as controller identifiers.
 
@@ -51,7 +52,7 @@ configuration and binaries live in `.cache/`, outside these modules.
 4. Build the test image and run `sieve test -c NAME -p PLAN`. The coordinator
    evaluates plan triggers against hook observations and executes fault actions.
    The oracle compares workload completion, resource history, and final state
-   against the learned reference. The cluster is removed after execution,
+   against the learned reference. The owned cluster is removed after execution,
    including setup/workload failures.
 
 Each command uses a fresh `runs/<mode>/<timestamp>-<id>/` directory unless
@@ -103,3 +104,8 @@ positional list comparisons. Dependency upgrades must keep the oracle's
 ability to detect missing operands, ownership changes, and other real failures.
 CI audits the installed lockfile environment and reachable Go packages, and
 checks that the injected client remains free of third-party modules.
+
+External execution is centralized in `process`, with finite deadlines and owned
+process sessions. Builds track Docker helper containers separately. Workloads
+record process outcomes alongside raw alarms, and failed baselines cannot create
+oracles. See [process execution](process-execution.md) for defaults and overrides.

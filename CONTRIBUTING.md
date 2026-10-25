@@ -73,3 +73,9 @@ A new controller starts with `uv run --locked sieve controller init NAME`.
 Complete its profile, image build, deployment, and workload using the
 [porting guide](docs/port.md). Run image and fault validation on Linux, using
 fresh output directories so prior evidence is preserved.
+
+Process ownership, timeout configuration and failure artifacts are described in
+[process execution](docs/process-execution.md). New external commands use
+`sieve_tool.process`; use argument lists and explicit `cwd`, and keep SDK calls
+inside their deadline guards. Lifecycle tests run without Docker; daemon-side
+cancellation controls and operator validation run on Linux.
