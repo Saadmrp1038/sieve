@@ -21,7 +21,13 @@ source-directory paths as controller identifiers.
 | `analysis.event_graph` | Build typed vertices, causality edges and differences |
 | `analysis.analyze` | Connect the trace, graph and schedule generators |
 | `faults` | Generate intermediate, missed, and stale-state schedules |
-| `oracle` | Learn masks/reference states and compare fault runs |
+| `oracle.artifacts` | Validate existing saved evidence formats with source diagnostics |
+| `oracle.learning` | Learn reference values and exclusions from two baselines |
+| `oracle.liveness_checker`, `oracle.safety_checker` | Compare explicit in-memory states and histories |
+| `oracle.validation` | Check injection/workload evidence and process outcomes |
+| `oracle.oracle` | Load selected evidence and save learned reference artifacts |
+| `oracle.reporting` | Render existing alarm and perturbation descriptions |
+| `results` | Typed verdicts and existing serialized result fields |
 | `testing` | Workload driver and convergence helpers |
 | `resources` | Packaged harness defaults |
 
@@ -159,3 +165,36 @@ values, pruning counts and full plan contents from the engine before this
 refactor. It includes real Secret Generator and RabbitMQ traces plus interleaved
 and interrupted synthetic histories. See its README for sanitization and capture
 provenance. These expectations are reviewed evidence, not generated test output.
+
+## Oracle boundaries
+
+State/history comparisons and baseline learning accept in-memory values. They
+perform no artifact reads and leave the supplied evidence unchanged. Comparison
+policy explicitly carries the workload and existing common/controller settings.
+Controller-family exclusions are supplied once per comparison, including the
+reference and current families for end-state checks. Existing masking, random-name
+counts, positional list handling, alarm wording and category ordering are retained.
+
+`oracle.artifacts` reads the existing JSON formats for state, history, event counts,
+field masks, controller families and process outcomes. Kubernetes object bodies
+remain schema-independent. Invalid JSON, duplicate object keys, non-JSON numeric
+constants and incorrect artifact field types raise `ArtifactError` with the file
+and field location. Validation messages omit input values. Artifact errors remain
+harness exceptions and cannot become operator alarms or successful test results.
+Only artifacts selected by enabled checks are loaded; missing process outcomes
+retain the existing marker-based validation used by older evidence.
+
+`oracle.oracle` handles file loading and saving. It passes data to the pure checks
+and returns `results.TestResult`. The result model retains separate common,
+end-state and history alarms, injection/workload completion and harness exception
+fields. Its serialization preserves the existing result JSON fields and alarm
+ordering. A completed coordinator action sequence still requires actual matching
+read holds/releases for read-pause schedules. Reporting has its own module and
+does not make verdict decisions.
+
+The 38 frozen verdicts in `fixtures/oracle-contracts/` include retained clean and
+incomplete Secret Generator runs plus explicit operand failures. Reference data,
+learned masks, exact alarms and serialized result records are compared against
+the preceding implementation. These snapshots retain existing interpretation,
+including the learner's handling of type changes; changing verdict rules requires
+separate review and evidence.
