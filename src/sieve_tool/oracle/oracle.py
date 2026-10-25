@@ -1,185 +1,192 @@
-import os
+"""Load selected evidence, invoke pure oracles and save learned references."""
 
-from sieve_tool.common.common import (
-    TestContext,
-    bcolors,
-    cprint,
-    dump_json_file,
-    sieve_modes,
-)
-from sieve_tool.oracle.checker_common import (
-    canonicalize_controller_related_list,
-    generate_alarm,
-    generate_controller_related_list,
-    test_run_validation,
+import json
+from pathlib import Path
+
+from sieve_tool.common.common import TestContext, bcolors, cprint, sieve_modes
+from sieve_tool.oracle.artifacts import (
+    read_digest,
+    read_family,
+    read_history,
+    read_outcome,
+    read_state,
 )
 from sieve_tool.oracle.customized_safety_checker import customized_safety_checker_suites
+from sieve_tool.oracle.learning import (
+    canonicalize_controller_related_list,
+    canonicalize_history_digest,
+    generate_controller_related_list,
+    second_pass_learn_trim,
+)
 from sieve_tool.oracle.liveness_checker import (
-    canonicalize_state,
     compare_states,
     generate_state,
     generate_state_mask,
 )
+from sieve_tool.oracle.policy import ComparisonPolicy
 from sieve_tool.oracle.safety_checker import (
     apply_safety_checker,
-    canonicalize_history_digest,
     compare_history_digests,
     generate_history,
     generate_history_digest,
 )
+from sieve_tool.oracle.validation import (
+    controller_panic_checker,
+    validate_execution,
+    workload_error_checker,
+)
+from sieve_tool.plans import FaultPlan, PauseControllerAction, parse_plan
 from sieve_tool.results import TestResult
+from sieve_tool.trace import iter_api_events
 
 
-def save_history(test_context: TestContext):
+def _save(directory: str | Path, name: str, value: object) -> None:
+    with (Path(directory) / name).open("w") as stream:
+        json.dump(value, stream, indent=4, sort_keys=True)
+
+
+def save_history(test_context: TestContext) -> None:
     cprint("Generating state update summary...", bcolors.OKGREEN)
-    history = generate_history(test_context)
-    history_digest = generate_history_digest(test_context)
-    dump_json_file(test_context.result_dir, history, "history.json")
-    dump_json_file(test_context.result_dir, history_digest, "event.json")
-
-
-def save_state(test_context: TestContext):
-    cprint("Generating end state...", bcolors.OKGREEN)
-    state = generate_state(test_context)
-    dump_json_file(test_context.result_dir, state, "state.json")
-
-
-def save_controller_related_object_list(test_context: TestContext):
-    cprint("Generating controller family list...", bcolors.OKGREEN)
-    controller_related_list = generate_controller_related_list(test_context)
-    dump_json_file(
-        test_context.result_dir, controller_related_list, "controller_family.json"
+    path = Path(test_context.result_dir) / "apiserver1.log"
+    _save(
+        test_context.result_dir, "history.json", generate_history(iter_api_events(path))
     )
+    digest = generate_history_digest(
+        iter_api_events(path),
+        test_context.common_config.state_update_summary_check_event_list,
+    )
+    _save(test_context.result_dir, "event.json", digest)
 
 
-def create_differential_oracles(test_context: TestContext):
+def save_state(test_context: TestContext) -> None:
+    cprint("Generating end state...", bcolors.OKGREEN)
+    state = generate_state(
+        iter_api_events(Path(test_context.result_dir) / "apiserver1.log")
+    )
+    _save(test_context.result_dir, "state.json", state)
+
+
+def save_controller_related_object_list(test_context: TestContext) -> None:
+    cprint("Generating controller family list...", bcolors.OKGREEN)
+    family = generate_controller_related_list(
+        iter_api_events(Path(test_context.result_dir) / "apiserver1.log")
+    )
+    _save(test_context.result_dir, "controller_family.json", family)
+
+
+def create_differential_oracles(test_context: TestContext) -> None:
     if not test_context.common_config.update_oracle_file_enabled:
         return
     assert test_context.mode == sieve_modes.LEARN and test_context.build_oracle
+    second = Path(test_context.result_dir)
+    first = second.with_name("learn_prev")
     cprint("Generating canonicalized state update summary...", bcolors.OKGREEN)
-    can_history_digest = canonicalize_history_digest(test_context)
-    dump_json_file(test_context.oracle_dir, can_history_digest, "event.json")
+    digest = canonicalize_history_digest(
+        read_digest(first / "event.json"), read_digest(second / "event.json")
+    )
+    _save(test_context.oracle_dir, "event.json", digest)
     cprint("Generating canonicalized end state...", bcolors.OKGREEN)
-    can_state = canonicalize_state(test_context)
-    dump_json_file(test_context.oracle_dir, can_state, "state.json")
+    state = second_pass_learn_trim(
+        read_state(first / "state.json"), read_state(second / "state.json")
+    )
+    _save(test_context.oracle_dir, "state.json", state)
     cprint(
         "Generating canonicalized state mask (for generating test plans)...",
         bcolors.OKGREEN,
     )
-    state_mask = generate_state_mask(can_state)
-    dump_json_file(test_context.oracle_dir, state_mask, "mask.json")
-    cprint(
-        "Copying controller family to the oracle dir...",
-        bcolors.OKGREEN,
+    _save(test_context.oracle_dir, "mask.json", generate_state_mask(state))
+    cprint("Copying controller family to the oracle dir...", bcolors.OKGREEN)
+    family = canonicalize_controller_related_list(
+        read_family(first / "controller_family.json"),
+        read_family(second / "controller_family.json"),
     )
-    dump_json_file(
-        test_context.oracle_dir,
-        canonicalize_controller_related_list(test_context),
-        "controller_family.json",
+    _save(test_context.oracle_dir, "controller_family.json", family)
+
+
+def validate_run(
+    test_context: TestContext, plan: FaultPlan | None = None
+) -> tuple[bool, bool]:
+    directory = Path(test_context.result_dir)
+    if plan is None and test_context.test_plan_content is not None:
+        plan = parse_plan(test_context.test_plan_content)
+    outcome = directory / "process-outcome.json"
+    return validate_execution(
+        (directory / "sieve-server.log").read_text(),
+        (directory / "workload.log").read_text(),
+        plan,
+        read_outcome(outcome) if outcome.is_file() else None,
     )
 
 
-def controller_panic_checker(test_context: TestContext):
-    controller_log = os.path.join(test_context.result_dir, "streamed-controller.log")
-    messages = []
-    file = open(controller_log)
-    for line in file.readlines():
-        if "Observed a panic" in line:
-            panic_in_file = line[line.find("Observed a panic") :]
-            messages.append(
-                generate_alarm("Exception from controller:", panic_in_file.strip())
+def check(test_context: TestContext) -> TestResult:
+    plan = parse_plan(test_context.test_plan_content)
+    injection_completed, workload_completed = validate_run(test_context, plan)
+    common = test_context.common_config
+    policy = ComparisonPolicy(
+        test_context.test_workload, common, test_context.controller_config
+    )
+    directory = Path(test_context.result_dir)
+    reference = Path(test_context.oracle_dir)
+    common_errors: list[str] = []
+    history_errors: list[str] = []
+    end_state_errors: list[str] = []
+    if common.controller_exception_check_enabled:
+        common_errors.extend(
+            controller_panic_checker(
+                (directory / "streamed-controller.log").read_text()
             )
-    messages.sort()
-    return messages
-
-
-def workload_error_checker(test_context: TestContext):
-    workload_log = os.path.join(test_context.result_dir, "workload.log")
-    messages = []
-    file = open(workload_log)
-    for line in file.readlines():
-        if line.startswith("FINISH-SIEVE-TEST"):
-            break
-        if "pauseController" in test_context.action_types and line.startswith(
-            "Conditional wait timeout"
-        ):
-            continue
-        messages.append(generate_alarm("Error:", line.strip()))
-    messages.sort()
-    return messages
-
-
-def textbook_checker(test_context: TestContext):
-    messages = []
-    if test_context.common_config.controller_exception_check_enabled:
-        panic_messages = controller_panic_checker(test_context)
-        messages.extend(panic_messages)
-
-    if test_context.common_config.workload_error_check_enabled:
-        workload_messages = workload_error_checker(test_context)
-        messages.extend(workload_messages)
-    return messages
-
-
-def safety_checker(test_context: TestContext):
-    messages = []
-    if test_context.common_config.state_update_summary_check_enabled:
-        if not (
-            test_context.test_plan_content["actions"] is not None
-            and test_context.test_plan_content["actions"][0]["actionType"]
-            == "pauseController"
-            and test_context.test_plan_content["actions"][0]["pauseAt"]
-            == "beforeControllerRead"
-        ):
-            compare_history_digests_messages = compare_history_digests(test_context)
-            messages.extend(compare_history_digests_messages)
-    for checker_suite in customized_safety_checker_suites:
-        safety_checker_messages = apply_safety_checker(
-            test_context,
-            checker_suite.resource_keys,
-            checker_suite.checker_name,
-            checker_suite.checker_function,
         )
-        messages.extend(safety_checker_messages)
-    return messages
-
-
-def liveness_checker(test_context: TestContext):
-    messages = []
-    if test_context.common_config.end_state_check_enabled:
-        # TODO: this is overkill; we should exclude the csi related objects only
+    if common.workload_error_check_enabled:
+        common_errors.extend(
+            workload_error_checker(
+                (directory / "workload.log").read_text(),
+                "pauseController" in test_context.action_types,
+            )
+        )
+    if common.state_update_summary_check_enabled:
+        # Preserve the existing exemption for schedules that intentionally miss a read.
+        first_action = plan.actions[0] if plan.actions is not None else None
         if not (
-            test_context.use_csi_driver_for_ref and not test_context.use_csi_driver
+            isinstance(first_action, PauseControllerAction)
+            and first_action.pause_at == "beforeControllerRead"
         ):
-            compare_states_messages = compare_states(test_context)
-            messages.extend(compare_states_messages)
-    return messages
-
-
-def check(test_context: TestContext):
-    common_errors = []
-    end_state_errors = []
-    history_errors = []
-    injection_completed = True
-    workload_completed = True
-
-    injection_completed, workload_completed = test_run_validation(test_context)
-
-    textbook_messages = textbook_checker(test_context)
-    common_errors.extend(textbook_messages)
-
-    safety_messages = safety_checker(test_context)
-    history_errors.extend(safety_messages)
-
-    liveness_messages = liveness_checker(test_context)
-    end_state_errors.extend(liveness_messages)
-
+            history_errors.extend(
+                compare_history_digests(
+                    read_digest(reference / "event.json"),
+                    read_digest(directory / "event.json"),
+                    read_family(directory / "controller_family.json"),
+                    policy,
+                )
+            )
+    if customized_safety_checker_suites:
+        history = read_history(directory / "history.json")
+        for suite in customized_safety_checker_suites:
+            history_errors.extend(
+                apply_safety_checker(
+                    history,
+                    suite.resource_keys,
+                    suite.checker_name,
+                    suite.checker_function,
+                )
+            )
+    if common.end_state_check_enabled and not (
+        test_context.use_csi_driver_for_ref and not test_context.use_csi_driver
+    ):
+        end_state_errors.extend(
+            compare_states(
+                read_state(reference / "state.json"),
+                read_state(directory / "state.json"),
+                policy,
+                read_family(reference / "controller_family.json"),
+                read_family(directory / "controller_family.json"),
+            )
+        )
     return TestResult(
-        injection_completed=injection_completed,
-        workload_completed=workload_completed,
-        common_errors=common_errors,
-        end_state_errors=end_state_errors,
-        history_errors=history_errors,
-        no_exception=True,
-        exception_message="",
+        injection_completed,
+        workload_completed,
+        common_errors,
+        end_state_errors,
+        history_errors,
+        True,
+        "",
     )

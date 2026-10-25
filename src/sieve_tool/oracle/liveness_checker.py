@@ -1,5 +1,7 @@
+"""State projection, masks and comparisons with explicit in-memory inputs."""
+
 import copy
-import os
+from collections.abc import Collection, Iterable
 from pathlib import PurePath
 
 from deepdiff import DeepDiff
@@ -7,52 +9,37 @@ from deepdiff import DeepDiff
 from sieve_tool.common.common import (
     METADATA_FIELDS,
     SIEVE_LEARN_VALUE_MASK,
-    TestContext,
-    first_pass_learn_result_dir,
     match_mask_regex,
-    sieve_modes,
 )
 from sieve_tool.events import (
+    APIEvent,
     APIEventTypes,
+    Mask,
     get_mask_by_resource_key,
     parse_key,
 )
-from sieve_tool.oracle.artifacts import read_state
-from sieve_tool.oracle.checker_common import (
-    generate_alarm,
-    get_current_controller_related_list,
-    get_reference_controller_related_list,
-    kind_native_objects,
-    second_pass_learn_trim,
-)
-from sieve_tool.trace import iter_api_events
+from sieve_tool.oracle.artifacts import State
+from sieve_tool.oracle.checker_common import generate_alarm, kind_native_objects
+from sieve_tool.oracle.policy import ComparisonPolicy
 
 
-def generate_state(test_context: TestContext):
-    end_state = {}
+def generate_state(events: Iterable[APIEvent]) -> State:
+    end_state: State = {}
     deleted = set()
-    api_log_path = os.path.join(test_context.result_dir, "apiserver1.log")
-    for api_event in reversed(list(iter_api_events(api_log_path))):
+    for api_event in reversed(list(events)):
         if api_event.key in deleted or api_event.key in end_state:
             continue
         if api_event.etype == APIEventTypes.DELETED:
             deleted.add(api_event.key)
         else:
+            assert api_event.obj_map is not None
             end_state[api_event.key] = api_event.obj_map
     return end_state
 
 
-def canonicalize_state(test_context: TestContext):
-    assert test_context.mode == sieve_modes.LEARN and test_context.build_oracle
-    second_pass_learn_dir = test_context.result_dir
-    cur_state = read_state(os.path.join(second_pass_learn_dir, "state.json"))
-    first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    prev_state = read_state(os.path.join(first_pass_learn_dir, "state.json"))
-    canonicalized_state = second_pass_learn_trim(prev_state, cur_state)
-    return canonicalized_state
-
-
-def generate_state_mask_helper(mask_list, key, obj, path):
+def generate_state_mask_helper(
+    mask_list: list[list[str]], obj: object, path: list[str]
+) -> None:
     if type(obj) is str:
         if obj == SIEVE_LEARN_VALUE_MASK:
             already_in = False
@@ -67,21 +54,21 @@ def generate_state_mask_helper(mask_list, key, obj, path):
             val = obj[i]
             newpath = copy.deepcopy(path)
             newpath.append("*")
-            generate_state_mask_helper(mask_list, i, val, newpath)
+            generate_state_mask_helper(mask_list, val, newpath)
     elif type(obj) is dict:
         for key in obj:
             val = obj[key]
             newpath = copy.deepcopy(path)
             newpath.append(key)
-            generate_state_mask_helper(mask_list, key, val, newpath)
+            generate_state_mask_helper(mask_list, val, newpath)
 
 
-def generate_state_mask(data):
+def generate_state_mask(data: State) -> Mask:
     mask_map = {}
     for key in data:
-        mask_list = []
+        mask_list: list[list[str]] = []
         if data[key] != SIEVE_LEARN_VALUE_MASK:
-            generate_state_mask_helper(mask_list, "", data[key], [])
+            generate_state_mask_helper(mask_list, data[key], [])
             # make the masked field_path compabitable with controller shape
             metadata_field_set = set(METADATA_FIELDS)
             translated_mask_list = []
@@ -101,75 +88,24 @@ def generate_state_mask(data):
     return mask_map
 
 
-def equal_path(template, value):
-    template = template.split("/")
-    value = value.split("/")
+def equal_path(template: str, value: str) -> bool:
+    template_parts = template.split("/")
+    value_parts = value.split("/")
 
-    if len(template) > len(value):
+    if len(template_parts) > len(value_parts):
         return False
 
-    for i in range(len(template)):
-        if template[i] == "*":
+    for i in range(len(template_parts)):
+        if template_parts[i] == "*":
             continue
-        if template[i] != value[i]:
+        if template_parts[i] != value_parts[i]:
             return False
     return True
 
 
-def get_canonicalized_state(test_context: TestContext):
-    canonicalized_state = read_state(
-        os.path.join(test_context.oracle_dir, "state.json")
-    )
-    return canonicalized_state
-
-
-def get_learning_once_state(test_context: TestContext):
-    first_pass_learn_dir = first_pass_learn_result_dir(test_context.result_dir)
-    learning_once_state = read_state(os.path.join(first_pass_learn_dir, "state.json"))
-    return learning_once_state
-
-
-def get_learning_twice_state(test_context: TestContext):
-    second_pass_learn_dir = test_context.result_dir
-    learning_twice_state = read_state(os.path.join(second_pass_learn_dir, "state.json"))
-    return learning_twice_state
-
-
-def get_testing_state(test_context: TestContext):
-    testing_state = read_state(os.path.join(test_context.result_dir, "state.json"))
-    return testing_state
-
-
-def check_single_state(state, resource_keys, checker_name, customized_checker):
-    messages = []
-    final_state = {}
-    for resource_key in resource_keys:
-        tokens = resource_key.split("/")
-        rtype = tokens[0]
-        name = tokens[2]
-        final_state[resource_key] = state[rtype][name]
-    if not customized_checker(final_state):
-        messages.append(
-            generate_alarm(
-                "[CUSTOMIZED-LIVENESS]",
-                "liveness violation: checker {} failed on {}".format(
-                    checker_name, final_state
-                ),
-            )
-        )
-    return messages
-
-
-def get_objects_from_state_by_type(state, rtype):
-    objects = []
-    for key in state:
-        if key.startswith(rtype + "/"):
-            objects.append(key)
-    return objects
-
-
-# TODO: this translation might be too ad-hoc
-def tranlate_apiserver_shape_to_controller_shape(path):
+def translate_apiserver_shape_to_controller_shape(
+    path: list[str | int],
+) -> list[str | int]:
     metadata_fields = set(METADATA_FIELDS)
     translated_path = copy.deepcopy(path)
     if len(path) > 1:
@@ -177,67 +113,58 @@ def tranlate_apiserver_shape_to_controller_shape(path):
             translated_path = translated_path[:1] + ["metadata"] + translated_path[1:]
         else:
             for i in range(1, len(path)):
-                if isinstance(translated_path[i], str):
-                    if translated_path[i].startswith("SIEVE"):
+                field = translated_path[i]
+                if isinstance(field, str):
+                    if field.startswith("SIEVE"):
                         break
-                    translated_path[i] = (
-                        translated_path[i][:1].lower() + translated_path[i][1:]
-                    )
+                    translated_path[i] = field[:1].lower() + field[1:]
     return translated_path
 
 
 def resource_key_should_be_masked(
-    test_context: TestContext,
-    resource_key,
-):
+    policy: ComparisonPolicy,
+    resource_key: str,
+    controller_family: Collection[str],
+) -> bool:
     resource_type, namespace, name = parse_key(resource_key)
     if name == "sieve-testing-global-config":
         return True
     else:
-        current_controller_family = get_current_controller_related_list(test_context)
-        reference_controller_family = get_reference_controller_related_list(
-            test_context
-        )
-        if (
-            resource_key in current_controller_family
-            or resource_key in reference_controller_family
-        ):
+        if resource_key in controller_family:
             return True
-        state_mask = test_context.controller_config.end_state_checker_mask
+        state_mask = policy.controller.end_state_checker_mask
         for test_workload in state_mask:
-            if test_workload == test_context.test_workload or test_workload == "*":
+            if test_workload == policy.workload or test_workload == "*":
                 for masked_resource_key in state_mask[test_workload]:
                     if masked_resource_key == resource_key or PurePath(
                         "/" + resource_key
                     ).match("/" + masked_resource_key):
                         if len(state_mask[test_workload][masked_resource_key]) == 0:
-                            # print("skip", masked_resource_key)
                             return True
     return False
 
 
 def resource_type_should_be_masked_by_controller_config(
-    test_context: TestContext,
-    resource_type,
-):
-    state_mask = test_context.controller_config.end_state_checker_mask
+    policy: ComparisonPolicy,
+    resource_type: str,
+) -> bool:
+    state_mask = policy.controller.end_state_checker_mask
     for test_workload in state_mask:
-        if test_workload == test_context.test_workload or test_workload == "*":
+        if test_workload == policy.workload or test_workload == "*":
             for masked_resource_key in state_mask[test_workload]:
                 if masked_resource_key == "{}/*/*".format(resource_type):
                     if len(state_mask[test_workload][masked_resource_key]) == 0:
-                        # print("skip", masked_resource_key)
                         return True
     return False
 
 
 def resource_field_path_should_be_masked(
-    test_context: TestContext, resource_key, field_path_list
-):
+    policy: ComparisonPolicy, resource_key: str, field_path_list: list[str]
+) -> bool:
     # TODO: we should also mask fields as specified in the common_config
-    state_mask = test_context.controller_config.end_state_checker_mask
+    state_mask = policy.controller.end_state_checker_mask
     for test_workload in state_mask:
-        if test_workload == test_context.test_workload or test_workload == "*":
+        if test_workload == policy.workload or test_workload == "*":
             for masked_resource_key in state_mask[test_workload]:
                 if masked_resource_key == resource_key or PurePath(
                     "/" + resource_key
@@ -260,17 +187,22 @@ def resource_field_path_should_be_masked(
     return False
 
 
-def compare_states(test_context: TestContext):
-    reference_state = get_canonicalized_state(test_context)
-    testing_state = get_testing_state(test_context)
+def compare_states(
+    reference_state: State,
+    testing_state: State,
+    policy: ComparisonPolicy,
+    reference_family: Collection[str],
+    current_family: Collection[str],
+) -> list[str]:
+    controller_family = set(reference_family) | set(current_family)
 
     messages = []
     resource_existence_messages = []
     fields_diff_messages = []
     fields_existence_messages = []
 
-    testing_resource_to_object_map = {}
-    reference_resource_to_object_map = {}
+    testing_resource_to_object_map: dict[str, list[str]] = {}
+    reference_resource_to_object_map: dict[str, list[str]] = {}
     resource_type_with_random_names = set()
     resource_type_masked_by_controller_config = set()
 
@@ -280,12 +212,10 @@ def compare_states(test_context: TestContext):
     for resource_key in keys_in_testing_state.union(keys_in_reference_state):
         if kind_native_objects(resource_key):
             continue
-        if resource_key_should_be_masked(test_context, resource_key):
+        if resource_key_should_be_masked(policy, resource_key, controller_family):
             continue
         resource_type, namespace, name = parse_key(resource_key)
-        if resource_type_should_be_masked_by_controller_config(
-            test_context, resource_type
-        ):
+        if resource_type_should_be_masked_by_controller_config(policy, resource_type):
             resource_type_masked_by_controller_config.add(resource_type)
         if resource_key in testing_state:
             if resource_type not in testing_resource_to_object_map:
@@ -308,7 +238,7 @@ def compare_states(test_context: TestContext):
     for resource_key in keys_in_testing_state_only:
         if kind_native_objects(resource_key):
             continue
-        if resource_key_should_be_masked(test_context, resource_key):
+        if resource_key_should_be_masked(policy, resource_key, controller_family):
             continue
         resource_type, namespace, name = parse_key(resource_key)
         if resource_type not in resource_type_with_random_names:
@@ -324,7 +254,7 @@ def compare_states(test_context: TestContext):
     for resource_key in keys_in_reference_state_only:
         if kind_native_objects(resource_key):
             continue
-        if resource_key_should_be_masked(test_context, resource_key):
+        if resource_key_should_be_masked(policy, resource_key, controller_family):
             continue
         resource_type, namespace, name = parse_key(resource_key)
         if resource_type not in resource_type_with_random_names:
@@ -379,7 +309,6 @@ def compare_states(test_context: TestContext):
         threshold_to_diff_deeper=0,
         zip_ordered_iterables=True,
     )
-    resource_map = {}
 
     for delta_type in tdiff:
         for key in tdiff[delta_type]:
@@ -389,32 +318,22 @@ def compare_states(test_context: TestContext):
                 continue
             resource_type, namespace, name = parse_key(resource_key)
             path = untranslated_path
-            if (
-                resource_type
-                not in test_context.controller_config.custom_resource_definitions
-            ):
-                path = tranlate_apiserver_shape_to_controller_shape(untranslated_path)
+            if resource_type not in policy.controller.custom_resource_definitions:
+                path = translate_apiserver_shape_to_controller_shape(untranslated_path)
             mask_keys = set(
                 get_mask_by_resource_key(
-                    test_context.common_config.field_key_mask,
+                    policy.common.field_key_mask,
                     resource_key,
                 )
             )
             mask_paths = set(
                 get_mask_by_resource_key(
-                    test_context.common_config.field_path_mask,
+                    policy.common.field_path_mask,
                     resource_key,
                 )
             )
 
-            # Handle for resource size diff
             if len(path) == 1:
-                if key.t1 == SIEVE_LEARN_VALUE_MASK:
-                    name = SIEVE_LEARN_VALUE_MASK
-                resource_map[resource_type] = {"add": [], "remove": []}
-                resource_map[resource_type][
-                    "add" if delta_type == "dictionary_item_added" else "remove"
-                ].append(name)
                 continue
 
             if delta_type in ["values_changed", "type_changes"]:
@@ -450,13 +369,14 @@ def compare_states(test_context: TestContext):
                     field_path_for_print += '["{}"]'.format(field)
 
             if resource_key_should_be_masked(
-                test_context,
+                policy,
                 resource_key,
+                controller_family,
             ):
                 continue
 
             if resource_field_path_should_be_masked(
-                test_context, resource_key, field_path_list
+                policy, resource_key, field_path_list
             ):
                 continue
 
@@ -505,8 +425,7 @@ def compare_states(test_context: TestContext):
                     )
                 )
             else:
-                print(delta_type)
-                raise AssertionError()
+                raise AssertionError(f"unsupported difference type {delta_type}")
 
     resource_existence_messages.sort()
     fields_diff_messages.sort()

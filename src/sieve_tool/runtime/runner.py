@@ -24,7 +24,6 @@ from sieve_tool.common.common import (
     sieve_modes,
 )
 from sieve_tool.common.config import get_common_config, load_controller_config
-from sieve_tool.oracle.checker_common import print_error_and_debugging_info
 from sieve_tool.oracle.oracle import (
     check,
     create_differential_oracles,
@@ -32,6 +31,7 @@ from sieve_tool.oracle.oracle import (
     save_history,
     save_state,
 )
+from sieve_tool.oracle.reporting import print_error_and_debugging_info
 from sieve_tool.paths import asset_path, repository_root
 from sieve_tool.process import cleanup_budget, execution, reset_cleanup_budget
 
@@ -125,7 +125,7 @@ def save_history_and_end_state(test_context: TestContext):
 
 def post_process(
     test_context: TestContext,
-) -> TestResult:
+) -> TestResult | None:
     """
     Postprocess the collected logs and results.
     For learn mode, it will generate the test plan and differential oracles.

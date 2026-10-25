@@ -129,7 +129,7 @@ class TestContext:
                 self.num_workers = 0
 
 
-def match_mask_regex(val):
+def match_mask_regex(val: object) -> bool:
     if type(val) is str:
         for reg in MASK_REGS:
             pat = re.compile(reg)
