@@ -1,16 +1,16 @@
 """Typed harness settings and controller integration configuration."""
 
+import json
+import os
 from dataclasses import field, fields
+from importlib.resources import files
+from pathlib import Path
 from typing import Annotated, Literal, NotRequired, TypedDict
 
 from pydantic import ConfigDict, Field, with_config
 from pydantic.dataclasses import dataclass
-from importlib.resources import files
-import json
-import os
-from pathlib import Path
 
-from sieve_tool.paths import repository_root, asset_path
+from sieve_tool.paths import asset_path, repository_root
 
 
 @dataclass(config=ConfigDict(strict=True, extra="forbid"))

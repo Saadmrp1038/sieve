@@ -9,7 +9,13 @@ import pytest
 import yaml
 
 from sieve_tool.common.config import get_common_config, load_controller_config
-from sieve_tool.plans import FaultPlan, load_plan, validate_expression, write_plan
+from sieve_tool.plans import (
+    FaultPlan,
+    load_plan,
+    parse_plan,
+    validate_expression,
+    write_plan,
+)
 from sieve_tool.runtime import runner
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +45,7 @@ def test_shared_invalid_plans_are_rejected(case):
     else:
         parent[key] = case["value"]
     with pytest.raises(ValueError):
-        FaultPlan.model_validate(value)
+        parse_plan(value)
 
 
 @pytest.mark.parametrize("expression", ["a", "a|b&c", "(a|b)&c", "a;b", "a&(b;c)"])
@@ -129,3 +135,19 @@ def test_ambiguous_yaml_is_rejected_before_model_validation(tmp_path, source):
     path.write_text(source)
     with pytest.raises(ValueError, match="Invalid fault plan"):
         load_plan(path)
+
+
+def test_wire_format_uses_existing_camel_case_field_names(tmp_path):
+    value = yaml.safe_load((ROOT / "fixtures/plans/restart.yaml").read_text())
+    action = value["actions"][0]
+    action["action_type"] = action.pop("actionType")
+    source = tmp_path / "plan.yaml"
+    source.write_text(yaml.safe_dump(value))
+    with pytest.raises(ValueError):
+        load_plan(source)
+
+
+def test_supported_client_endpoint_override_is_preserved():
+    value = yaml.safe_load((ROOT / "fixtures/plans/restart.yaml").read_text())
+    value["sieveServerAddr"] = "127.0.0.1:12345"
+    assert parse_plan(value).to_dict() == value

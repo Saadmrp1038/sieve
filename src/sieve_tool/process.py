@@ -1,20 +1,20 @@
 """Bounded subprocesses with explicit ownership, deadlines and durable logs."""
 
-from contextlib import contextmanager
-from contextvars import ContextVar
-from dataclasses import dataclass
-from functools import wraps
 import itertools
 import json
 import math
 import os
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
+from functools import wraps
+from pathlib import Path
 from uuid import uuid4
 
 DEFAULT_TIMEOUTS: dict[str, int | float] = {

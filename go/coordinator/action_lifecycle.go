@@ -16,7 +16,7 @@ func coordinatorTimeout(name string, fallback time.Duration) (time.Duration, err
 	}
 	seconds, err := strconv.ParseFloat(value, 64)
 	if err != nil || math.IsNaN(seconds) || math.IsInf(seconds, 0) || seconds <= 0 || seconds >= float64(math.MaxInt64)/float64(time.Second) {
-		return 0, fmt.Errorf("%s must be finite positive seconds", name)
+		return 0, fmt.Errorf("%s must be finite positive seconds within the supported duration range", name)
 	}
 	duration := time.Duration(seconds * float64(time.Second))
 	if duration <= 0 {

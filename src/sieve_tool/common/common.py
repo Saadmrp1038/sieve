@@ -1,9 +1,11 @@
-import os
-import yaml
-import shutil
-import re
-import json
 import glob
+import json
+import os
+import re
+import shutil
+
+import yaml
+
 from sieve_tool.common.config import CommonConfig, ControllerConfig
 from sieve_tool.plans import load_plan
 

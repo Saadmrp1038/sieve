@@ -1,12 +1,13 @@
 """Build instrumented controller images in an explicit repository cache."""
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from sieve_tool.common.common import rmtree_if_exists, sieve_modes
 from sieve_tool.common.config import ControllerConfig
-from sieve_tool.paths import repository_root, asset_path
+from sieve_tool.paths import asset_path, repository_root
 from sieve_tool.process import bounded, run
+
 from .dependencies import install_module
 from .instrumenter import run_instrumenter
 from .resources import docker_build_scope

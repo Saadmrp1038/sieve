@@ -2,9 +2,10 @@ import json
 import os
 import shutil
 import stat
-from sieve_tool.process import run
 from pathlib import Path
+
 from sieve_tool.common.common import add_mod_recursively
+from sieve_tool.process import run
 
 
 def install_module(module, sieve_dep_src_dir):

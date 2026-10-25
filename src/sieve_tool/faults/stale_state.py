@@ -1,29 +1,36 @@
-from sieve_tool.plans import (
-    APIServerAction,
-    ReconnectControllerAction,
-    ObjectCondition,
-    FaultPlan,
-    TimeoutCondition,
-    Trigger,
-    TriggerDefinition,
-    single_trigger,
-    write_plan,
-)
-from sieve_tool.faults.common import object_condition
-import json
 import os
 from typing import List, Tuple
-from sieve_tool.common.event_delta import *
-from sieve_tool.common.common import *
-from sieve_tool.common.k8s_event import *
+
 from sieve_tool.analysis.event_graph import (
     EventGraph,
     EventVertex,
     event_vertices_connected,
 )
+from sieve_tool.common.common import TestContext, bcolors, cprint
+from sieve_tool.common.event_delta import same_key
+from sieve_tool.common.k8s_event import (
+    ALLOWED_ERROR_TYPE,
+    ControllerHear,
+    ControllerHearTypes,
+    ControllerWrite,
+    ControllerWriteTypes,
+    generate_key,
+)
 from sieve_tool.faults.common import (
-    nondeterministic_key,
     detectable_event_diff,
+    nondeterministic_key,
+    object_condition,
+)
+from sieve_tool.plans import (
+    APIServerAction,
+    FaultPlan,
+    ObjectCondition,
+    ReconnectControllerAction,
+    TimeoutCondition,
+    Trigger,
+    TriggerDefinition,
+    single_trigger,
+    write_plan,
 )
 
 
@@ -154,7 +161,7 @@ def decide_stale_state_timing(source_vertex: EventVertex, sink_vertex: EventVert
         elif len(sink_vertex.out_intra_reconciler_edges) == 0:
             return "after"
         else:
-            assert False
+            raise AssertionError()
 
 
 def generate_stale_state_test_plan(

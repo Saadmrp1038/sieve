@@ -2,9 +2,9 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -14,7 +14,6 @@ from sieve_tool import cli
 from sieve_tool.common.config import get_common_config, load_controller_config
 from sieve_tool.paths import repository
 from sieve_tool.runtime import runner
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -174,6 +173,7 @@ def test_workload_child_receives_selected_configuration(tmp_path):
 
 def test_configmap_carries_json_without_changing_the_yaml_plan(tmp_path):
     import yaml
+
     from sieve_tool.runtime.cluster import create_configmap
 
     plan = tmp_path / "plan.yaml"

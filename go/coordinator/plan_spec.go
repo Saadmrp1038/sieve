@@ -51,6 +51,7 @@ func (v *planBool) UnmarshalYAML(n *yaml.Node) error {
 }
 
 type PlanSpec struct {
+	SieveServerAddr              *planText    `yaml:"sieveServerAddr"`
 	Workload                     planText     `yaml:"workload"`
 	Actions                      []ActionSpec `yaml:"actions"`
 	AnnotatedReconcileStackFrame []planText   `yaml:"annotatedReconcileStackFrame"`
@@ -135,6 +136,9 @@ func decodePlan(data []byte) (*PlanSpec, error) {
 	if spec.Workload == "" {
 		return nil, fmt.Errorf("workload: required nonempty string")
 	}
+	if spec.SieveServerAddr != nil && *spec.SieveServerAddr == "" {
+		return nil, fmt.Errorf("sieveServerAddr: must not be empty")
+	}
 	for i := range spec.Actions {
 		if err := spec.Actions[i].validate(); err != nil {
 			return nil, fmt.Errorf("actions[%d].%w", i, err)
@@ -177,8 +181,8 @@ func rejectFields(present map[string]bool, allowed ...string) error {
 }
 
 func (a *ActionSpec) validate() error {
-	if a.WaitBefore < 0 || a.WaitAfter < 0 {
-		return fmt.Errorf("waitBefore/waitAfter: must be nonnegative")
+	if a.WaitBefore < 0 || a.WaitAfter < 0 || a.WaitBefore > 9_223_372_036 || a.WaitAfter > 9_223_372_036 {
+		return fmt.Errorf("waitBefore/waitAfter: must fit a nonnegative duration")
 	}
 	fields := map[string]bool{
 		"apiServerName": a.APIServerName != nil, "pauseScope": a.PauseScope != nil,
@@ -311,8 +315,8 @@ func (c *ConditionSpec) validate() error {
 	switch string(c.ConditionType) {
 	case onTimeout:
 		allowed = []string{"timeoutValue"}
-		if c.TimeoutValue == nil || *c.TimeoutValue < 0 {
-			return fmt.Errorf("timeoutValue: required nonnegative integer")
+		if c.TimeoutValue == nil || *c.TimeoutValue < 0 || *c.TimeoutValue > 9_223_372_036 {
+			return fmt.Errorf("timeoutValue: required integer fitting a nonnegative duration")
 		}
 	case onObjectCreate, onObjectDelete, onObjectUpdate, onAnyFieldModification:
 		allowed = []string{"resourceKey", "occurrence"}

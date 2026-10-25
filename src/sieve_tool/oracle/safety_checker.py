@@ -1,13 +1,25 @@
-from sieve_tool.common.common import *
+import copy
 import json
+import os
 from pathlib import PurePath
-from sieve_tool.oracle.checker_common import *
+
+from sieve_tool.common.common import (
+    SIEVE_LEARN_VALUE_MASK,
+    TestContext,
+    first_pass_learn_result_dir,
+    sieve_modes,
+)
 from sieve_tool.common.k8s_event import (
-    APIEventTypes,
     SIEVE_API_EVENT_MARK,
-    parse_api_event,
+    APIEventTypes,
     extract_generate_name,
     is_generated_random_name,
+    parse_api_event,
+)
+from sieve_tool.oracle.checker_common import (
+    generate_alarm,
+    get_current_controller_related_list,
+    second_pass_learn_trim,
 )
 
 
@@ -134,13 +146,6 @@ def get_learning_twice_history_digest(test_context: TestContext):
         open(os.path.join(second_pass_learn_dir, "event.json"))
     )
     return learning_twice_history_digest
-
-
-def get_testing_history_digest(test_context: TestContext):
-    testing_history_digest = json.load(
-        open(os.path.join(test_context.result_dir, "event.json"))
-    )
-    return testing_history_digest
 
 
 def get_testing_history_digest(test_context: TestContext):

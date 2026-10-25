@@ -1,7 +1,7 @@
 import sys
-import os
+
+from sieve_tool.common.common import EXIST, NONEXIST, RUNNING, TERMINATED
 from sieve_tool.testing.driver import new_built_in_workload
-from sieve_tool.common.common import RUNNING, TERMINATED, NONEXIST, EXIST
 
 test_cases = {
     "recreate": new_built_in_workload(70)

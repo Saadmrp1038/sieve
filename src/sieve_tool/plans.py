@@ -1,18 +1,18 @@
 """Validated fault schedules shared by generators and the runtime boundary."""
 
-from collections.abc import Hashable
 import json
-from pathlib import Path
 import re
+from collections.abc import Hashable
+from pathlib import Path
 from typing import Annotated, ClassVar, Literal, Self
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
-import yaml
 
 Nonempty = Annotated[str, Field(min_length=1)]
-PositiveInt = Annotated[int, Field(gt=0)]
-NonnegativeInt = Annotated[int, Field(ge=0)]
+PositiveInt = Annotated[int, Field(gt=0, le=(1 << 63) - 1)]
+NonnegativeInt = Annotated[int, Field(ge=0, le=9_223_372_036)]
 type Observation = Literal[
     "beforeAPIServerRecv",
     "afterAPIServerRecv",
@@ -225,6 +225,7 @@ class FaultPlan(PlanModel):
     nullable_fields: ClassVar[frozenset[str]] = frozenset({"actions"})
     workload: Nonempty
     actions: list[FaultAction] | None
+    sieve_server_addr: Nonempty | None = None
     annotated_reconcile_stack_frame: list[str] | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -249,18 +250,20 @@ class PlanLoader(yaml.SafeLoader):
         return result
 
 
+def parse_plan(value: object) -> FaultPlan:
+    return FaultPlan.model_validate(value, by_alias=True, by_name=False)
+
+
 def load_plan(path: str | Path) -> FaultPlan:
     source = Path(path)
     try:
-        return FaultPlan.model_validate(
-            yaml.load(source.read_text(), Loader=PlanLoader)
-        )
+        return parse_plan(yaml.load(source.read_text(), Loader=PlanLoader))
     except (ValueError, yaml.YAMLError) as error:
         raise ValueError(f"Invalid fault plan {source}: {error}") from error
 
 
 def write_plan(value: object, path: str | Path) -> None:
-    plan = value if isinstance(value, FaultPlan) else FaultPlan.model_validate(value)
+    plan = value if isinstance(value, FaultPlan) else parse_plan(value)
     Path(path).write_text(yaml.safe_dump(plan.to_dict(), sort_keys=False))
 
 

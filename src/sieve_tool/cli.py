@@ -1,15 +1,15 @@
 """The installed Sieve command-line interface."""
 
 import argparse
-from pathlib import Path
 import re
 import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import uuid4
 
 from sieve_tool.paths import find_repository, repository
-from sieve_tool.process import execution, cancellation_signals, Cancelled, ProcessError
+from sieve_tool.process import Cancelled, ProcessError, cancellation_signals, execution
 
 
 def parser():
@@ -169,7 +169,7 @@ def _main(argv=None):
 
 
 def _dispatch(arguments, root, common):
-    from sieve_tool.common.config import get_common_config, load_controller_config
+    from sieve_tool.common.config import load_controller_config
 
     registry = getattr(arguments, "registry", None) or common.container_registry
     if arguments.command == "build":

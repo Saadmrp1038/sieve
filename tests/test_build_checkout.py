@@ -1,8 +1,9 @@
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
+
 from sieve_tool.build import kubernetes
 
 
@@ -64,6 +65,7 @@ if __name__ == "__main__":
 
 def test_controller_patches_do_not_need_global_git_identity(tmp_path, monkeypatch):
     from types import SimpleNamespace
+
     from sieve_tool.build.controllers import download_controller
     from sieve_tool.paths import repository
 

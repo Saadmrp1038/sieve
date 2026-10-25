@@ -1,9 +1,22 @@
-from sieve_tool.plans import ObjectCondition, UpdateCondition
 import json
 import os
-from sieve_tool.common.event_delta import *
-from sieve_tool.common.common import *
-from sieve_tool.common.k8s_event import *
+from typing import Dict, Optional, Union
+
+from sieve_tool.common.common import TestContext
+from sieve_tool.common.k8s_event import (
+    EVENT_NONE_TYPE,
+    APIEventTypes,
+    ControllerHear,
+    ControllerHearTypes,
+    ControllerWrite,
+    ControllerWriteTypes,
+    detectable_controller_hear_types,
+    detectable_controller_write_types,
+    extract_generate_name,
+    generate_key,
+    is_generated_random_name,
+)
+from sieve_tool.plans import ObjectCondition, UpdateCondition
 
 
 def convert_deltafifo_etype_to_API_etype(etype: str) -> str:
@@ -23,21 +36,21 @@ def event_diff_validation_check(prev_etype: str, cur_etype: str):
         or prev_etype == ControllerHearTypes.DELETED
     ):
         # this should never happen
-        assert False, "There should not be consecutive Deleted | Added"
+        raise AssertionError("There should not be consecutive Deleted | Added")
     if (
         prev_etype == ControllerHearTypes.DELETED
         and cur_etype != ControllerHearTypes.ADDED
         and cur_etype != ControllerHearTypes.UPDATED
     ):
         # this should never happen
-        assert False, "Deleted must be followed with Added | Updated"
+        raise AssertionError("Deleted must be followed with Added | Updated")
     if (
         prev_etype != EVENT_NONE_TYPE
         and prev_etype != ControllerHearTypes.DELETED
         and cur_etype == ControllerHearTypes.ADDED
     ):
         # this should never happen
-        assert False, "Added must be the first or follow Deleted"
+        raise AssertionError("Added must be the first or follow Deleted")
 
 
 def detectable_event_diff(

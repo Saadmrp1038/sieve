@@ -279,5 +279,15 @@
     ],
     "value": 1,
     "delete": false
+  },
+  {
+    "name": "overflowing wait",
+    "path": [
+      "actions",
+      "0",
+      "waitBefore"
+    ],
+    "value": 9223372037,
+    "delete": false
   }
 ]

@@ -1,12 +1,14 @@
 """Download, instrument, and build Kubernetes node images."""
 
 import os
-from pathlib import Path
 import shutil
-from sieve_tool.process import run, bounded, ProcessError, ProcessTimeout
 import sys
+from pathlib import Path
+
 from sieve_tool.common.common import rmtree_if_exists
 from sieve_tool.paths import cache_path, repository_root
+from sieve_tool.process import ProcessError, ProcessTimeout, bounded, run
+
 from .instrumenter import run_instrumenter
 from .resources import docker_build_scope
 
