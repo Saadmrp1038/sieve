@@ -13,7 +13,7 @@ def run():
         "go": ["version"],
         "docker": ["info", "--format", "{{.ServerVersion}}"],
         "kind": ["version"],
-        "kubectl": ["version", "--client=true", "--short"],
+        "kubectl": ["version", "--client=true"],
     }.items():
         if not shutil.which(name):
             fail(f"{name} is missing from PATH")
