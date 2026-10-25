@@ -525,142 +525,114 @@ type TestPlan struct {
 	actions []Action
 }
 
-func parseTriggerDefinition(raw map[string]interface{}) TriggerDefinition {
-	condition := raw["condition"].(map[string]interface{})
-	conditionType := condition["conditionType"].(string)
+func (spec TriggerSpecDefinition) build() TriggerDefinition {
+	condition := spec.Condition
+	conditionType := string(condition.ConditionType)
 	switch conditionType {
 	case onObjectCreate:
-		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectCreateTrigger{
-			name:              raw["triggerName"].(string),
-			resourceKey:       condition["resourceKey"].(string),
-			desiredOccurrence: condition["occurrence"].(int),
+			name:              string(spec.TriggerName),
+			resourceKey:       text(condition.ResourceKey, ""),
+			desiredOccurrence: integer(condition.Occurrence),
 			actualOccurrence:  0,
-			observedWhen:      observationPoint["when"].(string),
-			observedBy:        observationPoint["by"].(string),
+			observedWhen:      string(spec.ObservationPoint.When),
+			observedBy:        string(spec.ObservationPoint.By),
 		}
 	case onObjectDelete:
-		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectDeleteTrigger{
-			name:              raw["triggerName"].(string),
-			resourceKey:       condition["resourceKey"].(string),
-			desiredOccurrence: condition["occurrence"].(int),
+			name:              string(spec.TriggerName),
+			resourceKey:       text(condition.ResourceKey, ""),
+			desiredOccurrence: integer(condition.Occurrence),
 			actualOccurrence:  0,
-			observedWhen:      observationPoint["when"].(string),
-			observedBy:        observationPoint["by"].(string),
+			observedWhen:      string(spec.ObservationPoint.When),
+			observedBy:        string(spec.ObservationPoint.By),
 		}
 	case onObjectUpdate:
-		convertStateToAPIForm := false
-		if val, ok := condition["convertStateToAPIForm"]; ok {
-			convertStateToAPIForm = val.(bool)
-		}
+		convertStateToAPIForm := boolean(condition.ConvertStateToAPIForm)
 		var prevStateDiff map[string]interface{} = nil
 		var curStateDiff map[string]interface{} = nil
-		_, ok1 := condition["prevStateDiff"]
-		_, ok2 := condition["curStateDiff"]
-		if ok1 && ok2 {
+		if condition.PrevStateDiff != nil && condition.CurStateDiff != nil {
 			if convertStateToAPIForm {
-				prevStateDiff = convertObjectStateToAPIForm(strToMap(condition["prevStateDiff"].(string)))
-				curStateDiff = convertObjectStateToAPIForm(strToMap(condition["curStateDiff"].(string)))
+				prevStateDiff = convertObjectStateToAPIForm(strToMap(text(condition.PrevStateDiff, "")))
+				curStateDiff = convertObjectStateToAPIForm(strToMap(text(condition.CurStateDiff, "")))
 			} else {
-				prevStateDiff = strToMap(condition["prevStateDiff"].(string))
-				curStateDiff = strToMap(condition["curStateDiff"].(string))
+				prevStateDiff = strToMap(text(condition.PrevStateDiff, ""))
+				curStateDiff = strToMap(text(condition.CurStateDiff, ""))
 			}
 		}
-		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &ObjectUpdateTrigger{
-			name:                  raw["triggerName"].(string),
-			resourceKey:           condition["resourceKey"].(string),
+			name:                  string(spec.TriggerName),
+			resourceKey:           text(condition.ResourceKey, ""),
 			prevStateDiff:         prevStateDiff,
 			curStateDiff:          curStateDiff,
 			convertStateToAPIForm: convertStateToAPIForm,
-			desiredOccurrence:     condition["occurrence"].(int),
+			desiredOccurrence:     integer(condition.Occurrence),
 			actualOccurrence:      0,
-			observedWhen:          observationPoint["when"].(string),
-			observedBy:            observationPoint["by"].(string),
+			observedWhen:          string(spec.ObservationPoint.When),
+			observedBy:            string(spec.ObservationPoint.By),
 		}
 	case onAnyFieldModification:
-		convertStateToAPIForm := false
-		if val, ok := condition["convertStateToAPIForm"]; ok {
-			convertStateToAPIForm = val.(bool)
-		}
+		convertStateToAPIForm := boolean(condition.ConvertStateToAPIForm)
 		var prevStateDiff map[string]interface{}
 		if convertStateToAPIForm {
-			prevStateDiff = convertObjectStateToAPIForm(strToMap(condition["prevStateDiff"].(string)))
+			prevStateDiff = convertObjectStateToAPIForm(strToMap(text(condition.PrevStateDiff, "")))
 		} else {
-			prevStateDiff = strToMap(condition["prevStateDiff"].(string))
+			prevStateDiff = strToMap(text(condition.PrevStateDiff, ""))
 		}
-		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &AnyFieldModificationTrigger{
-			name:                  raw["triggerName"].(string),
-			resourceKey:           condition["resourceKey"].(string),
+			name:                  string(spec.TriggerName),
+			resourceKey:           text(condition.ResourceKey, ""),
 			prevStateDiff:         prevStateDiff,
 			convertStateToAPIForm: convertStateToAPIForm,
-			desiredOccurrence:     condition["occurrence"].(int),
+			desiredOccurrence:     integer(condition.Occurrence),
 			actualOccurrence:      0,
-			observedWhen:          observationPoint["when"].(string),
-			observedBy:            observationPoint["by"].(string),
+			observedWhen:          string(spec.ObservationPoint.When),
+			observedBy:            string(spec.ObservationPoint.By),
 		}
 	case onTimeout:
 		return &TimeoutTrigger{
-			name:         raw["triggerName"].(string),
-			timeoutValue: condition["timeoutValue"].(int),
+			name:         string(spec.TriggerName),
+			timeoutValue: integer(condition.TimeoutValue),
 		}
 	case onAnnotatedAPICall:
-		observationPoint := raw["observationPoint"].(map[string]interface{})
 		return &AnnotatedAPICallTrigger{
-			name:              raw["triggerName"].(string),
-			module:            condition["module"].(string),
-			filePath:          condition["filePath"].(string),
-			receiverType:      condition["receiverType"].(string),
-			funName:           condition["funName"].(string),
-			desiredOccurrence: condition["occurrence"].(int),
+			name:              string(spec.TriggerName),
+			module:            text(condition.Module, ""),
+			filePath:          text(condition.FilePath, ""),
+			receiverType:      text(condition.ReceiverType, ""),
+			funName:           text(condition.FunName, ""),
+			desiredOccurrence: integer(condition.Occurrence),
 			actualOccurrence:  0,
-			observedWhen:      observationPoint["when"].(string),
-			observedBy:        observationPoint["by"].(string),
+			observedWhen:      string(spec.ObservationPoint.When),
+			observedBy:        string(spec.ObservationPoint.By),
 		}
 	default:
-		log.Fatalf("invalid trigger type %v", conditionType)
-		return nil
+		panic("unvalidated trigger type: " + conditionType)
 	}
 }
 
-func parseAction(raw map[string]interface{}) Action {
-	trigger := raw["trigger"].(map[string]interface{})
-
-	expression := trigger["expression"].(string)
+func (spec ActionSpec) build() Action {
+	expression := string(spec.Trigger.Expression)
 	infix := expressionToInfixTokens(expression)
 	prefix := infixToPrefix(infix)
 	binaryTreeRoot := prefixExpressionToBinaryTree(prefix)
 	triggerGraph := binaryTreeToTriggerGraph(binaryTreeRoot)
 	printTriggerGraph(triggerGraph)
 
-	definitions := trigger["definitions"].([]interface{})
 	triggerDefinitions := map[string]TriggerDefinition{}
-	for _, definition := range definitions {
-		triggerDefinition := parseTriggerDefinition(definition.(map[string]interface{}))
-		triggerDefinitions[triggerDefinition.getTriggerName()] = triggerDefinition
+	for _, definition := range spec.Trigger.Definitions {
+		trigger := definition.build()
+		triggerDefinitions[trigger.getTriggerName()] = trigger
 	}
-
-	actionType := raw["actionType"].(string)
-	async := false
-	if val, ok := raw["async"]; ok {
-		async = val.(bool)
-	}
-	waitBefore := 0
-	if val, ok := raw["waitBefore"]; ok {
-		waitBefore = val.(int)
-	}
-	waitAfter := 0
-	if val, ok := raw["waitAfter"]; ok {
-		waitAfter = val.(int)
-	}
+	actionType := string(spec.ActionType)
+	async := bool(spec.Async)
+	waitBefore, waitAfter := int(spec.WaitBefore), int(spec.WaitAfter)
 
 	switch actionType {
 	case pauseAPIServer:
 		return &PauseAPIServerAction{
-			apiServerName:      raw["apiServerName"].(string),
-			pauseScope:         raw["pauseScope"].(string),
+			apiServerName:      text(spec.APIServerName, ""),
+			pauseScope:         text(spec.PauseScope, ""),
 			async:              async,
 			waitBefore:         waitBefore,
 			waitAfter:          waitAfter,
@@ -669,8 +641,8 @@ func parseAction(raw map[string]interface{}) Action {
 		}
 	case resumeAPIServer:
 		return &ResumeAPIServerAction{
-			apiServerName:      raw["apiServerName"].(string),
-			pauseScope:         raw["pauseScope"].(string),
+			apiServerName:      text(spec.APIServerName, ""),
+			pauseScope:         text(spec.PauseScope, ""),
 			async:              async,
 			waitBefore:         waitBefore,
 			waitAfter:          waitAfter,
@@ -678,17 +650,11 @@ func parseAction(raw map[string]interface{}) Action {
 			triggerDefinitions: triggerDefinitions,
 		}
 	case pauseController:
-		pauseScope := "all"
-		if val, ok := raw["pauseScope"]; ok {
-			pauseScope = val.(string)
-		}
-		avoidOngoingRead := false
-		if val, ok := raw["avoidOngoingRead"]; ok {
-			avoidOngoingRead = val.(bool)
-		}
+		pauseScope := text(spec.PauseScope, "all")
+		avoidOngoingRead := boolean(spec.AvoidOngoingRead)
 		return &PauseControllerAction{
 			pauseScope:         pauseScope,
-			pauseAt:            raw["pauseAt"].(string),
+			pauseAt:            text(spec.PauseAt, ""),
 			avoidOngoingRead:   avoidOngoingRead,
 			async:              async,
 			waitBefore:         waitBefore,
@@ -697,13 +663,10 @@ func parseAction(raw map[string]interface{}) Action {
 			triggerDefinitions: triggerDefinitions,
 		}
 	case resumeController:
-		pauseScope := "all"
-		if val, ok := raw["pauseScope"]; ok {
-			pauseScope = val.(string)
-		}
+		pauseScope := text(spec.PauseScope, "all")
 		return &ResumeControllerAction{
 			pauseScope:         pauseScope,
-			pauseAt:            raw["pauseAt"].(string),
+			pauseAt:            text(spec.PauseAt, ""),
 			async:              async,
 			waitBefore:         waitBefore,
 			waitAfter:          waitAfter,
@@ -712,7 +675,7 @@ func parseAction(raw map[string]interface{}) Action {
 		}
 	case restartController:
 		return &RestartControllerAction{
-			controllerLabel:    raw["controllerLabel"].(string),
+			controllerLabel:    text(spec.ControllerLabel, ""),
 			async:              async,
 			waitBefore:         waitBefore,
 			waitAfter:          waitAfter,
@@ -721,8 +684,8 @@ func parseAction(raw map[string]interface{}) Action {
 		}
 	case reconnectController:
 		return &ReconnectControllerAction{
-			controllerLabel:    raw["controllerLabel"].(string),
-			reconnectAPIServer: raw["reconnectAPIServer"].(string),
+			controllerLabel:    text(spec.ControllerLabel, ""),
+			reconnectAPIServer: text(spec.ReconnectAPIServer, ""),
 			async:              async,
 			waitBefore:         waitBefore,
 			waitAfter:          waitAfter,
@@ -730,27 +693,16 @@ func parseAction(raw map[string]interface{}) Action {
 			triggerDefinitions: triggerDefinitions,
 		}
 	default:
-		log.Fatalf("invalid action type %s\n", actionType)
-		return nil
+		panic("unvalidated action type: " + actionType)
 	}
 }
 
-func parseTestPlan(raw map[string]interface{}) *TestPlan {
-	if actionsInTestPlan, ok := raw["actions"].([]interface{}); ok {
-		actions := []Action{}
-		for _, rawAction := range actionsInTestPlan {
-			actionInTestPlan := rawAction.(map[string]interface{})
-			action := parseAction(actionInTestPlan)
-			actions = append(actions, action)
-		}
-		return &TestPlan{
-			actions: actions,
-		}
-	} else {
-		return &TestPlan{
-			actions: nil,
-		}
+func (spec *PlanSpec) build() *TestPlan {
+	actions := make([]Action, 0, len(spec.Actions))
+	for _, action := range spec.Actions {
+		actions = append(actions, action.build())
 	}
+	return &TestPlan{actions: actions}
 }
 
 func printExpression(exp []string) {

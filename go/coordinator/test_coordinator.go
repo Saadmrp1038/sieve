@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"strings"
 	"sync"
 
@@ -44,9 +45,16 @@ type testCoordinator struct {
 	stateMachine                  *StateMachine
 }
 
-func NewTestCoordinator() *TestCoordinator {
-	config := getConfig()
-	testPlan := parseTestPlan(config)
+func NewTestCoordinator() (*TestCoordinator, error) {
+	data, err := os.ReadFile("server.yaml")
+	if err != nil {
+		return nil, err
+	}
+	spec, err := decodePlan(data)
+	if err != nil {
+		return nil, err
+	}
+	testPlan := spec.build()
 	asyncDoneCh := make(chan *AsyncDoneNotification)
 	controllerOngoingReadLock := &sync.Mutex{}
 	pauseControllerSharedDataLock := &sync.Mutex{}
@@ -89,7 +97,7 @@ func NewTestCoordinator() *TestCoordinator {
 		Server: server,
 	}
 	listener.Server.Start()
-	return listener
+	return listener, nil
 }
 
 func (tc *TestCoordinator) NotifyTestBeforeAPIServerRecv(request *sieve.NotifyTestBeforeAPIServerRecvRequest, response *sieve.Response) error {

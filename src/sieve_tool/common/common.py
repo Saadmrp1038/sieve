@@ -5,6 +5,7 @@ import re
 import json
 import glob
 from sieve_tool.common.config import CommonConfig, ControllerConfig
+from sieve_tool.plans import load_plan
 
 NO_ERROR_MESSAGE = ""
 
@@ -111,7 +112,7 @@ class TestContext:
         self.test_plan_content = None
         self.action_types = []
         if self.mode == sieve_modes.TEST:
-            self.test_plan_content = yaml.safe_load(open(original_test_plan))
+            self.test_plan_content = load_plan(original_test_plan).to_dict()
             if self.test_plan_content["actions"] is not None:
                 for action in self.test_plan_content["actions"]:
                     self.action_types.append(action["actionType"])

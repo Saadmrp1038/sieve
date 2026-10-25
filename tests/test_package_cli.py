@@ -44,8 +44,10 @@ def test_explicit_repository_scaffold_and_cwd_restoration(tmp_path, monkeypatch)
     command = ["--repo", str(checkout), "controller", "init", "new-operator"]
     assert cli.main(command) == 0
     profile = checkout / "controllers/new-operator"
-    config = load_controller_config(profile)
-    assert (checkout / config.test_command[1]).is_file()
+    config = json.loads((profile / "config.json").read_text())
+    assert (checkout / config["test_command"][1]).is_file()
+    with pytest.raises(ValueError, match="commit"):
+        load_controller_config(profile)
     assert cli.main(command) == 1
     assert Path.cwd() == caller
     assert not (caller / "controllers").exists()
@@ -55,8 +57,8 @@ def test_explicit_repository_scaffold_and_cwd_restoration(tmp_path, monkeypatch)
     "settings, message",
     [
         ({"typo": True}, "Unknown Sieve settings"),
-        ({"generate_debugging_information_enabled": []}, "must be bool"),
-        ({"workload_command_wait_timeout": True}, "must be int"),
+        ({"generate_debugging_information_enabled": []}, "valid boolean"),
+        ({"workload_command_wait_timeout": True}, "valid integer"),
     ],
 )
 def test_invalid_override_fails(tmp_path, settings, message):

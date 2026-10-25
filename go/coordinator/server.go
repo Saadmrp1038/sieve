@@ -21,7 +21,13 @@ func main() {
 	case sieve.LEARN:
 		rpc.Register(NewLearnListener())
 	case sieve.TEST:
-		rpc.Register(NewTestCoordinator())
+		listener, err := NewTestCoordinator()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := rpc.Register(listener); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		log.Fatalf("Cannot recognize mode: %s\n", phase)
 	}

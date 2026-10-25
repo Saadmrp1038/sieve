@@ -1,3 +1,5 @@
+from sieve_tool.plans import load_plan
+
 """Execute workloads and apply analysis/oracles; no CLI or import-time I/O."""
 
 from dataclasses import replace
@@ -271,8 +273,7 @@ def run_test(test_context: TestContext) -> TestResult:
 
 
 def create_plan_for_test_mode(test_context: TestContext):
-    with open(test_context.original_test_plan) as plan:
-        test_plan_content = yaml.safe_load(plan)
+    test_plan_content = load_plan(test_context.original_test_plan).to_dict()
     # TODO: we should probably just add the annotatedReconcileStackFrame when generating the test plan.
     test_plan_content["annotatedReconcileStackFrame"] = [
         i for i in test_context.controller_config.annotated_reconcile_functions.values()
@@ -302,8 +303,7 @@ def create_plan_for_vanilla_mode(test_context: TestContext):
 
 
 def get_test_workload_from_test_plan(test_plan_file):
-    test_plan = yaml.safe_load(open(test_plan_file))
-    return test_plan["workload"]
+    return load_plan(test_plan_file).workload
 
 
 def run(
@@ -426,7 +426,8 @@ def run_batch(
         test_plan_folder
     )
     test_plans = glob.glob(os.path.join(test_plan_folder, "*.yaml"))
-    # test_plans.sort(key=lambda test_plan: test_plan.split("-")[-1].split(".")[0])
+    for test_plan in test_plans:
+        load_plan(test_plan)
     print("Test plans to run:")
     print("\n".join(test_plans))
     results = []

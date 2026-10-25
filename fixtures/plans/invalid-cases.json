@@ -1,0 +1,283 @@
+[
+  {
+    "name": "missing workload",
+    "path": [
+      "workload"
+    ],
+    "value": null,
+    "delete": true
+  },
+  {
+    "name": "wrong workload type",
+    "path": [
+      "workload"
+    ],
+    "value": 8,
+    "delete": false
+  },
+  {
+    "name": "missing actions",
+    "path": [
+      "actions"
+    ],
+    "value": null,
+    "delete": true
+  },
+  {
+    "name": "unknown root field",
+    "path": [
+      "typo"
+    ],
+    "value": true,
+    "delete": false
+  },
+  {
+    "name": "unknown action",
+    "path": [
+      "actions",
+      "0",
+      "actionType"
+    ],
+    "value": "rebootController",
+    "delete": false
+  },
+  {
+    "name": "wrong boolean",
+    "path": [
+      "actions",
+      "0",
+      "async"
+    ],
+    "value": "false",
+    "delete": false
+  },
+  {
+    "name": "null boolean",
+    "path": [
+      "actions",
+      "0",
+      "async"
+    ],
+    "value": null,
+    "delete": false
+  },
+  {
+    "name": "negative wait",
+    "path": [
+      "actions",
+      "0",
+      "waitBefore"
+    ],
+    "value": -1,
+    "delete": false
+  },
+  {
+    "name": "fractional wait",
+    "path": [
+      "actions",
+      "0",
+      "waitBefore"
+    ],
+    "value": 1.5,
+    "delete": false
+  },
+  {
+    "name": "float wait",
+    "path": [
+      "actions",
+      "0",
+      "waitBefore"
+    ],
+    "value": 1.0,
+    "delete": false
+  },
+  {
+    "name": "boolean wait",
+    "path": [
+      "actions",
+      "0",
+      "waitBefore"
+    ],
+    "value": true,
+    "delete": false
+  },
+  {
+    "name": "irrelevant action field",
+    "path": [
+      "actions",
+      "0",
+      "pauseScope"
+    ],
+    "value": "all",
+    "delete": false
+  },
+  {
+    "name": "missing label",
+    "path": [
+      "actions",
+      "0",
+      "controllerLabel"
+    ],
+    "value": null,
+    "delete": true
+  },
+  {
+    "name": "null label",
+    "path": [
+      "actions",
+      "0",
+      "controllerLabel"
+    ],
+    "value": null,
+    "delete": false
+  },
+  {
+    "name": "empty triggers",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions"
+    ],
+    "value": [],
+    "delete": false
+  },
+  {
+    "name": "undefined trigger",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "expression"
+    ],
+    "value": "missing",
+    "delete": false
+  },
+  {
+    "name": "trailing operator",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "expression"
+    ],
+    "value": "trigger1|",
+    "delete": false
+  },
+  {
+    "name": "missing operator",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "expression"
+    ],
+    "value": "trigger1(trigger1)",
+    "delete": false
+  },
+  {
+    "name": "unbalanced parentheses",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "expression"
+    ],
+    "value": "(trigger1",
+    "delete": false
+  },
+  {
+    "name": "empty group",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "expression"
+    ],
+    "value": "()",
+    "delete": false
+  },
+  {
+    "name": "unknown condition",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "condition",
+      "conditionType"
+    ],
+    "value": "onMagic",
+    "delete": false
+  },
+  {
+    "name": "zero occurrence",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "condition",
+      "occurrence"
+    ],
+    "value": 0,
+    "delete": false
+  },
+  {
+    "name": "boolean occurrence",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "condition",
+      "occurrence"
+    ],
+    "value": true,
+    "delete": false
+  },
+  {
+    "name": "missing observation",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "observationPoint"
+    ],
+    "value": null,
+    "delete": true
+  },
+  {
+    "name": "unknown observation",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "observationPoint",
+      "when"
+    ],
+    "value": "tomorrow",
+    "delete": false
+  },
+  {
+    "name": "irrelevant condition field",
+    "path": [
+      "actions",
+      "0",
+      "trigger",
+      "definitions",
+      "0",
+      "condition",
+      "timeoutValue"
+    ],
+    "value": 1,
+    "delete": false
+  }
+]

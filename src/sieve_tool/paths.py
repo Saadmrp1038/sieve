@@ -44,6 +44,6 @@ def repository(root: str | Path):
         _root.reset(token)
 
 
-def asset_path(path):
+def asset_path(path: str | Path) -> Path:
     path = Path(path)
     return path if path.is_absolute() else repository_root() / path

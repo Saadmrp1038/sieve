@@ -17,7 +17,7 @@ import threading
 import time
 from uuid import uuid4
 
-DEFAULT_TIMEOUTS = {
+DEFAULT_TIMEOUTS: dict[str, int | float] = {
     "command": 60,
     "network": 600,
     "compile": 900,
@@ -33,15 +33,24 @@ _deadline = ContextVar("sieve_process_deadline", default=None)
 _counter = itertools.count(1)
 
 
-def validate_timeouts(overrides):
+def validate_timeouts(overrides: object) -> dict[str, int | float]:
     if not isinstance(overrides, dict):
         raise ValueError("process_timeouts must be a dictionary")
+    if not all(isinstance(name, str) for name in overrides):
+        raise ValueError("Process timeout names must be strings")
     if unknown := set(overrides) - set(DEFAULT_TIMEOUTS):
         raise ValueError("Unknown process timeout: " + ", ".join(sorted(unknown)))
+    validated = DEFAULT_TIMEOUTS.copy()
     for name, value in overrides.items():
-        if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+        ):
             raise ValueError(f"Process timeout {name} must be a finite positive number")
-    return {**DEFAULT_TIMEOUTS, **overrides}
+        validated[name] = value
+    return validated
 
 
 def settings():
