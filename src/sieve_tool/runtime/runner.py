@@ -1,5 +1,6 @@
 """Execute workloads and apply analysis/oracles; no CLI or import-time I/O."""
 
+from dataclasses import replace
 import glob
 import errno
 import json
@@ -24,7 +25,10 @@ from sieve_tool.oracle.oracle import (
 )
 from sieve_tool.oracle.checker_common import print_error_and_debugging_info
 from .cluster import setup_cluster, teardown_cluster, generate_testing_cluster_config
-from .workload import run_workload
+from .workload import run_workload, collect_diagnostics
+from sieve_tool.paths import repository_root, asset_path
+from sieve_tool.process import cleanup_budget, execution, reset_cleanup_budget
+from .cluster import cluster_lease
 
 
 def save_run_result(
@@ -64,6 +68,15 @@ def save_run_result(
                         if test_context.mode == sieve_modes.TEST
                         else "",
                         "host": socket.gethostname(),
+                        "execution": json.loads(
+                            (
+                                Path(test_context.result_dir) / "process-outcome.json"
+                            ).read_text()
+                        )
+                        if (
+                            Path(test_context.result_dir) / "process-outcome.json"
+                        ).exists()
+                        else None,
                     }
                 }
             },
@@ -186,37 +199,66 @@ def run_test(test_context: TestContext) -> TestResult:
     try:
         if test_context.postprocess:
             return post_process(test_context)
-        prepare_test_plan(test_context)
-        cluster_started = True
-        setup_cluster(test_context)
-        run_workload(test_context)
-        teardown_cluster()
-        cluster_started = False
-        save_history_and_end_state(test_context)
-        # if the build_oracle is enabled, then we need to run the learn run again
-        # to eliminate nondeterminism in the end-state and state-update collected by Sieve
-        if test_context.mode == sieve_modes.LEARN and test_context.build_oracle:
-            print(
-                "\nTo build the differential oracle, we need to run the learn run twice"
-            )
-            print("Starting the second learn run...")
-            save_previous_learn_results(test_context)
+        passes = (
+            2
+            if test_context.mode == sieve_modes.LEARN and test_context.build_oracle
+            else 1
+        )
+        for index in range(passes):
+            reset_cleanup_budget()
             prepare_test_plan(test_context)
             cluster_started = True
             setup_cluster(test_context)
             run_workload(test_context)
-            teardown_cluster()
+            if test_context.mode in (sieve_modes.LEARN, sieve_modes.VANILLA):
+                directory = Path(test_context.result_dir)
+                marker = directory / "workload.log"
+                outcome_file = directory / "process-outcome.json"
+                outcome = (
+                    json.loads(outcome_file.read_text())
+                    if outcome_file.exists()
+                    else {}
+                )
+                if not (
+                    marker.exists()
+                    and marker.read_text().strip() == "FINISH-SIEVE-TEST"
+                    and outcome.get("status") == "completed"
+                    and outcome.get("returncode") == 0
+                ):
+                    raise RuntimeError(
+                        "Baseline workload did not complete; refusing to learn from an incomplete run"
+                    )
+            with cleanup_budget():
+                teardown_cluster()
             cluster_started = False
             save_history_and_end_state(test_context)
+            if index + 1 < passes:
+                save_previous_learn_results(test_context)
         return post_process(test_context)
-    except Exception:
+    except BaseException as primary:
         error = traceback.format_exc()
-        print(error)
         if cluster_started:
-            try:
-                teardown_cluster()
-            except Exception:
-                print("Cluster cleanup failed:\n" + traceback.format_exc())
+            with cleanup_budget():
+                try:
+                    directory = (
+                        Path(test_context.result_dir)
+                        if hasattr(test_context, "result_dir")
+                        else None
+                    )
+                    if (
+                        directory is not None
+                        and not (directory / "diagnostics.json").exists()
+                    ):
+                        collect_diagnostics(test_context)
+                except Exception as secondary:
+                    primary.add_note(f"Diagnostic collection also failed: {secondary}")
+                try:
+                    teardown_cluster()
+                except Exception as secondary:
+                    primary.add_note(f"Cluster cleanup also failed: {secondary}")
+        if not isinstance(primary, Exception):
+            raise
+        print(error)
         return TestResult(
             injection_completed=False,
             workload_completed=False,
@@ -224,7 +266,7 @@ def run_test(test_context: TestContext) -> TestResult:
             end_state_errors=[],
             history_errors=[],
             no_exception=False,
-            exception_message=error,
+            exception_message=error + "\n".join(getattr(primary, "__notes__", [])),
         )
 
 
@@ -281,6 +323,8 @@ def run(
     Prepare the test context based on the input options and the configurations
     and start to run the test.
     """
+    controller_config_dir = str(asset_path(controller_config_dir).resolve())
+    result_root_dir = str(Path(result_root_dir).expanduser().resolve())
     common_config = common_config or get_common_config()
     controller_config = load_controller_config(controller_config_dir)
     if test_workload is None:
@@ -291,7 +335,9 @@ def run(
         mode, controller_config, test_plan, test_workload
     )
     oracle_dir = os.path.join(
-        oracle_root or "runs/oracles", controller_config.controller_name, test_workload
+        oracle_root or str(repository_root() / "runs/oracles"),
+        controller_config.controller_name,
+        test_workload,
     )
     assert (
         os.path.isdir(oracle_dir)
@@ -342,7 +388,20 @@ def run(
         common_config=common_config,
         controller_config=controller_config,
     )
-    test_result = run_test(test_context)
+    overrides = controller_config.test_setting.get(test_workload, {}).get(
+        "process_timeouts", {}
+    )
+    test_context.common_config = replace(
+        common_config, process_timeouts={**common_config.process_timeouts, **overrides}
+    )
+    with execution(
+        test_context.common_config.process_timeouts, Path(result_dir) / "commands"
+    ):
+        if postprocess:
+            test_result = run_test(test_context)
+        else:
+            with cluster_lease():
+                test_result = run_test(test_context)
     return test_result, test_context
 
 
@@ -391,5 +450,19 @@ def run_batch(
             test_result,
             start_time,
         )
+        outcome = Path(test_context.result_dir) / "process-outcome.json"
+        timed_out = (
+            outcome.exists()
+            and json.loads(outcome.read_text()).get("status") == "timed_out"
+        )
+        if (
+            not test_result.no_exception
+            or not test_result.workload_completed
+            or timed_out
+        ):
+            print(
+                "Stopping batch after an execution failure; retained plans have not been retried"
+            )
+            break
 
     return results

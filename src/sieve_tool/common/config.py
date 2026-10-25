@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from sieve_tool.paths import repository_root
+from sieve_tool.paths import repository_root, asset_path
 
 
 @dataclass
@@ -32,6 +32,7 @@ class CommonConfig:
     field_path_mask: dict
     state_update_summary_checker_mask: list
     update_oracle_file_enabled: bool
+    process_timeouts: dict
 
 
 def get_common_config(override=None):
@@ -57,6 +58,9 @@ def get_common_config(override=None):
     for name, kind in expected.items():
         if type(data.get(name)) is not kind:
             raise ValueError(f"Setting {name} must be {kind.__name__}")
+    from sieve_tool.process import validate_timeouts
+
+    validate_timeouts(data["process_timeouts"])
     return CommonConfig(**data)
 
 
@@ -115,8 +119,15 @@ class ControllerConfig:
 
 
 def load_controller_config(controller_config_dir):
-    controller_config_path = os.path.join(controller_config_dir, "config.json")
+    controller_config_path = asset_path(controller_config_dir) / "config.json"
     controller_config = json.load(open(controller_config_path))
+    command = controller_config["test_command"]
+    if (
+        not isinstance(command, list)
+        or not command
+        or not all(isinstance(arg, str) for arg in command)
+    ):
+        raise ValueError("test_command must be a nonempty argument list")
     return ControllerConfig(
         controller_name=controller_config["name"],
         github_link=controller_config["github_link"],

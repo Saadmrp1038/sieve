@@ -200,6 +200,14 @@ def test_run_validation(test_context: TestContext):
             injection_completed = False
     if not is_test_workload_finished(workload_log):
         workload_completed = False
+    outcome = os.path.join(test_context.result_dir, "process-outcome.json")
+    if os.path.isfile(outcome):
+        process = json.load(open(outcome))
+        workload_completed = (
+            workload_completed
+            and process.get("status") == "completed"
+            and process.get("returncode") == 0
+        )
     return injection_completed, workload_completed
 
 

@@ -6,7 +6,10 @@
     "client_go_version": "v0.17.2",
     "dockerfile_path": "build/Dockerfile",
     "controller_image_name": "percona/mongodb-operator:latest",
-    "test_command": "python3 controllers/mongodb-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/mongodb-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "perconaservermongodb",
         "perconaservermongodbbackup",

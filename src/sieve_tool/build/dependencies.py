@@ -2,20 +2,20 @@ import json
 import os
 import shutil
 import stat
-import subprocess
+from sieve_tool.process import run
 from pathlib import Path
-
 from sieve_tool.common.common import add_mod_recursively
 
 
 def install_module(module, sieve_dep_src_dir):
     """Use Go's resolved module directory, including custom module caches."""
-    result = subprocess.run(
+    result = run(
         ["go", "mod", "download", "-json", module],
         check=True,
-        capture_output=True,
-        text=True,
         env={**os.environ, "GOWORK": "off"},
+        capture_output=True,
+        operation="install module",
+        category="network",
     )
     metadata = json.loads(result.stdout)
     destination = Path(sieve_dep_src_dir) / module

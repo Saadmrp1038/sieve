@@ -115,3 +115,45 @@ def test_controller_patches_do_not_need_global_git_identity(tmp_path, monkeypatc
             )
         )
     assert (checkout / ".cache/controllers/operator/logic.go").read_text() == "patched"
+
+
+def test_cached_checkout_without_requested_tag_fetches_release(tmp_path, monkeypatch):
+    from sieve_tool.process import run as execute
+
+    remote = tmp_path / "release"
+    remote.mkdir()
+    git = ["git", "-C", str(remote)]
+    subprocess.run([*git, "init"], check=True, capture_output=True)
+    (remote / "source.go").write_text("release")
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run(
+        [
+            *git,
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@localhost",
+            "commit",
+            "-m",
+            "release",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run([*git, "tag", "v1.18.9"], check=True)
+    cached = tmp_path / "cached"
+    cached.mkdir()
+    subprocess.run(["git", "-C", str(cached), "init"], check=True, capture_output=True)
+    cloned = []
+
+    def offline(argv, **kwargs):
+        if "clone" in argv:
+            argv = list(argv)
+            argv[-2] = str(remote)
+            cloned.append(True)
+        return execute(argv, **kwargs)
+
+    monkeypatch.setattr(kubernetes, "run", offline)
+    kubernetes.download_kubernetes("v1.18.9", checkout=cached)
+    assert cloned == [True]
+    assert (cached / "source.go").read_text() == "release"

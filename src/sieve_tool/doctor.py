@@ -2,7 +2,7 @@
 
 from importlib import import_module
 import shutil
-import subprocess
+from sieve_tool.process import run as run_process, ProcessError
 
 from sieve_tool.common.common import fail, ok, warn
 
@@ -20,15 +20,15 @@ def run():
             missing.append(name)
             continue
         try:
-            result = subprocess.run(
+            result = run_process(
                 [name, *arguments],
                 capture_output=True,
-                text=True,
+                operation=f"check {name}",
                 timeout=30,
                 check=True,
             )
             ok(f"{name}: {result.stdout.strip()}")
-        except (subprocess.SubprocessError, OSError) as error:
+        except (ProcessError, OSError) as error:
             fail(f"{name} check failed: {error}")
             missing.append(name)
     for module in ("kubernetes", "docker", "yaml", "deepdiff"):

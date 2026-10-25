@@ -1,141 +1,216 @@
+from sieve_tool.kubernetes import api as kubernetes_api, load_config
+
+"""Run workloads and own their log followers through success and failure."""
+from contextlib import ExitStack
 from dataclasses import asdict
 import json
 import os
 from pathlib import Path
-import subprocess
-import signal
+import sys
 import kubernetes
-
-from sieve_tool.common.common import *
+from sieve_tool.common.common import sieve_modes
+from sieve_tool.paths import repository_root
+from sieve_tool.process import (
+    cleanup_budget,
+    remaining,
+    ManagedProcess,
+    ProcessTimeout,
+    deadline,
+    limit,
+    request_timeout,
+    run,
+)
 from .cluster import start_controller, stop_coordinator
 
 
-def run_workload(
-    test_context: TestContext,
-):
-    """
-    Deploy the controller and run the provided testing workload.
-    """
-
-    cprint("Deploying controller...", bcolors.OKGREEN)
-    start_controller(test_context)
-    ok("Controller deployed")
-
-    # If there are multiple contains in the controller pod then we need to find the correct one.
-    select_container_from_pod = (
-        " -c {} ".format(test_context.controller_config.container_name)
-        if test_context.controller_config.container_name is not None
-        else ""
-    )
-
-    kubernetes.config.load_kube_config()
-    pod_name = (
-        kubernetes.client.CoreV1Api()
-        .list_namespaced_pod(
-            test_context.common_config.namespace,
-            watch=False,
-            label_selector="sievetag=" + test_context.controller,
+def collect_diagnostics(context):
+    if not hasattr(context, "result_dir"):
+        return
+    directory = Path(context.result_dir)
+    if not directory.exists():
+        return
+    failures = []
+    with cleanup_budget(), deadline(min(60, remaining(limit("cleanup")) / 2)):
+        commands = []
+        for i in range(context.num_apiservers):
+            output = directory / f"apiserver{i + 1}.log"
+            if output.exists():
+                continue
+            name = "kube-apiserver-kind-control-plane" + (str(i + 1) if i else "")
+            commands.append(
+                (
+                    ["kubectl", "logs", name, "-n", "kube-system"],
+                    output,
+                    "collect API-server log",
+                )
+            )
+        if context.mode != sieve_modes.VANILLA:
+            commands.append(
+                (
+                    [
+                        "docker",
+                        "cp",
+                        "kind-control-plane:/sieve/coordinator/sieve-server.log",
+                        directory / "sieve-server.log",
+                    ],
+                    None,
+                    "collect coordinator log",
+                )
+            )
+        namespace = context.common_config.namespace
+        commands.extend(
+            [
+                (
+                    [
+                        "kubectl",
+                        "get",
+                        "pods,persistentvolumeclaims,statefulsets,deployments",
+                        "-n",
+                        namespace,
+                        "-o",
+                        "json",
+                    ],
+                    directory / "resources-snapshot.json",
+                    "collect resource status",
+                ),
+                (
+                    ["kubectl", "get", "events", "-n", namespace, "-o", "json"],
+                    directory / "events-snapshot.json",
+                    "collect namespace events",
+                ),
+            ]
         )
-        .items[0]
-        .metadata.name
-    )
-    # Stream the controller log to streamed-controller.log for debugging purpose.
-    # If the controller crashes due to some panic, Sieve will report that by checking
-    # the streamed log.
-    streamed_log_file = open(
-        os.path.join(test_context.result_dir, "streamed-controller.log"), "w+"
-    )
-    streaming = subprocess.Popen(
-        "kubectl logs {} {} -f".format(pod_name, select_container_from_pod),
-        stdout=streamed_log_file,
-        stderr=streamed_log_file,
-        shell=True,
-        preexec_fn=os.setsid,
-    )
-
-    # Stream the apiserver log.
-    # The apiserver log should contain the state changes (i.e., creation, deletion and update events)
-    # during the test workload and the log content will be later used for
-    # (1) generating differential oracles for learn mode and
-    # (2) detecting errors (e.g., inconsistency in end states) for test mode.
-    # TODO: Storing everything in a log is a bit hacky,
-    # and it is better to save all the recorded state changes in a database during runtime,
-    # if that does not hurt the performance too much.
-    # Another alternative is to just watch all the objects using the local kubectl.
-    streamed_api_server_log_file = open(
-        os.path.join(test_context.result_dir, "apiserver1.log"), "w+"
-    )
-    streaming_api_server = subprocess.Popen(
-        "kubectl logs kube-apiserver-kind-control-plane -n kube-system -f",
-        stdout=streamed_api_server_log_file,
-        stderr=streamed_api_server_log_file,
-        shell=True,
-        preexec_fn=os.setsid,
-    )
-
-    cprint("Running test workload...", bcolors.OKGREEN)
-    test_command = "{} {} {}".format(
-        test_context.controller_config.test_command,
-        test_context.test_workload,
-        os.path.join(test_context.result_dir, "workload.log"),
-    )
-    settings = Path(test_context.result_dir).resolve() / "harness-config.json"
-    settings.write_text(json.dumps(asdict(test_context.common_config), indent=2) + "\n")
-    process = subprocess.Popen(
-        test_command,
-        shell=True,
-        env={**os.environ, "SIEVE_HARNESS_CONFIG": str(settings)},
-    )
-    process.wait()
-
-    pod_name = (
-        kubernetes.client.CoreV1Api()
-        .list_namespaced_pod(
-            test_context.common_config.namespace,
-            watch=False,
-            label_selector="sievetag=" + test_context.controller,
-        )
-        .items[0]
-        .metadata.name
-    )
-
-    # Also save the log of other apiservers (for multi-apiserver set up) for debugging purpose.
-    for i in range(1, test_context.num_apiservers):
-        apiserver_name = "kube-apiserver-kind-control-plane" + (
-            "" if i == 0 else str(i + 1)
-        )
-        apiserver_log = "apiserver{}.log".format(str(i + 1))
-        os_system(
-            "kubectl logs {} -n kube-system > {}/{}".format(
-                apiserver_name, test_context.result_dir, apiserver_log
+        commands.append(
+            (
+                [
+                    "kubectl",
+                    "logs",
+                    "-l",
+                    "sievetag=" + context.controller,
+                    "--tail=-1",
+                ],
+                directory / "controller.log",
+                "collect controller log",
             )
         )
-
-    # Save the Sieve server log.
-    # In learn mode, the Sieve server log contains the collected controller events
-    # which will be used to generate test plans.
-    if test_context.mode != sieve_modes.VANILLA:
-        os_system(
-            "docker cp kind-control-plane:/sieve/coordinator/sieve-server.log {}/sieve-server.log".format(
-                test_context.result_dir
-            )
-        )
-
-    # Save the controller log as well mainly for debugging purpose.
-    os_system(
-        "kubectl logs --request-timeout=30s {} {} > {}/controller.log".format(
-            pod_name, select_container_from_pod, test_context.result_dir
-        )
+        for argv, output, operation in commands:
+            try:
+                result = run(
+                    argv,
+                    operation=operation,
+                    category="request",
+                    output=output,
+                    check=False,
+                )
+                if result.returncode:
+                    failures.append(
+                        f"{operation}: exit {result.returncode}; logs: {result.log}"
+                    )
+            except Exception as error:
+                failures.append(str(error))
+    (directory / "diagnostics.json").write_text(
+        json.dumps({"failures": failures}, indent=2) + "\n"
     )
-    # Stop streaming controller log.
+
+
+def run_workload(context):
+    start_controller(context)
+    directory = Path(context.result_dir)
+    load_config()
+    pods = (
+        kubernetes_api(kubernetes.client.CoreV1Api)
+        .list_namespaced_pod(
+            context.common_config.namespace,
+            watch=False,
+            label_selector="sievetag=" + context.controller,
+            _request_timeout=request_timeout(),
+        )
+        .items
+    )
+    if not pods:
+        raise RuntimeError("Controller disappeared before workload startup")
+    container = (
+        ["-c", context.controller_config.container_name]
+        if context.controller_config.container_name
+        else []
+    )
+    outcome = {"status": "starting", "returncode": None}
     try:
-        os.killpg(streaming.pid, signal.SIGTERM)
-    except Exception as e:
-        print("Unable to kill controller log streaming process: ", e)
-    streamed_log_file.close()
-    # Stop streaming apiserver log.
-    os.killpg(streaming_api_server.pid, signal.SIGTERM)
-    streamed_api_server_log_file.close()
-
-    if test_context.mode != sieve_modes.VANILLA:
-        stop_coordinator()
+        followers = ExitStack()
+        try:
+            followers.enter_context(
+                ManagedProcess(
+                    ["kubectl", "logs", pods[0].metadata.name, *container, "-f"],
+                    operation="follow controller log",
+                    category="workload",
+                    output=directory / "streamed-controller.log",
+                )
+            )
+            followers.enter_context(
+                ManagedProcess(
+                    [
+                        "kubectl",
+                        "logs",
+                        "kube-apiserver-kind-control-plane",
+                        "-n",
+                        "kube-system",
+                        "-f",
+                    ],
+                    operation="follow API-server log",
+                    category="workload",
+                    output=directory / "apiserver1.log",
+                )
+            )
+            settings = directory / "harness-config.json"
+            settings.write_text(
+                json.dumps(asdict(context.common_config), indent=2) + "\n"
+            )
+            command = list(context.controller_config.test_command)
+            if command[0] in ("python", "python3"):
+                command[0] = sys.executable
+            try:
+                result = run(
+                    [*command, context.test_workload, directory / "workload.log"],
+                    operation="execute workload",
+                    category="workload",
+                    cwd=repository_root(),
+                    env={"SIEVE_HARNESS_CONFIG": str(settings)},
+                    output=directory / "workload-process.log",
+                    check=False,
+                )
+                outcome = {
+                    "status": "completed" if result.returncode == 0 else "failed",
+                    "returncode": result.returncode,
+                    "duration_seconds": result.duration,
+                    "log": os.path.relpath(result.log, directory),
+                }
+            except ProcessTimeout as error:
+                outcome = {
+                    "status": "timed_out",
+                    "returncode": None,
+                    "error": str(error),
+                }
+            except BaseException as error:
+                outcome = {
+                    "status": "cancelled"
+                    if isinstance(error, KeyboardInterrupt)
+                    else "failed",
+                    "returncode": None,
+                    "error": str(error),
+                }
+                raise
+            finally:
+                (directory / "process-outcome.json").write_text(
+                    json.dumps(outcome, indent=2) + "\n"
+                )
+        finally:
+            with cleanup_budget():
+                collect_diagnostics(context)
+                followers.close()
+    finally:
+        if context.mode != sieve_modes.VANILLA:
+            with cleanup_budget():
+                try:
+                    stop_coordinator()
+                except Exception as error:
+                    print(f"Coordinator cleanup failed: {error}", flush=True)

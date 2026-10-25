@@ -3,7 +3,6 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
-import os
 
 
 _root: ContextVar[Path | None] = ContextVar("sieve_repository", default=None)
@@ -36,13 +35,15 @@ def cache_path(*parts: str) -> Path:
 
 @contextmanager
 def repository(root: str | Path):
-    """Scope commands to a checkout and always restore the caller's cwd."""
+    """Select repository assets without changing the process working directory."""
     root = Path(root).resolve()
     token = _root.set(root)
-    previous = Path.cwd()
     try:
-        os.chdir(root)
         yield root
     finally:
-        os.chdir(previous)
         _root.reset(token)
+
+
+def asset_path(path):
+    path = Path(path)
+    return path if path.is_absolute() else repository_root() / path
