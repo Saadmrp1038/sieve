@@ -248,8 +248,8 @@ class ManagedProcess:
             "status": status,
             "pid": self.proc.pid if self.proc is not None else None,
             "elapsed_seconds": time.monotonic() - self.started,
-            "stdout_log": str(self.out_path),
-            "stderr_log": str(self.err_path),
+            "stdout_log": os.path.relpath(self.out_path, self.events.parent),
+            "stderr_log": os.path.relpath(self.err_path, self.events.parent),
             **fields,
         }
         with self.events.open("a") as stream:
@@ -410,3 +410,37 @@ def cleanup_budget():
         _cleanup_end.set(end)
     with deadline(max(0, end - time.monotonic()), fresh=True):
         yield
+
+
+@contextmanager
+def wall_timeout(operation, seconds):
+    """Bound synchronous SDK calls, including a peer that trickles response data."""
+    if threading.current_thread() is not threading.main_thread():
+        raise RuntimeError("Bounded SDK calls require the main thread")
+    seconds = remaining(seconds)
+    if seconds <= 0:
+        raise ProcessTimeout(operation, seconds, None)
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+    if previous_timer[0] and not getattr(previous_handler, "_sieve_timeout", False):
+        raise RuntimeError("SIGALRM is already owned by another deadline handler")
+    started = time.monotonic()
+
+    def expire(signum, frame):
+        raise ProcessTimeout(operation, seconds, None)
+
+    expire._sieve_timeout = True
+    signal.signal(signal.SIGALRM, expire)
+    signal.setitimer(
+        signal.ITIMER_REAL,
+        min(seconds, previous_timer[0]) if previous_timer[0] else seconds,
+    )
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0]:
+            leftover = previous_timer[0] - (time.monotonic() - started)
+            if leftover > 0:
+                signal.setitimer(signal.ITIMER_REAL, leftover, previous_timer[1])

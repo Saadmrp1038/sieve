@@ -5,11 +5,11 @@ from pathlib import Path
 import re
 import sys
 import time
-import subprocess
 from datetime import datetime, timezone
 from uuid import uuid4
 
 from sieve_tool.paths import find_repository, repository
+from sieve_tool.process import execution, cancellation_signals, Cancelled, ProcessError
 
 
 def parser():
@@ -127,6 +127,18 @@ def successful(result, context):
 
 
 def main(argv=None):
+    try:
+        with cancellation_signals():
+            return _main(argv)
+    except Cancelled as error:
+        print(f"sieve: {error}", file=sys.stderr)
+        return 128 + error.signum
+    except KeyboardInterrupt:
+        print("sieve: interrupted", file=sys.stderr)
+        return 130
+
+
+def _main(argv=None):
     arguments = parser().parse_args(argv)
     try:
         if arguments.command == "doctor":
@@ -141,21 +153,24 @@ def main(argv=None):
         if getattr(arguments, "output", None) is not None:
             arguments.output = arguments.output.expanduser().resolve()
         with repository(root):
-            return _dispatch(arguments, root)
+            from sieve_tool.common.config import get_common_config
+
+            common = get_common_config(arguments.config)
+            with execution(
+                common.process_timeouts, root / ".cache/commands" / uuid4().hex
+            ):
+                return _dispatch(arguments, root, common)
     except (ValueError, OSError) as error:
         print(f"sieve: {error}", file=sys.stderr)
         return 1
-    except subprocess.CalledProcessError as error:
-        print(
-            f"sieve: command failed ({error.returncode}): {error.cmd}", file=sys.stderr
-        )
+    except ProcessError as error:
+        print(f"sieve: {error}", file=sys.stderr)
         return 1
 
 
-def _dispatch(arguments, root):
+def _dispatch(arguments, root, common):
     from sieve_tool.common.config import get_common_config, load_controller_config
 
-    common = get_common_config(arguments.config)
     registry = getattr(arguments, "registry", None) or common.container_registry
     if arguments.command == "build":
         if arguments.controller:

@@ -1,6 +1,6 @@
+from sieve_tool.kubernetes import api as kubernetes_api, load_config
 from typing import Tuple
 import kubernetes
-import os
 from sieve_tool.common.common import (
     POD,
     PVC,
@@ -17,16 +17,36 @@ import time
 import traceback
 from sieve_tool.common.config import get_common_config
 import datetime
-import subprocess
 import json
+from sieve_tool.paths import repository_root
+from sieve_tool.process import (
+    run as run_process,
+    ProcessError,
+    ProcessTimeout,
+    deadline,
+    execution,
+    request_timeout,
+)
+from pathlib import Path
 
 common_config = get_common_config()
 
 
+def bounded_wait(function):
+
+    def call(self):
+        with deadline(self.timeout):
+            return function(self)
+
+    return call
+
+
 def get_pod(resource_name, namespace):
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-    pods = core_v1.list_namespaced_pod(namespace=namespace, watch=False).items
+    load_config()
+    core_v1 = kubernetes_api(kubernetes.client.CoreV1Api)
+    pods = core_v1.list_namespaced_pod(
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
+    ).items
     target_pod = None
     for pod in pods:
         if pod.metadata.name == resource_name:
@@ -41,9 +61,11 @@ def get_pod(resource_name, namespace):
 
 
 def get_pods(resource_name_prefix, namespace):
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-    pods = core_v1.list_namespaced_pod(namespace=namespace, watch=False).items
+    load_config()
+    core_v1 = kubernetes_api(kubernetes.client.CoreV1Api)
+    pods = core_v1.list_namespaced_pod(
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
+    ).items
     target_pods = []
     for pod in pods:
         if pod.metadata.name.startswith(resource_name_prefix):
@@ -52,10 +74,10 @@ def get_pods(resource_name_prefix, namespace):
 
 
 def get_sts(resource_name, namespace):
-    kubernetes.config.load_kube_config()
-    apps_v1 = kubernetes.client.AppsV1Api()
+    load_config()
+    apps_v1 = kubernetes_api(kubernetes.client.AppsV1Api)
     statefulsets = apps_v1.list_namespaced_stateful_set(
-        namespace=namespace, watch=False
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
     ).items
     target_sts = None
     for sts in statefulsets:
@@ -65,10 +87,10 @@ def get_sts(resource_name, namespace):
 
 
 def get_pvc(resource_name, namespace):
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
+    load_config()
+    core_v1 = kubernetes_api(kubernetes.client.CoreV1Api)
     pvcs = core_v1.list_namespaced_persistent_volume_claim(
-        namespace=namespace, watch=False
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
     ).items
     target_pvc = None
     for pvc in pvcs:
@@ -84,9 +106,11 @@ def get_pvc(resource_name, namespace):
 
 
 def get_secret(resource_name, namespace):
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-    secrets = core_v1.list_namespaced_secret(namespace=namespace, watch=False).items
+    load_config()
+    core_v1 = kubernetes_api(kubernetes.client.CoreV1Api)
+    secrets = core_v1.list_namespaced_secret(
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
+    ).items
     for secret in secrets:
         if secret.metadata.name == resource_name:
             return secret
@@ -94,9 +118,11 @@ def get_secret(resource_name, namespace):
 
 
 def get_service(resource_name, namespace):
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-    services = core_v1.list_namespaced_service(namespace=namespace, watch=False).items
+    load_config()
+    core_v1 = kubernetes_api(kubernetes.client.CoreV1Api)
+    services = core_v1.list_namespaced_service(
+        namespace=namespace, watch=False, _request_timeout=request_timeout()
+    ).items
     for service in services:
         if service.metadata.name == resource_name:
             return service
@@ -105,16 +131,26 @@ def get_service(resource_name, namespace):
 
 def get_custom_resource(custom_resource_type, resource_name, namespace):
     try:
-        custom_resource = json.loads(
-            os.popen(
-                "kubectl get %s %s -o json -n %s"
-                % (custom_resource_type, resource_name, namespace)
-            ).read()
+        result = run_process(
+            [
+                "kubectl",
+                "get",
+                custom_resource_type,
+                resource_name,
+                "-o",
+                "json",
+                "-n",
+                namespace,
+            ],
+            operation="read custom resource",
+            category="request",
+            capture_output=True,
+            check=False,
+            cwd=repository_root(),
         )
-        return custom_resource
-    except Exception as e:
-        print("get custom resource fail", e)
-    return None
+    except ProcessError:
+        return None
+    return json.loads(result.stdout) if result.returncode == 0 else None
 
 
 class TestCmd:
@@ -123,23 +159,19 @@ class TestCmd:
         self.timeout = timeout
 
     def run(self) -> Tuple[int, str]:
-        print()
-        print(self.cmd)
-        proc = subprocess.Popen(self.cmd, shell=True)
         try:
-            proc.wait(timeout=self.timeout)
-            if proc.returncode != 0:
-                return 1, "Command error code: '%s' returns %d " % (
-                    self.cmd,
-                    proc.returncode,
-                )
-        except subprocess.TimeoutExpired:
-            proc.terminate()
-            return 2, "Command timeout: '%s' does not finish within %d seconds" % (
+            result = run_process(
                 self.cmd,
-                self.timeout,
+                operation="workload step",
+                timeout=self.timeout,
+                cwd=repository_root(),
+                check=False,
             )
-        return 0, NO_ERROR_MESSAGE
+        except ProcessTimeout as error:
+            return (2, f"Command timeout: {error}")
+        if result.returncode:
+            return (1, f"Command error: exit {result.returncode}; logs: {result.log}")
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWait:
@@ -149,18 +181,11 @@ class TestWait:
     def run(self) -> Tuple[int, str]:
         print("wait for %s seconds" % str(self.timeout))
         time.sleep(self.timeout)
-        return 0, NO_ERROR_MESSAGE
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWaitForStatus:
-    def __init__(
-        self,
-        resource_type,
-        resource_name,
-        status,
-        timeout,
-        namespace,
-    ):
+    def __init__(self, resource_type, resource_name, status, timeout, namespace):
         self.resource_type = resource_type
         self.resource_name = resource_name
         self.status = status
@@ -206,25 +231,22 @@ class TestWaitForStatus:
             assert False, "status not supported yet"
         return False
 
+    @bounded_wait
     def run(self) -> Tuple[int, str]:
-        s = time.time()
+        s = time.monotonic()
         print(
             "wait until %s %s becomes %s..."
             % (self.resource_type, self.resource_name, self.status)
         )
         while True:
-            duration = time.time() - s
+            duration = time.monotonic() - s
             if duration > self.timeout:
                 error_message = (
                     "Conditional wait timeout: %s does not become %s within %d seconds"
-                    % (
-                        self.resource_name,
-                        self.status,
-                        self.timeout,
-                    )
+                    % (self.resource_name, self.status, self.timeout)
                 )
                 print(error_message)
-                return 1, error_message
+                return (1, error_message)
             if self.resource_type == POD:
                 if self.check_pod():
                     break
@@ -234,20 +256,13 @@ class TestWaitForStatus:
             else:
                 assert False, "type not supported yet"
             time.sleep(5)
-        time.sleep(5)  # make it configurable
-        print("wait takes %f seconds" % (time.time() - s))
-        return 0, NO_ERROR_MESSAGE
+        time.sleep(5)
+        print("wait takes %f seconds" % (time.monotonic() - s))
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWaitForNumber:
-    def __init__(
-        self,
-        resource_type,
-        resource_name_prefix,
-        number,
-        timeout,
-        namespace,
-    ):
+    def __init__(self, resource_type, resource_name_prefix, number, timeout, namespace):
         self.resource_type = resource_type
         self.resource_name_prefix = resource_name_prefix
         self.number = number
@@ -267,45 +282,35 @@ class TestWaitForNumber:
                 running_pods.append(pod)
         return len(running_pods) == self.number
 
+    @bounded_wait
     def run(self) -> Tuple[int, str]:
-        s = time.time()
+        s = time.monotonic()
         print(
             "wait until the number of running %s %s becomes %s..."
             % (self.resource_type, self.resource_name_prefix, self.number)
         )
         while True:
-            duration = time.time() - s
+            duration = time.monotonic() - s
             if duration > self.timeout:
                 error_message = (
                     "Conditional wait timeout: %s does not become %s within %d seconds"
-                    % (
-                        self.resource_name_prefix,
-                        self.number,
-                        self.timeout,
-                    )
+                    % (self.resource_name_prefix, self.number, self.timeout)
                 )
                 print(error_message)
-                return 1, error_message
+                return (1, error_message)
             if self.resource_type == POD:
                 if self.check_pod():
                     break
             else:
                 assert False, "type not supported yet"
             time.sleep(5)
-        time.sleep(5)  # make it configurable
-        print("wait takes %f seconds" % (time.time() - s))
-        return 0, NO_ERROR_MESSAGE
+        time.sleep(5)
+        print("wait takes %f seconds" % (time.monotonic() - s))
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWaitForStorage:
-    def __init__(
-        self,
-        resource_type,
-        resource_name,
-        storage_size,
-        timeout,
-        namespace,
-    ):
+    def __init__(self, resource_type, resource_name, storage_size, timeout, namespace):
         self.resource_type = resource_type
         self.resource_name = resource_name
         self.storage_size = storage_size
@@ -324,41 +329,35 @@ class TestWaitForStorage:
                 return True
         return False
 
+    @bounded_wait
     def run(self) -> Tuple[int, str]:
-        s = time.time()
+        s = time.monotonic()
         print(
             "wait until %s %s has storage size %s..."
             % (self.resource_type, self.resource_name, self.storage_size)
         )
         while True:
-            duration = time.time() - s
+            duration = time.monotonic() - s
             if duration > self.timeout:
                 error_message = (
                     "Conditional wait timeout: %s does not have storage size %s within %d seconds"
                     % (self.resource_name, self.storage_size, self.timeout)
                 )
                 print(error_message)
-                return 1, error_message
+                return (1, error_message)
             if self.resource_type == STS:
                 if self.check_sts():
                     break
             else:
                 assert False, "type not supported yet"
             time.sleep(5)
-        time.sleep(5)  # make it configurable
-        print("wait takes %f seconds" % (time.time() - s))
-        return 0, NO_ERROR_MESSAGE
+        time.sleep(5)
+        print("wait takes %f seconds" % (time.monotonic() - s))
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWaitForExistence:
-    def __init__(
-        self,
-        resource_type,
-        resource_name,
-        exist: bool,
-        timeout,
-        namespace,
-    ):
+    def __init__(self, resource_type, resource_name, exist: bool, timeout, namespace):
         self.resource_type = resource_type
         self.resource_name = resource_name
         self.exist = exist
@@ -372,13 +371,11 @@ class TestWaitForExistence:
             print("error occurs during check pvc", err)
             print(traceback.format_exc())
             return False
-
         if self.exist == EXIST:
             if secret is not None:
                 return True
-        else:
-            if secret is None:
-                return True
+        elif secret is None:
+            return True
         return False
 
     def check_service(self):
@@ -388,17 +385,16 @@ class TestWaitForExistence:
             print("error occurs during check pvc", err)
             print(traceback.format_exc())
             return False
-
         if self.exist == EXIST:
             if service is not None:
                 return True
-        else:
-            if service is None:
-                return True
+        elif service is None:
+            return True
         return False
 
+    @bounded_wait
     def run(self) -> Tuple[int, str]:
-        s = time.time()
+        s = time.monotonic()
         print(
             "wait until %s %s %s..."
             % (
@@ -408,7 +404,7 @@ class TestWaitForExistence:
             )
         )
         while True:
-            duration = time.time() - s
+            duration = time.monotonic() - s
             if duration > self.timeout:
                 error_message = (
                     "Conditional wait timeout: %s does not become %s within %d seconds"
@@ -419,7 +415,7 @@ class TestWaitForExistence:
                     )
                 )
                 print(error_message)
-                return 1, error_message
+                return (1, error_message)
             if self.resource_type == SECRET:
                 if self.check_secret():
                     break
@@ -429,19 +425,14 @@ class TestWaitForExistence:
             else:
                 assert False, "type not supported yet"
             time.sleep(5)
-        time.sleep(5)  # make it configurable
-        print("wait takes %f seconds" % (time.time() - s))
-        return 0, NO_ERROR_MESSAGE
+        time.sleep(5)
+        print("wait takes %f seconds" % (time.monotonic() - s))
+        return (0, NO_ERROR_MESSAGE)
 
 
 class TestWaitForCRConditions:
     def __init__(
-        self,
-        custom_resource_type,
-        resource_name,
-        conditions,
-        timeout,
-        namespace,
+        self, custom_resource_type, resource_name, conditions, timeout, namespace
     ):
         self.custom_resource_type = custom_resource_type
         self.resource_name = resource_name
@@ -463,40 +454,34 @@ class TestWaitForCRConditions:
                 return False
         return True
 
+    @bounded_wait
     def run(self) -> Tuple[int, str]:
-        s = time.time()
+        s = time.monotonic()
         print(
             "wait until %s %s %s..."
-            % (
-                self.custom_resource_type,
-                self.resource_name,
-                self.conditions,
-            )
+            % (self.custom_resource_type, self.resource_name, self.conditions)
         )
         while True:
-            duration = time.time() - s
+            duration = time.monotonic() - s
             if duration > self.timeout:
                 error_message = (
                     "Conditional wait timeout: %s does not achieve %s within %d seconds"
-                    % (
-                        self.resource_name,
-                        self.conditions,
-                        self.timeout,
-                    )
+                    % (self.resource_name, self.conditions, self.timeout)
                 )
                 print(error_message)
-                return 1, error_message
+                return (1, error_message)
             custom_resource = get_custom_resource(
                 self.custom_resource_type, self.resource_name, self.namespace
             )
             if custom_resource is None:
+                time.sleep(1)
                 continue
             if self.check_cr_conditions(custom_resource):
                 break
             time.sleep(5)
-        time.sleep(5)  # make it configurable
-        print("wait takes %f seconds" % (time.time() - s))
-        return 0, NO_ERROR_MESSAGE
+        time.sleep(5)
+        print("wait takes %f seconds" % (time.monotonic() - s))
+        return (0, NO_ERROR_MESSAGE)
 
 
 class BuiltInWorkLoad:
@@ -527,13 +512,7 @@ class BuiltInWorkLoad:
         timeout=common_config.workload_conditional_wait_timeout,
         namespace=common_config.namespace,
     ):
-        test_wait = TestWaitForStatus(
-            POD,
-            pod_name,
-            status,
-            timeout,
-            namespace,
-        )
+        test_wait = TestWaitForStatus(POD, pod_name, status, timeout, namespace)
         self.work_list.append(test_wait)
         return self
 
@@ -544,13 +523,7 @@ class BuiltInWorkLoad:
         timeout=common_config.workload_conditional_wait_timeout,
         namespace=common_config.namespace,
     ):
-        test_wait = TestWaitForStatus(
-            PVC,
-            pvc_name,
-            status,
-            timeout,
-            namespace,
-        )
+        test_wait = TestWaitForStatus(PVC, pvc_name, status, timeout, namespace)
         self.work_list.append(test_wait)
         return self
 
@@ -561,13 +534,7 @@ class BuiltInWorkLoad:
         timeout=common_config.workload_conditional_wait_timeout,
         namespace=common_config.namespace,
     ):
-        test_wait = TestWaitForExistence(
-            SECRET,
-            secret_name,
-            exist,
-            timeout,
-            namespace,
-        )
+        test_wait = TestWaitForExistence(SECRET, secret_name, exist, timeout, namespace)
         self.work_list.append(test_wait)
         return self
 
@@ -579,11 +546,7 @@ class BuiltInWorkLoad:
         namespace=common_config.namespace,
     ):
         test_wait = TestWaitForExistence(
-            SERVICE,
-            service_name,
-            exist,
-            timeout,
-            namespace,
+            SERVICE, service_name, exist, timeout, namespace
         )
         self.work_list.append(test_wait)
         return self
@@ -595,13 +558,7 @@ class BuiltInWorkLoad:
         timeout=common_config.workload_conditional_wait_timeout,
         namespace=common_config.namespace,
     ):
-        test_wait = TestWaitForStorage(
-            STS,
-            sts_name,
-            storage_size,
-            timeout,
-            namespace,
-        )
+        test_wait = TestWaitForStorage(STS, sts_name, storage_size, timeout, namespace)
         self.work_list.append(test_wait)
         return self
 
@@ -614,11 +571,7 @@ class BuiltInWorkLoad:
         namespace=common_config.namespace,
     ):
         test_wait = TestWaitForCRConditions(
-            custom_resource_type,
-            resource_name,
-            conditions,
-            timeout,
-            namespace,
+            custom_resource_type, resource_name, conditions, timeout, namespace
         )
         self.work_list.append(test_wait)
         return self
@@ -629,22 +582,25 @@ class BuiltInWorkLoad:
         return self
 
     def run(self, output_file):
-        with open(output_file, "w") as f:
-            for work in self.work_list:
-                return_code, error_message = work.run()
-                print(datetime.datetime.now())
-                if return_code != 0:
-                    print(error_message)
-                    f.write(error_message + "\n")
-                    if return_code == 2:
-                        return
-            print()
-            print(
-                "wait for final grace period %s seconds"
-                % (str(self.final_grace_period))
-            )
-            time.sleep(self.final_grace_period)
-            f.write("FINISH-SIEVE-TEST\n")
+        with execution(
+            common_config.process_timeouts, Path(output_file).parent / "commands"
+        ):
+            with open(output_file, "w") as f:
+                for work in self.work_list:
+                    return_code, error_message = work.run()
+                    print(datetime.datetime.now())
+                    if return_code != 0:
+                        print(error_message)
+                        f.write(error_message + "\n")
+                        if return_code == 2:
+                            return
+                print()
+                print(
+                    "wait for final grace period %s seconds"
+                    % str(self.final_grace_period)
+                )
+                time.sleep(self.final_grace_period)
+                f.write("FINISH-SIEVE-TEST\n")
 
 
 def new_built_in_workload(final_grace_period=50):

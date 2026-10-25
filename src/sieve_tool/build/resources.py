@@ -89,17 +89,20 @@ def docker_build_scope():
                 + "\n"
             )
         except Exception as error:
-            record.write_text(
-                json.dumps(
-                    {
-                        "owner_label": "sieve.build=" + owner,
-                        "status": "cleanup_failed",
-                        "error": str(error),
-                    },
-                    indent=2,
+            try:
+                record.write_text(
+                    json.dumps(
+                        {
+                            "owner_label": "sieve.build=" + owner,
+                            "status": "cleanup_failed",
+                            "error": str(error),
+                        },
+                        indent=2,
+                    )
+                    + "\n"
                 )
-                + "\n"
-            )
+            except OSError:
+                pass
             if failure is None:
                 raise
             failure.add_note(

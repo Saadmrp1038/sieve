@@ -174,16 +174,6 @@ def rmtree_if_exists(dir_name):
         shutil.rmtree(dir_name)
 
 
-def os_system(cmd, early_exit=True):
-    return_code = os.WEXITSTATUS(os.system(cmd))
-    if return_code != 0 and early_exit:
-        fail(cmd)
-        raise Exception(
-            "Failed to execute {} with return code {}".format(cmd, return_code)
-        )
-    return return_code
-
-
 def first_pass_learn_result_dir(learn_result_dir):
     learn_prev_res_dir = os.path.join(
         os.path.dirname(learn_result_dir),

@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from sieve_tool.paths import repository_root
+from sieve_tool.paths import repository_root, asset_path
 
 
 @dataclass
@@ -119,8 +119,15 @@ class ControllerConfig:
 
 
 def load_controller_config(controller_config_dir):
-    controller_config_path = os.path.join(controller_config_dir, "config.json")
+    controller_config_path = asset_path(controller_config_dir) / "config.json"
     controller_config = json.load(open(controller_config_path))
+    command = controller_config["test_command"]
+    if (
+        not isinstance(command, list)
+        or not command
+        or not all(isinstance(arg, str) for arg in command)
+    ):
+        raise ValueError("test_command must be a nonempty argument list")
     return ControllerConfig(
         controller_name=controller_config["name"],
         github_link=controller_config["github_link"],

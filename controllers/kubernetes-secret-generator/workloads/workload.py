@@ -3,28 +3,26 @@
 import base64
 import json
 from pathlib import Path
-import subprocess
 import sys
 import time
 import traceback
 
 import yaml
 
+from sieve_tool.process import run as run_process
+
 NAME = "sieve-generated-secret"
 TIMEOUT = 120
 
 
 def kubectl(*args, payload=None):
-    result = subprocess.run(
+    result = run_process(
         ["kubectl", "--namespace", "default", *args],
+        operation="Secret Generator kubectl",
         input=json.dumps(payload) if payload is not None else None,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
+        capture_output=True,
+        category="request",
     )
-    if result.returncode:
-        raise RuntimeError(result.stderr.strip())
     return result.stdout
 
 

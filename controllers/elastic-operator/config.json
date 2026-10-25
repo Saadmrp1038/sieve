@@ -6,7 +6,10 @@
     "client_go_version": "v0.23.0",
     "dockerfile_path": "Dockerfile",
     "controller_image_name": "elastic/elastic-operator:latest",
-    "test_command": "python3 controllers/elastic-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/elastic-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "elasticsearch"
     ],

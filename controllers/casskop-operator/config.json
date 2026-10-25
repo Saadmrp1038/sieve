@@ -6,7 +6,10 @@
     "client_go_version": "v0.18.2",
     "dockerfile_path": "build/Dockerfile",
     "controller_image_name": "orangeopensource/casskop-operator:latest",
-    "test_command": "python3 controllers/casskop-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/casskop-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "cassandracluster",
         "cassandrarestore",

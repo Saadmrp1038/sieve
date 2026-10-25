@@ -6,8 +6,15 @@
     "client_go_version": "v0.0.0-20191016111102-bec269661e48",
     "dockerfile_path": "build/Dockerfile",
     "controller_image_name": "kubernetes-secret-generator:latest",
-    "test_command": "python3 controllers/kubernetes-secret-generator/workloads/workload.py",
-    "custom_resource_definitions": ["stringsecret", "sshkeypair", "basicauth"],
+    "test_command": [
+        "python3",
+        "controllers/kubernetes-secret-generator/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "stringsecret",
+        "sshkeypair",
+        "basicauth"
+    ],
     "annotated_reconcile_functions": {
         "pkg/controller/crd/stringsecret/stringsecret_controller.go": "github.com/mittwald/kubernetes-secret-generator/pkg/controller/crd/stringsecret.(*ReconcileStringSecret).Reconcile",
         "pkg/controller/secret/secret_controller.go": "github.com/mittwald/kubernetes-secret-generator/pkg/controller/secret.(*ReconcileSecret).Reconcile"
@@ -16,6 +23,8 @@
     "container_name": "manager",
     "controller_deployment_file_path": "controllers/kubernetes-secret-generator/deploy/operator.yaml",
     "test_setting": {
-        "create-update-recreate": {"num_workers": 0}
+        "create-update-recreate": {
+            "num_workers": 0
+        }
     }
 }

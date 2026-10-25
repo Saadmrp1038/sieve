@@ -6,7 +6,10 @@
     "client_go_version": "v0.20.2",
     "dockerfile_path": "Dockerfile",
     "controller_image_name": "orangeopensource/nifikop-operator:latest",
-    "test_command": "python3 controllers/nifikop-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/nifikop-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "nificluster"
     ],

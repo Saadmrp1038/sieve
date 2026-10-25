@@ -9,7 +9,10 @@
     "vendored_sieve_client_path": "vendor/sieve.client",
     "dockerfile_path": "Dockerfile",
     "controller_image_name": "kapp-controller:latest",
-    "test_command": "python3 controllers/kapp-controller/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/kapp-controller/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "internalpackagemetadata",
         "internalpackage",

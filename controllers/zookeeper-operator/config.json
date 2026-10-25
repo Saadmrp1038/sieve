@@ -6,7 +6,10 @@
     "client_go_version": "v0.17.2",
     "dockerfile_path": "Dockerfile",
     "controller_image_name": "pravega/zookeeper-operator:latest",
-    "test_command": "python3 controllers/zookeeper-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/zookeeper-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "zookeepercluster"
     ],

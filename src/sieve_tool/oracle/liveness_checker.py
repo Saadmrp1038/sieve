@@ -6,35 +6,6 @@ from deepdiff import DeepDiff
 from pathlib import PurePath
 
 
-def get_resource_helper(func, namespace):
-    k8s_namespace = namespace
-    response = func(k8s_namespace, _preload_content=False, watch=False)
-    data = json.loads(response.data)
-    return {resource["metadata"]["name"]: resource for resource in data["items"]}
-
-
-def get_crd_list():
-    data = []
-    try:
-        for item in json.loads(os.popen("kubectl get crd -o json").read())["items"]:
-            data.append(item["spec"]["names"]["singular"])
-    except Exception as e:
-        print("get_crd_list fail", e)
-    return data
-
-
-def get_crd(crd):
-    data = {}
-    try:
-        for item in json.loads(os.popen("kubectl get {} -o json".format(crd)).read())[
-            "items"
-        ]:
-            data[item["metadata"]["name"]] = item
-    except Exception as e:
-        print("get_crd fail", e)
-    return data
-
-
 def generate_state(test_context: TestContext):
     end_state = {}
     deleted = set()

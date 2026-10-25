@@ -6,7 +6,10 @@
     "client_go_version": "v0.17.4",
     "dockerfile_path": "operator/docker/base/Dockerfile",
     "controller_image_name": "datastax/cass-operator:latest",
-    "test_command": "python3 controllers/cass-operator/workloads/workload.py",
+    "test_command": [
+        "python3",
+        "controllers/cass-operator/workloads/workload.py"
+    ],
     "custom_resource_definitions": [
         "cassandradatacenter"
     ],

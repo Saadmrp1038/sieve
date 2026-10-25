@@ -29,7 +29,7 @@ def create(directory, name):
         "dockerfile_path": "build/Dockerfile",
         "controller_image_name": f"{name}:latest",
         "annotated_reconcile_functions": {},
-        "test_command": f"python controllers/{name}/workloads/workload.py",
+        "test_command": ["python3", f"controllers/{name}/workloads/workload.py"],
         "custom_resource_definitions": [],
         "controller_pod_label": name,
         "controller_deployment_file_path": f"controllers/{name}/deploy/operator.yaml",

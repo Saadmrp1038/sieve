@@ -3,7 +3,6 @@
 import json
 import os
 from pathlib import Path
-import shlex
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -46,7 +45,7 @@ def test_explicit_repository_scaffold_and_cwd_restoration(tmp_path, monkeypatch)
     assert cli.main(command) == 0
     profile = checkout / "controllers/new-operator"
     config = load_controller_config(profile)
-    assert (checkout / shlex.split(config.test_command)[1]).is_file()
+    assert (checkout / config.test_command[1]).is_file()
     assert cli.main(command) == 1
     assert Path.cwd() == caller
     assert not (caller / "controllers").exists()
@@ -114,7 +113,7 @@ def test_cli_returns_failure_for_incomplete_or_alarming_test(tmp_path, failure):
 
 
 def test_failed_setup_cleans_cluster_and_keeps_original_error():
-    context = SimpleNamespace(postprocess=False)
+    context = SimpleNamespace(postprocess=False, mode="test", build_oracle=False)
     with (
         patch.object(runner, "prepare_test_plan"),
         patch.object(runner, "setup_cluster", side_effect=RuntimeError("setup broke")),
@@ -141,7 +140,7 @@ def test_all_controller_profiles_point_to_moved_assets():
     assert len(profiles) == 12
     for path in profiles:
         config = load_controller_config(path.parent)
-        assert (ROOT / shlex.split(config.test_command)[1]).is_file(), path
+        assert (ROOT / config.test_command[1]).is_file(), path
         assert (ROOT / config.controller_deployment_file_path).is_file(), path
         assert (path.parent / "build/build.sh").is_file(), path
         assert (path.parent / "deploy/deploy.sh").is_file(), path

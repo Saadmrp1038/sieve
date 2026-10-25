@@ -1,113 +1,144 @@
+from sieve_tool.kubernetes import api as kubernetes_api, load_config
+
+"""Create and tear down the cluster owned by this run, within finite budgets."""
+from contextlib import closing, contextmanager
+from contextvars import ContextVar
+import fcntl
+import json
 import os
 from pathlib import Path
 import shutil
-import subprocess
 import sys
+import tempfile
 import time
-import traceback
-import json
-import yaml
 import docker
 import kubernetes
-
+import yaml
 from sieve_tool.common.common import *
-from sieve_tool.paths import repository_root, cache_path
+from sieve_tool.paths import repository_root, cache_path, asset_path
+from sieve_tool.process import (
+    ProcessError,
+    bounded,
+    run,
+    request_timeout,
+    remaining,
+    limit,
+    wall_timeout,
+)
+
+_owned = ContextVar("sieve_cluster_owned", default=False)
+
+
+@contextmanager
+def cluster_lease():
+    path = Path(tempfile.gettempdir()) / f"sieve-kind-{os.getuid()}.lock"
+    with path.open("a") as stream:
+        try:
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError(
+                "Another Sieve run owns the kind cluster on this host"
+            ) from None
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
 
 
 def create_configmap(test_plan):
-    test_plan_content = json.dumps(yaml.safe_load(Path(test_plan).read_text()))
-    configmap = {}
-    configmap["apiVersion"] = "v1"
-    configmap["kind"] = "ConfigMap"
-    configmap["metadata"] = {"name": "sieve-testing-global-config"}
-    configmap["data"] = {"sieveTestPlan": test_plan_content}
-    configmap_path = "{}-configmap.yaml".format(test_plan[:-5])
-    yaml.dump(configmap, open(configmap_path, "w"), sort_keys=False)
-    return configmap_path
+    path = Path(test_plan)
+    content = {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {"name": "sieve-testing-global-config"},
+        "data": {"sieveTestPlan": json.dumps(yaml.safe_load(path.read_text()))},
+    }
+    target = path.with_name(path.stem + "-configmap.yaml")
+    target.write_text(yaml.safe_dump(content, sort_keys=False))
+    return str(target)
 
 
 def create_kind_config(num_apiservers, num_workers):
-    kind_config_dir = ".cache/kind"
-    os.makedirs(kind_config_dir, exist_ok=True)
-    kind_config_filename = os.path.join(
-        kind_config_dir,
-        "kind-{}a-{}w.yaml".format(
-            str(num_apiservers),
-            str(num_workers),
-        ),
+    directory = cache_path("kind")
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / f"kind-{num_apiservers}a-{num_workers}w.yaml"
+    target.write_text(
+        yaml.safe_dump(
+            {
+                "kind": "Cluster",
+                "apiVersion": "kind.x-k8s.io/v1alpha4",
+                "nodes": [{"role": "control-plane"} for _ in range(num_apiservers)]
+                + [{"role": "worker"} for _ in range(num_workers)],
+            },
+            sort_keys=False,
+        )
     )
-    with open(kind_config_filename, "w") as kind_config_file:
-        kind_config_file.writelines(
-            ["kind: Cluster\n", "apiVersion: kind.x-k8s.io/v1alpha4\n", "nodes:\n"]
-        )
-        for i in range(num_apiservers):
-            kind_config_file.write("- role: control-plane\n")
-        for i in range(num_workers):
-            kind_config_file.write("- role: worker\n")
-    return kind_config_filename
+    return str(target)
 
 
-def redirect_workers(test_context: TestContext):
-    leading_api = test_context.common_config.leading_api
+def redirect_workers(test_context):
     for i in range(test_context.num_workers):
-        worker = "kind-worker" + (str(i + 1) if i > 0 else "")
-        os_system(
-            "docker exec {} bash -c \"sed -i 's/kind-external-load-balancer/{}/g' /etc/kubernetes/kubelet.conf\"".format(
-                worker, leading_api
-            )
+        worker = "kind-worker" + (str(i + 1) if i else "")
+        run(
+            [
+                "docker",
+                "exec",
+                worker,
+                "sed",
+                "-i",
+                f"s/kind-external-load-balancer/{test_context.common_config.leading_api}/g",
+                "/etc/kubernetes/kubelet.conf",
+            ],
+            operation="redirect worker API endpoint",
         )
-        os_system('docker exec {} bash -c "systemctl restart kubelet"'.format(worker))
+        run(
+            ["docker", "exec", worker, "systemctl", "restart", "kubelet"],
+            operation="restart redirected kubelet",
+        )
 
 
 def redirect_kubectl():
-    client = docker.from_env(version="auto")
-    cp_port = client.containers.get("kind-control-plane").attrs["NetworkSettings"][
-        "Ports"
-    ]["6443/tcp"][0]["HostPort"]
-    balancer_port = client.containers.get("kind-external-load-balancer").attrs[
-        "NetworkSettings"
-    ]["Ports"]["6443/tcp"][0]["HostPort"]
-    kube_config = os.getenv("KUBECONFIG")
-    target_prefix = "    server: https://127.0.0.1:"
-    fin = open(kube_config)
-    data = fin.read()
-    # print("Replace {} w {} in {}".format(balancer_port, cp_port, kube_config))
-    data = data.replace(target_prefix + balancer_port, target_prefix + cp_port)
-    fin.close()
-    fin = open(kube_config, "w")
-    fin.write(data)
-    fin.close()
+    with (
+        wall_timeout("inspect Docker node", limit("request")),
+        closing(docker.from_env(timeout=remaining(limit("request")))) as client,
+    ):
+        cp_port = client.containers.get("kind-control-plane").attrs["NetworkSettings"][
+            "Ports"
+        ]["6443/tcp"][0]["HostPort"]
+        balancer_port = client.containers.get("kind-external-load-balancer").attrs[
+            "NetworkSettings"
+        ]["Ports"]["6443/tcp"][0]["HostPort"]
+    target = Path(os.environ["KUBECONFIG"])
+    prefix = "    server: https://127.0.0.1:"
+    target.write_text(
+        target.read_text().replace(prefix + balancer_port, prefix + cp_port)
+    )
 
 
 def get_apiserver_ports(num_api):
-    client = docker.from_env(version="auto")
-    ports = []
-    for i in range(num_api):
-        container_name_prefix = "kind-control-plane"
-        suffix = str(i + 1) if i > 0 else ""
-        cp_port = client.containers.get(container_name_prefix + suffix).attrs[
-            "NetworkSettings"
-        ]["Ports"]["6443/tcp"][0]["HostPort"]
-        ports.append(cp_port)
-    return ports
+    with (
+        wall_timeout("inspect Docker node", limit("request")),
+        closing(docker.from_env(timeout=remaining(limit("request")))) as client,
+    ):
+        return [
+            client.containers.get(
+                "kind-control-plane" + (str(i + 1) if i else "")
+            ).attrs["NetworkSettings"]["Ports"]["6443/tcp"][0]["HostPort"]
+            for i in range(num_api)
+        ]
 
 
-def prepare_coordinator(test_context: TestContext):
+def prepare_coordinator(test_context):
     workspace = cache_path("coordinator")
     if workspace.exists():
         shutil.rmtree(workspace)
     workspace.mkdir(parents=True)
-    subprocess.run(
-        ["go", "build", "-o", str(workspace / "sieve-coordinator"), "."],
+    run(
+        ["go", "build", "-o", workspace / "sieve-coordinator", "."],
         cwd=repository_root() / "go/coordinator",
-        env={
-            **os.environ,
-            "GOOS": "linux",
-            "GOARCH": "amd64",
-            "CGO_ENABLED": "0",
-            "GOWORK": "off",
-        },
-        check=True,
+        env={"GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "0", "GOWORK": "off"},
+        category="compile",
+        operation="compile coordinator",
     )
     if test_context.mode == sieve_modes.TEST:
         (workspace / "configured_field_key_mask.json").write_text(
@@ -121,22 +152,23 @@ def prepare_coordinator(test_context: TestContext):
             workspace / "learned_field_path_mask.json",
         )
     shutil.copy(test_context.test_plan, workspace / "server.yaml")
-    subprocess.run(
-        ["docker", "exec", "kind-control-plane", "mkdir", "-p", "/sieve"], check=True
+    run(
+        ["docker", "exec", "kind-control-plane", "mkdir", "-p", "/sieve"],
+        operation="prepare coordinator directory",
     )
-    subprocess.run(
-        ["docker", "cp", str(workspace), "kind-control-plane:/sieve/coordinator"],
-        check=True,
+    run(
+        ["docker", "cp", workspace, "kind-control-plane:/sieve/coordinator"],
+        operation="copy coordinator into node",
     )
 
 
-def start_coordinator(test_context: TestContext):
+def start_coordinator(test_context):
     mode = (
         test_context.mode
         if test_context.mode == sieve_modes.TEST
         else sieve_modes.LEARN
     )
-    subprocess.run(
+    run(
         [
             "docker",
             "exec",
@@ -145,12 +177,12 @@ def start_coordinator(test_context: TestContext):
             "-c",
             f"cd /sieve/coordinator || exit 1; ./sieve-coordinator {mode} > sieve-server.log 2>&1 & echo $! > coordinator.pid",
         ],
-        check=True,
+        operation="start coordinator",
     )
 
 
 def stop_coordinator():
-    subprocess.run(
+    run(
         [
             "docker",
             "exec",
@@ -159,222 +191,207 @@ def stop_coordinator():
             "-c",
             'read -r pid < /sieve/coordinator/coordinator.pid; kill "$pid"',
         ],
-        check=True,
+        operation="stop coordinator",
+        timeout=15,
     )
 
 
-def setup_kind_cluster(test_context: TestContext):
-    kind_config = create_kind_config(
+def setup_kind_cluster(test_context):
+    existing = run(
+        ["kind", "get", "clusters"],
+        operation="check existing clusters",
+        capture_output=True,
+    ).stdout.splitlines()
+    if "kind" in existing:
+        raise RuntimeError(
+            "A kind cluster already exists; refusing to replace an unowned cluster"
+        )
+    configuration = create_kind_config(
         test_context.num_apiservers, test_context.num_workers
     )
-    platform = ""
-    if sys.platform == "darwin":
-        platform = "macos-"
-    k8s_container_registry = test_context.container_registry
-    k8s_image_tag = (
-        test_context.controller_config.kubernetes_version
-        + "-"
-        + platform
-        + test_context.image_tag
+    platform = "macos-" if sys.platform == "darwin" else ""
+    image = f"{test_context.container_registry}/node:{test_context.controller_config.kubernetes_version}-{platform}{test_context.image_tag}"
+    _owned.set(True)
+    (Path(test_context.result_dir) / "resources.json").write_text(
+        json.dumps(
+            {"cluster": "kind", "owner_pid": os.getpid(), "image": image}, indent=2
+        )
+        + "\n"
     )
-    retry_cnt = 0
-    # Retry cluster creation for 5 times.
-    while retry_cnt < 5:
+    for attempt in range(3):
         try:
-            os_system("kind delete cluster")
-            # Sleep here in case if the machine is slow and kind cluster deletion is not done before creating a new cluster.
-            time.sleep(10 * retry_cnt)
-            if retry_cnt == 0:
-                print("Trying to create kind cluster")
-            else:
-                print(
-                    "Retrying to create kind cluster; retry count {}".format(retry_cnt)
-                )
-            retry_cnt += 1
-            os_system(
-                "kind create cluster --image {}/node:{} --config {}".format(
-                    k8s_container_registry, k8s_image_tag, kind_config
-                )
+            run(
+                [
+                    "kind",
+                    "create",
+                    "cluster",
+                    "--image",
+                    image,
+                    "--config",
+                    configuration,
+                ],
+                category="cluster",
+                operation="create kind cluster",
             )
-            os_system(
-                "docker exec kind-control-plane bash -c 'mkdir -p /root/.kube/ && cp /etc/kubernetes/admin.conf /root/.kube/config'"
+            run(
+                [
+                    "docker",
+                    "exec",
+                    "kind-control-plane",
+                    "bash",
+                    "-c",
+                    "mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config",
+                ],
+                operation="prepare node kubeconfig",
             )
             return
-        except Exception:
-            print(traceback.format_exc())
-    raise RuntimeError("Failed to create kind cluster after five attempts")
+        except ProcessError:
+            if attempt == 2 or remaining(limit("cluster")) <= 0:
+                raise
+            run(
+                ["kind", "delete", "cluster"],
+                category="cluster",
+                operation="remove partial cluster",
+            )
+            time.sleep(min(5 * (attempt + 1), remaining(limit("cluster"))))
 
 
-def setup_cluster(test_context: TestContext):
-    """
-    Set up the kind cluster for testing and wait until the control plane is ready.
-    """
+@bounded("cluster")
+def setup_cluster(test_context):
     setup_kind_cluster(test_context)
-    print("\n\n")
-
-    # When testing stale-state, we need to pause the apiserver
-    # if workers talks to the paused apiserver, the whole cluster will be slowed down.
-    # In a multi-apiserver set up (HA mode), each worker (kubelet) talks to a load balancer
-    # which might forward the request to any backend apiserver.
-    # We want to focus on testing how the controller handles staleness
-    # so here we redirect the workers to an apiserver (configurable in config.json)
-    # which Sieve will NOT slow down later.
     if "reconnectController" in test_context.action_types:
-        cprint(
-            "Redirecting workers and kubectl to the leading API server...",
-            bcolors.OKGREEN,
-        )
-        redirect_workers(test_context)  # Redirect the kubelet on each worker node.
-        redirect_kubectl()  # Redirect the local kubectl.
-        ok("Redirection done")
-
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-
-    # Then we wait apiservers to be ready.
-    print("Waiting for apiservers to be ready...")
-    apiserver_list = []
-    for i in range(test_context.num_apiservers):
-        apiserver_name = "kube-apiserver-kind-control-plane" + (
-            "" if i == 0 else str(i + 1)
-        )
-        apiserver_list.append(apiserver_name)
-    # TODO: this can be better replaced by a watch.
-    for tick in range(600):
-        created = core_v1.list_namespaced_pod(
-            "kube-system", watch=False, label_selector="component=kube-apiserver"
+        redirect_workers(test_context)
+        redirect_kubectl()
+    load_config()
+    api = kubernetes_api(kubernetes.client.CoreV1Api)
+    end = time.monotonic() + remaining(limit("cluster"))
+    while time.monotonic() < end:
+        pods = api.list_namespaced_pod(
+            "kube-system",
+            watch=False,
+            label_selector="component=kube-apiserver",
+            _request_timeout=request_timeout(),
         ).items
-        if len(created) == len(apiserver_list) and len(created) == len(
-            [item for item in created if item.status.phase == "Running"]
+        if len(pods) == test_context.num_apiservers and all(
+            (pod.status.phase == "Running" for pod in pods)
         ):
             break
-        time.sleep(1)
-
+        time.sleep(min(1, max(0, end - time.monotonic())))
+    else:
+        raise RuntimeError("API-server readiness deadline expired")
     if test_context.mode != sieve_modes.VANILLA:
-        # Start the Sieve server.
-        # In learn mode, it will record the controller events used for generating test plans.
-        # In test mode, it reads the test plan and injects fault accordingly.
         prepare_coordinator(test_context)
-        cprint("Setting up Sieve server...", bcolors.OKGREEN)
         start_coordinator(test_context)
-        ok("Sieve server set up")
-
-    time.sleep(3)  # Ensure that every apiserver will see the configmap is created.
-
-    # We store the test plan into a configmap and create this configmap
-    # so that the instrumentation at the apiserver side can also read the test plan
-    # (by examining each incoming confimap creation event).
-    # This is a bit hacky.
-    # TODO: find a more elegant way to communicate with the instrumented apiserver.
-    configmap = create_configmap(test_context.test_plan)
-    os_system("kubectl apply -f {}".format(configmap))
-
-    # Preload controller image to kind nodes.
-    # This makes it faster to start the controller.
-    image = "{}/{}:{}".format(
-        test_context.container_registry,
-        test_context.controller,
-        test_context.image_tag,
+    time.sleep(3)
+    run(
+        ["kubectl", "apply", "-f", create_configmap(test_context.test_plan)],
+        operation="publish Sieve configuration",
     )
-    kind_load_cmd = "kind load docker-image {}".format(image)
-    print("Loading image {} to kind nodes...".format(image))
-    if os_system(kind_load_cmd, early_exit=False) != 0:
-        print("Cannot load image {} locally, try to pull from remote".format(image))
-        os_system("docker pull {}".format(image))
-        os_system(kind_load_cmd)
+    image = f"{test_context.container_registry}/{test_context.controller}:{test_context.image_tag}"
+    loaded = run(
+        ["kind", "load", "docker-image", image],
+        operation="load controller image",
+        category="network",
+        check=False,
+    )
+    if loaded.returncode:
+        run(
+            ["docker", "pull", image],
+            operation="pull controller image",
+            category="network",
+        )
+        run(
+            ["kind", "load", "docker-image", image],
+            operation="load pulled controller image",
+            category="network",
+        )
 
 
-def deploy_controller(test_context: TestContext):
-    # Install csi driver if some controller needs it.
+def deploy_controller(test_context):
     if test_context.use_csi_driver:
-        print("Installing csi provisioner...")
-        org_dir = os.getcwd()
-        os.chdir("infra/kubernetes/csi-driver")
-        os_system("./install.sh")
-        os.chdir(org_dir)
-
-    deployment_file = test_context.controller_config.controller_deployment_file_path
-
-    # Backup the provided deployment file.
-    backup_deployment_file = deployment_file + ".bkp"
-    shutil.copyfile(deployment_file, backup_deployment_file)
-
-    # Modify the marked container_registry and image_tag in the deployment yaml.
-    # TODO: there should be a better way to parameterize the deployment yaml file.
-    fin = open(deployment_file)
-    data = fin.read()
-    data = data.replace("${SIEVE-DR}", test_context.container_registry)
-    data = data.replace("${SIEVE-DT}", test_context.image_tag)
-    fin.close()
-    fin = open(deployment_file, "w")
-    fin.write(data)
-    fin.close()
-
-    # Run the provided deploy script.
-    org_dir = os.getcwd()
-    os.chdir(deploy_directory(test_context))
-    os_system("./deploy.sh")
-    os.chdir(org_dir)
-
-    # Restore deployment file for later use.
-    shutil.copyfile(backup_deployment_file, deployment_file)
-    os.remove(backup_deployment_file)
+        run(
+            ["bash", "./install.sh"],
+            cwd=repository_root() / "infra/kubernetes/csi-driver",
+            operation="install CSI provisioner",
+            category="cluster",
+        )
+    source = Path(test_context.controller_config_dir) / "deploy"
+    target = Path(test_context.result_dir) / "deployment"
+    shutil.copytree(source, target)
+    manifest = target / asset_path(
+        test_context.controller_config.controller_deployment_file_path
+    ).relative_to(source)
+    manifest.write_text(
+        manifest.read_text()
+        .replace("${SIEVE-DR}", test_context.container_registry)
+        .replace("${SIEVE-DT}", test_context.image_tag)
+    )
+    run(
+        ["bash", "./deploy.sh"],
+        cwd=target,
+        operation="deploy controller",
+        category="cluster",
+    )
 
 
-def start_controller(test_context: TestContext):
-    """
-    Deploy the controller and wait until the controller becomes ready
-    """
-    controller = test_context.controller
-    num_apiservers = test_context.num_apiservers
+@bounded("cluster")
+def start_controller(test_context):
     deploy_controller(test_context)
-
-    kubernetes.config.load_kube_config()
-    core_v1 = kubernetes.client.CoreV1Api()
-
-    # Wait for controller pod to be ready
-    # TODO: this can be better replaced by a watch.
-    print("Wait for the controller pod to be ready...")
-    pod_ready = False
-    for tick in range(600):
-        controller_pod = core_v1.list_namespaced_pod(
+    load_config()
+    api = kubernetes_api(kubernetes.client.CoreV1Api)
+    end = time.monotonic() + remaining(limit("cluster"))
+    while time.monotonic() < end:
+        pods = api.list_namespaced_pod(
             test_context.common_config.namespace,
             watch=False,
-            label_selector="sievetag=" + controller,
+            label_selector="sievetag=" + test_context.controller,
+            _request_timeout=request_timeout(),
         ).items
-        if len(controller_pod) >= 1:
-            if controller_pod[0].status.phase == "Running":
-                pod_ready = True
-                break
-        time.sleep(1)
-    if not pod_ready:
-        fail("waiting for the controller pod to be ready")
-        raise Exception("Wait timeout after 600 seconds")
-
-    # Issue a get crd operation to each apiserver (i.e., addr)
-    # to make sure the instrumentation at the apiserver side
-    # can observe the crd change.
-    # This is necessary because sometimes the instrumentation at the apiserver
-    # side needs to talk to the Sieve server when certain changes happen to
-    # the custom resource objects (depending on the test plan).
-    apiserver_addr_list = []
-    apiserver_ports = get_apiserver_ports(num_apiservers)
-    for port in apiserver_ports:
-        apiserver_addr_list.append("https://127.0.0.1:" + port)
-    for addr in apiserver_addr_list:
+        if pods and any(
+            (
+                pod.status.phase == "Running"
+                and any(
+                    (
+                        condition.type == "Ready" and condition.status == "True"
+                        for condition in pod.status.conditions or []
+                    )
+                )
+                for pod in pods
+            )
+        ):
+            break
+        time.sleep(min(1, max(0, end - time.monotonic())))
+    else:
+        raise RuntimeError("Controller readiness deadline expired")
+    for port in get_apiserver_ports(test_context.num_apiservers):
         for crd in test_context.controller_config.custom_resource_definitions:
-            os_system("kubectl get {} -s {} --ignore-not-found=true".format(crd, addr))
+            run(
+                [
+                    "kubectl",
+                    "get",
+                    crd,
+                    "-s",
+                    f"https://127.0.0.1:{port}",
+                    "--ignore-not-found=true",
+                ],
+                operation="prime API-server CRD instrumentation",
+            )
 
 
 def teardown_cluster():
-    os_system("kind delete cluster")
+    if _owned.get():
+        run(
+            ["kind", "delete", "cluster"],
+            operation="delete owned cluster",
+            category="cleanup",
+        )
+        _owned.set(False)
 
 
 def generate_testing_cluster_config(mode, controller_config, test_plan, test_workload):
     num_apiservers = 1
     num_workers = 2
     use_csi_driver = False
-
     if test_workload in controller_config.test_setting:
         if "num_apiservers" in controller_config.test_setting[test_workload]:
             num_apiservers = controller_config.test_setting[test_workload][
@@ -386,8 +403,4 @@ def generate_testing_cluster_config(mode, controller_config, test_plan, test_wor
             use_csi_driver = controller_config.test_setting[test_workload][
                 "use_csi_driver"
             ]
-    return (
-        num_apiservers,
-        num_workers,
-        use_csi_driver,
-    )
+    return (num_apiservers, num_workers, use_csi_driver)
