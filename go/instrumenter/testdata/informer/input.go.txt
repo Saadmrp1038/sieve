@@ -1,0 +1,19 @@
+package cache
+
+import "errors"
+
+type Delta struct {
+	Type   string
+	Object interface{}
+}
+type sharedIndexInformer struct{ Values []interface{} }
+
+func (s *sharedIndexInformer) HandleDeltas(obj interface{}) error {
+	for _, d := range obj.([]Delta) {
+		if d.Type == "error" {
+			return errors.New("bad delta")
+		}
+		s.Values = append(s.Values, d.Object)
+	}
+	return nil
+}

@@ -1,0 +1,22 @@
+package cacher
+
+type Event struct {
+	Type   string
+	Key    string
+	Object interface{}
+}
+type watchCache struct {
+	seen   int
+	last   string
+	values []interface{}
+}
+
+func (w *watchCache) processEvent(event Event) error {
+	w.seen++
+	key := event.Key
+	obj := event.Object
+	_ = obj
+	w.last = key
+	w.values = append(w.values, event.Object)
+	return nil
+}

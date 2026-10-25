@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/dave/dst"
@@ -110,13 +111,23 @@ func writeInstrumentedFile(ofilepath, pkg string, f *dst.File, customizedImportM
 	fres := res.FileRestorer()
 	fres.Alias["sieve.client"] = "sieve"
 
-	autoInstrFile, err := os.Create(ofilepath)
-	check(err)
-	defer autoInstrFile.Close()
 	var buf bytes.Buffer
-	err = fres.Fprint(&buf, f)
+	check(fres.Fprint(&buf, f))
+	temporary, err := os.CreateTemp(filepath.Dir(ofilepath), ".sieve-instrument-*")
 	check(err)
-	autoInstrFile.Write(buf.Bytes())
+	defer os.Remove(temporary.Name())
+	defer temporary.Close()
+	mode := os.FileMode(0644)
+	if info, err := os.Stat(ofilepath); err == nil {
+		mode = info.Mode().Perm()
+	} else if !os.IsNotExist(err) {
+		check(err)
+	}
+	check(temporary.Chmod(mode))
+	_, err = temporary.Write(buf.Bytes())
+	check(err)
+	check(temporary.Close())
+	check(os.Rename(temporary.Name(), ofilepath))
 }
 
 func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, stackFrame string) {

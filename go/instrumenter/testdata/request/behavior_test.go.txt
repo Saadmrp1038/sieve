@@ -1,0 +1,14 @@
+package rest
+
+import "testing"
+
+func TestBehavior(t *testing.T) {
+	r := &Request{verb: "POST", resource: "secrets", resourceName: "example", namespace: "default", namespaceSet: true}
+	if r.Body("payload") != r {
+		t.Fatal("Body lost receiver")
+	}
+	result := r.Do()
+	if value, err := result.Get(); value != "payload" || err != nil {
+		t.Fatalf("changed response: %v %v", value, err)
+	}
+}

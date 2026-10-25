@@ -1,0 +1,16 @@
+package cache
+
+import "testing"
+
+func TestBehavior(t *testing.T) {
+	s := &sharedIndexInformer{}
+	if err := s.HandleDeltas([]Delta{{Type: "Added", Object: "one"}, {Type: "Updated", Object: "two"}}); err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Values) != 2 || s.Values[0] != "one" || s.Values[1] != "two" {
+		t.Fatalf("changed delta order: %v", s.Values)
+	}
+	if err := s.HandleDeltas([]Delta{{Type: "error", Object: "three"}}); err == nil || len(s.Values) != 2 {
+		t.Fatalf("changed error: %v %v", err, s.Values)
+	}
+}

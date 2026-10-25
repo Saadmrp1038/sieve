@@ -1,0 +1,46 @@
+package cache
+
+import sieve "sieve.client"
+
+type storage struct{ items map[string]interface{} }
+
+func (s *storage) List() []interface{} {
+	result := []interface{}{}
+	for _, obj := range s.items {
+		result = append(result, obj)
+	}
+	return result
+}
+func (s *storage) Get(key string) (interface{}, bool)                   { obj, ok := s.items[key]; return obj, ok }
+func (s *storage) ByIndex(indexName, key string) ([]interface{}, error) { return s.List(), nil }
+
+type cache struct{ cacheStorage *storage }
+
+func (c *cache) GetByKey(key string) (interface{}, bool, error) {
+	sieve.NotifyLearnBeforeCacheGet(key, c.cacheStorage.List()) //sieve
+	item, exists := c.cacheStorage.Get(key)
+	sieve.NotifyLearnAfterCacheGet(key, item, exists) //sieve
+	return item, exists, nil
+}
+func (c *cache) List() []interface{} {
+	sieve.NotifyLearnBeforeCacheList(c.cacheStorage.List()) //sieve
+	items := c.cacheStorage.List()                          //sieve
+	sieve.NotifyLearnAfterCacheList(items, nil)             //sieve
+	return items                                            //sieve
+}
+func (c *cache) ByIndex(indexName, key string) ([]interface{}, error) {
+	sieve.NotifyLearnBeforeCacheList(c.cacheStorage.List()) //sieve
+	items, err := c.cacheStorage.ByIndex(indexName, key)    //sieve
+	sieve.NotifyLearnAfterCacheList(items, err)             //sieve
+	return items, err                                       //sieve
+}
+func (c *cache) Add(obj interface{}) error    { c.cacheStorage.items["key"] = obj; return nil }
+func (c *cache) Update(obj interface{}) error { c.cacheStorage.items["key"] = obj; return nil }
+func (c *cache) Delete(obj interface{}) error { delete(c.cacheStorage.items, "key"); return nil }
+func (c *cache) Replace(list []interface{}, resourceVersion string) error {
+	c.cacheStorage.items = map[string]interface{}{}
+	for _, obj := range list {
+		c.cacheStorage.items["key"] = obj
+	}
+	return nil
+}

@@ -1,0 +1,15 @@
+package example
+
+import "testing"
+
+func TestBehavior(t *testing.T) {
+	c := &Client{}
+	value, err := c.Create(3)
+	if value != 4 || err != nil || c.Calls != 1 {
+		t.Fatalf("changed result: %d %v %+v", value, err, c)
+	}
+	value, err = c.Create(-1)
+	if value != -1 || err == nil || c.Calls != 2 {
+		t.Fatalf("changed early return: %d %v %+v", value, err, c)
+	}
+}

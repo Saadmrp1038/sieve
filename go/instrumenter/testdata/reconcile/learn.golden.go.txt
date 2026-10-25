@@ -1,0 +1,19 @@
+package example
+
+import (
+	"errors"
+
+	sieve "sieve.client"
+)
+
+type Reconciler struct{ Calls int }
+
+func (r *Reconciler) Reconcile(value int) (int, error) {
+	sieve.NotifyLearnBeforeReconcile("example.(*Reconciler).Reconcile")      //sieve
+	defer sieve.NotifyLearnAfterReconcile("example.(*Reconciler).Reconcile") //sieve
+	r.Calls++
+	if value < 0 {
+		return -1, errors.New("negative")
+	}
+	return value * 2, nil
+}

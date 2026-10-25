@@ -1,0 +1,61 @@
+package cache
+
+import sieve "sieve.client"
+
+type storage struct{ items map[string]interface{} }
+
+func (s *storage) List() []interface{} {
+	result := []interface{}{}
+	for _, obj := range s.items {
+		result = append(result, obj)
+	}
+	return result
+}
+func (s *storage) Get(key string) (interface{}, bool)                   { obj, ok := s.items[key]; return obj, ok }
+func (s *storage) ByIndex(indexName, key string) ([]interface{}, error) { return s.List(), nil }
+
+type cache struct{ cacheStorage *storage }
+
+func (c *cache) GetByKey(key string) (interface{}, bool, error) {
+	sieveBeforeResourceKey := sieve.NotifyTestBeforeCacheGet(key, c.cacheStorage.List(), c) //sieve
+	item, exists := c.cacheStorage.Get(key)
+	sieve.NotifyTestAfterCacheGet(key, item, exists, sieveBeforeResourceKey) //sieve
+	return item, exists, nil
+}
+func (c *cache) List() []interface{} {
+	sieve.NotifyTestBeforeCacheList(c.cacheStorage.List()) //sieve
+	items := c.cacheStorage.List()                         //sieve
+	sieve.NotifyTestAfterCacheList(items, nil)             //sieve
+	return items                                           //sieve
+}
+func (c *cache) ByIndex(indexName, key string) ([]interface{}, error) {
+	sieve.NotifyTestBeforeCacheList(c.cacheStorage.List()) //sieve
+	items, err := c.cacheStorage.ByIndex(indexName, key)   //sieve
+	sieve.NotifyTestAfterCacheList(items, err)             //sieve
+	return items, err                                      //sieve
+}
+func (c *cache) Add(obj interface{}) error {
+	sieve.NotifyTestCacheObject(c, obj) //sieve
+	c.cacheStorage.items["key"] = obj
+	return nil
+}
+func (c *cache) Update(obj interface{}) error {
+	sieve.NotifyTestCacheObject(c, obj) //sieve
+	c.cacheStorage.items["key"] = obj
+	return nil
+}
+func (c *cache) Delete(obj interface{}) error {
+	sieve.NotifyTestCacheObject(c, obj) //sieve
+	delete(c.cacheStorage.items, "key")
+	return nil
+}
+func (c *cache) Replace(list []interface{}, resourceVersion string) error {
+	for _, sieveObject := range list {
+		sieve.NotifyTestCacheObject(c, sieveObject)
+	} //sieve
+	c.cacheStorage.items = map[string]interface{}{}
+	for _, obj := range list {
+		c.cacheStorage.items["key"] = obj
+	}
+	return nil
+}

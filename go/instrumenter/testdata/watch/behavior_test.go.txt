@@ -1,0 +1,13 @@
+package cacher
+
+import "testing"
+
+func TestBehavior(t *testing.T) {
+	w := &watchCache{}
+	if err := w.processEvent(Event{Type: "ADDED", Key: "secrets/default/one", Object: map[string]interface{}{"metadata": map[string]interface{}{"name": "one", "namespace": "default"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if w.seen != 1 || w.last != "secrets/default/one" || len(w.values) != 1 {
+		t.Fatalf("changed cache write: %+v", w)
+	}
+}

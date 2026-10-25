@@ -1,0 +1,15 @@
+package example
+
+import "testing"
+
+func TestBehavior(t *testing.T) {
+	r := &Reconciler{}
+	value, err := r.Reconcile(3)
+	if value != 6 || err != nil || r.Calls != 1 {
+		t.Fatalf("changed result: %d %v %+v", value, err, r)
+	}
+	value, err = r.Reconcile(-1)
+	if value != -1 || err == nil || r.Calls != 2 {
+		t.Fatalf("changed early return: %d %v %+v", value, err, r)
+	}
+}

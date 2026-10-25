@@ -2,13 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"strings"
-
-	"encoding/json"
 )
 
 func instrumentKubernetesForTest(k8s_filepath string) {
@@ -23,129 +19,91 @@ func instrumentKubernetesForLearn(k8s_filepath string) {
 	instrumentWatchCacheGoForAll(watchCacheGoFile, watchCacheGoFile, "Learn", true, false)
 }
 
-func instrumentControllerForLearn(configMap map[string]interface{}) {
-	application_file_path := configMap["app_file_path"].(string)
-	client_go_filepath := configMap["client_go_filepath"].(string)
-	annotated_reconcile_functions := configMap["annotated_reconcile_functions"].(map[string]interface{})
-	apis_to_instrument := configMap["apis_to_instrument"].([]interface{})
+func instrumentControllerForLearn(config InstrumentationConfig) {
+	applicationFilePath := config.ApplicationPath
+	clientGoPath := config.ClientGoPath
+	reconcileFunctions := config.ReconcileFunctions
+	apis := config.APIs
 
-	sharedInformerGoFile := path.Join(client_go_filepath, "tools", "cache", "shared_informer.go")
+	sharedInformerGoFile := path.Join(clientGoPath, "tools", "cache", "shared_informer.go")
 	fmt.Printf("instrumenting %s\n", sharedInformerGoFile)
 	instrumentSharedInformerGoForAll(sharedInformerGoFile, sharedInformerGoFile, "Learn")
 
-	requestGoFile := path.Join(client_go_filepath, "rest", "request.go")
+	requestGoFile := path.Join(clientGoPath, "rest", "request.go")
 	fmt.Printf("instrumenting %s\n", requestGoFile)
 	instrumentRequestGoForAll(requestGoFile, requestGoFile, "Learn")
 
-	storeGoFile := path.Join(client_go_filepath, "tools", "cache", "store.go")
+	storeGoFile := path.Join(clientGoPath, "tools", "cache", "store.go")
 	fmt.Printf("instrumenting %s\n", storeGoFile)
 	instrumentStoreGoForAll(storeGoFile, storeGoFile, "Learn")
 
-	for filePath, stackFrame := range annotated_reconcile_functions {
-		source_file_to_instrument := path.Join(application_file_path, filePath)
-		tokens := strings.Split(strings.Split(stackFrame.(string), "/")[len(strings.Split(stackFrame.(string), "/"))-1], ".")
-		pkg := tokens[len(tokens)-3]
-		recvType := strings.Trim(tokens[len(tokens)-2], "()")
-		funName := tokens[len(tokens)-1]
+	for filePath, stackFrame := range reconcileFunctions {
+		source_file_to_instrument := path.Join(applicationFilePath, filePath)
+		pkg, recvType, funName, err := reconcileTarget(stackFrame)
+		if err != nil {
+			panic(err)
+		}
 		fmt.Printf("instrumenting %s\n", source_file_to_instrument)
-		instrumentAnnotatedReconcile(source_file_to_instrument, source_file_to_instrument, pkg, funName, recvType, stackFrame.(string))
+		instrumentAnnotatedReconcile(source_file_to_instrument, source_file_to_instrument, pkg, funName, recvType, stackFrame)
 	}
 
-	for _, api_to_instrument := range apis_to_instrument {
-		entry := api_to_instrument.(map[string]interface{})
-		module := entry["module"].(string)
-		filePath := entry["file_path"].(string)
-		pkg := entry["package"].(string)
-		funName := entry["func_name"].(string)
-		recvType := entry["receiver_type"].(string)
-		customizedImportMap := map[string]string{}
-		if val, ok := entry["import_map"]; ok {
-			tempMap := val.(map[string]interface{})
-			for key, val := range tempMap {
-				customizedImportMap[key] = val.(string)
-			}
-		}
-		source_file_to_instrument := path.Join(application_file_path, "sieve-dependency", "src", module, filePath)
+	for _, api_to_instrument := range apis {
+		module, filePath, pkg, funName, recvType := api_to_instrument.Module, api_to_instrument.FilePath, api_to_instrument.Package, api_to_instrument.Function, api_to_instrument.ReceiverType
+		customizedImportMap := api_to_instrument.ImportMap
+		source_file_to_instrument := path.Join(applicationFilePath, "sieve-dependency", "src", module, filePath)
 		fmt.Printf("instrumenting %s\n", source_file_to_instrument)
 		instrumentAnnotatedAPI(source_file_to_instrument, source_file_to_instrument, module, filePath, pkg, funName, recvType, "Learn", customizedImportMap, true)
 	}
 }
 
-func instrumentControllerForTest(configMap map[string]interface{}) {
-	client_go_filepath := configMap["client_go_filepath"].(string)
-	application_file_path := configMap["app_file_path"].(string)
-	apis_to_instrument := configMap["apis_to_instrument"].([]interface{})
+func instrumentControllerForTest(config InstrumentationConfig) {
+	clientGoPath := config.ClientGoPath
+	applicationFilePath := config.ApplicationPath
+	apis := config.APIs
 
-	requestGoFile := path.Join(client_go_filepath, "rest", "request.go")
+	requestGoFile := path.Join(clientGoPath, "rest", "request.go")
 	fmt.Printf("instrumenting %s\n", requestGoFile)
 	instrumentRequestGoForAll(requestGoFile, requestGoFile, "Test")
 
-	sharedInformerGoFile := path.Join(client_go_filepath, "tools", "cache", "shared_informer.go")
+	sharedInformerGoFile := path.Join(clientGoPath, "tools", "cache", "shared_informer.go")
 	fmt.Printf("instrumenting %s\n", sharedInformerGoFile)
 	instrumentSharedInformerGoForAll(sharedInformerGoFile, sharedInformerGoFile, "Test")
 
-	storeGoFile := path.Join(client_go_filepath, "tools", "cache", "store.go")
+	storeGoFile := path.Join(clientGoPath, "tools", "cache", "store.go")
 	fmt.Printf("instrumenting %s\n", storeGoFile)
 	instrumentStoreGoForAll(storeGoFile, storeGoFile, "Test")
 
-	for _, api_to_instrument := range apis_to_instrument {
-		entry := api_to_instrument.(map[string]interface{})
-		module := entry["module"].(string)
-		filePath := entry["file_path"].(string)
-		pkg := entry["package"].(string)
-		funName := entry["func_name"].(string)
-		recvType := entry["receiver_type"].(string)
-		customizedImportMap := map[string]string{}
-		if val, ok := entry["import_map"]; ok {
-			tempMap := val.(map[string]interface{})
-			for key, val := range tempMap {
-				customizedImportMap[key] = val.(string)
-			}
-		}
-		source_file_to_instrument := path.Join(application_file_path, "sieve-dependency", "src", module, filePath)
+	for _, api_to_instrument := range apis {
+		module, filePath, pkg, funName, recvType := api_to_instrument.Module, api_to_instrument.FilePath, api_to_instrument.Package, api_to_instrument.Function, api_to_instrument.ReceiverType
+		customizedImportMap := api_to_instrument.ImportMap
+		source_file_to_instrument := path.Join(applicationFilePath, "sieve-dependency", "src", module, filePath)
 		fmt.Printf("instrumenting %s\n", source_file_to_instrument)
 		instrumentAnnotatedAPI(source_file_to_instrument, source_file_to_instrument, module, filePath, pkg, funName, recvType, "Test", customizedImportMap, true)
 	}
 }
 
-func readConfig(configPath string) map[string]interface{} {
-	data, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		log.Fatalf("Fail due to error: %v\n", err)
-	}
-	configMap := make(map[string]interface{})
-	err = json.Unmarshal([]byte(data), &configMap)
-	if err != nil {
-		log.Fatalf("Fail due to error: %v\n", err)
-	}
-	return configMap
-}
-
 func main() {
-	args := os.Args
-	configMap := readConfig(args[1])
-	project := configMap["project"].(string)
-	mode := configMap["mode"].(string)
-	if project == "kubernetes" {
-		k8s_filepath := configMap["k8s_filepath"].(string)
-		if mode == LEARN {
-			instrumentKubernetesForLearn(k8s_filepath)
-		} else if mode == TEST {
-			instrumentKubernetesForTest(k8s_filepath)
-		} else if mode == VANILLA {
-
+	if len(os.Args) != 2 {
+		log.Fatal("usage: sieve-instrumenter config.json")
+	}
+	config, err := readConfig(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	if config.Mode == VANILLA {
+		return
+	}
+	if config.Project == "kubernetes" {
+		if config.Mode == LEARN {
+			instrumentKubernetesForLearn(config.KubernetesPath)
 		} else {
-			panic(fmt.Sprintf("Unsupported mode %s", mode))
+			instrumentKubernetesForTest(config.KubernetesPath)
 		}
 	} else {
-		if mode == LEARN {
-			instrumentControllerForLearn(configMap)
-		} else if mode == TEST {
-			instrumentControllerForTest(configMap)
-		} else if mode == VANILLA {
-
+		if config.Mode == LEARN {
+			instrumentControllerForLearn(config)
 		} else {
-			panic(fmt.Sprintf("Unsupported mode %s", mode))
+			instrumentControllerForTest(config)
 		}
 	}
 }

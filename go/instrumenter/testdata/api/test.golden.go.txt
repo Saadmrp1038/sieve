@@ -1,0 +1,19 @@
+package example
+
+import (
+	"errors"
+
+	sieve "sieve.client"
+)
+
+type Client struct{ Calls int }
+
+func (c *Client) Create(value int) (int, error) {
+	invocationIDVar := sieve.NotifyTestBeforeAnnotatedAPICall("example", "client.go", "*Client", "Create")    //sieve
+	defer sieve.NotifyTestAfterAnnotatedAPICall(invocationIDVar, "example", "client.go", "*Client", "Create") //sieve
+	c.Calls++
+	if value < 0 {
+		return -1, errors.New("negative")
+	}
+	return value + 1, nil
+}

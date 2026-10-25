@@ -1,0 +1,13 @@
+package example
+
+import "errors"
+
+type Client struct{ Calls int }
+
+func (c *Client) Create(value int) (int, error) {
+	c.Calls++
+	if value < 0 {
+		return -1, errors.New("negative")
+	}
+	return value + 1, nil
+}
