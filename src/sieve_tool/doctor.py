@@ -1,10 +1,11 @@
 """Check the tools required to build images and execute workloads."""
 
-from importlib import import_module
 import shutil
-from sieve_tool.process import run as run_process, ProcessError
+from importlib import import_module
 
 from sieve_tool.common.common import fail, ok, warn
+from sieve_tool.process import ProcessError
+from sieve_tool.process import run as run_process
 
 
 def run():

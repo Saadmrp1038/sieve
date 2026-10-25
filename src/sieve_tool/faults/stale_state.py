@@ -1,17 +1,36 @@
-import json
 import os
 from typing import List, Tuple
-from sieve_tool.common.event_delta import *
-from sieve_tool.common.common import *
-from sieve_tool.common.k8s_event import *
+
 from sieve_tool.analysis.event_graph import (
     EventGraph,
     EventVertex,
     event_vertices_connected,
 )
+from sieve_tool.common.common import TestContext, bcolors, cprint
+from sieve_tool.common.event_delta import same_key
+from sieve_tool.common.k8s_event import (
+    ALLOWED_ERROR_TYPE,
+    ControllerHear,
+    ControllerHearTypes,
+    ControllerWrite,
+    ControllerWriteTypes,
+    generate_key,
+)
 from sieve_tool.faults.common import (
-    nondeterministic_key,
     detectable_event_diff,
+    nondeterministic_key,
+    object_condition,
+)
+from sieve_tool.plans import (
+    APIServerAction,
+    FaultPlan,
+    ObjectCondition,
+    ReconnectControllerAction,
+    TimeoutCondition,
+    Trigger,
+    TriggerDefinition,
+    single_trigger,
+    write_plan,
 )
 
 
@@ -142,111 +161,78 @@ def decide_stale_state_timing(source_vertex: EventVertex, sink_vertex: EventVert
         elif len(sink_vertex.out_intra_reconciler_edges) == 0:
             return "after"
         else:
-            assert False
+            raise AssertionError()
 
 
 def generate_stale_state_test_plan(
     test_context: TestContext,
     controller_hear: ControllerHear,
     controller_write: ControllerWrite,
-    pause_timing,
-):
-    resource_key1 = generate_key(
+    pause_timing: str,
+) -> FaultPlan:
+    heard_resource = generate_key(
         controller_hear.rtype, controller_hear.namespace, controller_hear.name
     )
-    resource_key2 = generate_key(
+    written_resource = generate_key(
         controller_write.rtype, controller_write.namespace, controller_write.name
     )
-    condition_for_trigger1 = {}
-    if controller_hear.etype == ControllerHearTypes.ADDED:
-        condition_for_trigger1["conditionType"] = "onObjectCreate"
-        condition_for_trigger1["resourceKey"] = resource_key1
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-    elif controller_hear.etype == ControllerHearTypes.DELETED:
-        condition_for_trigger1["conditionType"] = "onObjectDelete"
-        condition_for_trigger1["resourceKey"] = resource_key1
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-    else:
-        condition_for_trigger1["conditionType"] = "onObjectUpdate"
-        condition_for_trigger1["resourceKey"] = resource_key1
-        condition_for_trigger1["prevStateDiff"] = json.dumps(
-            controller_hear.slim_prev_obj_map, sort_keys=True
-        )
-        condition_for_trigger1["curStateDiff"] = json.dumps(
-            controller_hear.slim_cur_obj_map, sort_keys=True
-        )
-        if (
-            controller_hear.rtype
-            not in test_context.controller_config.custom_resource_definitions
-        ):
-            condition_for_trigger1["convertStateToAPIForm"] = True
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-    return {
-        "workload": test_context.test_workload,
-        "actions": [
-            {
-                "actionType": "pauseAPIServer",
-                "apiServerName": test_context.common_config.following_api,
-                "pauseScope": resource_key1,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger1",
-                            "condition": condition_for_trigger1,
-                            "observationPoint": {
-                                "when": "afterAPIServerRecv"
-                                if pause_timing == "after"
-                                else "beforeAPIServerRecv",
-                                "by": test_context.common_config.following_api,
-                            },
-                        }
+    condition = object_condition(
+        controller_hear,
+        convert_state=controller_hear.rtype
+        not in test_context.controller_config.custom_resource_definitions,
+    )
+    following_api = test_context.common_config.following_api
+    return FaultPlan(
+        workload=test_context.test_workload,
+        actions=[
+            APIServerAction(
+                action_type="pauseAPIServer",
+                api_server_name=following_api,
+                pause_scope=heard_resource,
+                trigger=single_trigger(
+                    "trigger1",
+                    condition,
+                    "afterAPIServerRecv"
+                    if pause_timing == "after"
+                    else "beforeAPIServerRecv",
+                    following_api,
+                ),
+            ),
+            ReconnectControllerAction(
+                action_type="reconnectController",
+                controller_label=test_context.controller_config.controller_pod_label,
+                reconnect_api_server=following_api,
+                async_=True,
+                wait_before=10,
+                trigger=single_trigger(
+                    "trigger2",
+                    ObjectCondition(
+                        condition_type="onObjectCreate",
+                        resource_key=written_resource,
+                        occurrence=1,
+                    ),
+                    "afterAPIServerRecv",
+                    test_context.common_config.leading_api,
+                ),
+            ),
+            APIServerAction(
+                action_type="resumeAPIServer",
+                api_server_name=following_api,
+                pause_scope=heard_resource,
+                trigger=Trigger(
+                    definitions=[
+                        TriggerDefinition(
+                            trigger_name="trigger3",
+                            condition=TimeoutCondition(
+                                condition_type="onTimeout", timeout_value=20
+                            ),
+                        )
                     ],
-                    "expression": "trigger1",
-                },
-            },
-            {
-                "actionType": "reconnectController",
-                "controllerLabel": test_context.controller_config.controller_pod_label,
-                "reconnectAPIServer": test_context.common_config.following_api,
-                "async": True,
-                "waitBefore": 10,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger2",
-                            "condition": {
-                                "conditionType": "onObjectCreate",
-                                "resourceKey": resource_key2,
-                                "occurrence": 1,
-                            },
-                            "observationPoint": {
-                                "when": "afterAPIServerRecv",
-                                "by": test_context.common_config.leading_api,
-                            },
-                        }
-                    ],
-                    "expression": "trigger2",
-                },
-            },
-            {
-                "actionType": "resumeAPIServer",
-                "apiServerName": test_context.common_config.following_api,
-                "pauseScope": resource_key1,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger3",
-                            "condition": {
-                                "conditionType": "onTimeout",
-                                "timeoutValue": 20,
-                            },
-                        }
-                    ],
-                    "expression": "trigger3",
-                },
-            },
+                    expression="trigger3",
+                ),
+            ),
         ],
-    }
+    )
 
 
 def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestContext):
@@ -284,7 +270,7 @@ def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestC
                 path, "stale-state-test-plan-{}.yaml".format(str(i))
             )
             if test_context.common_config.persist_test_plans_enabled:
-                dump_to_yaml(stale_state_test_plan, file_name)
+                write_plan(stale_state_test_plan, file_name)
         elif timing == "before":
             stale_state_test_plan = generate_stale_state_test_plan(
                 test_context, controller_hear, controller_write, timing
@@ -294,7 +280,7 @@ def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestC
                 path, "stale-state-test-plan-{}.yaml".format(str(i))
             )
             if test_context.common_config.persist_test_plans_enabled:
-                dump_to_yaml(stale_state_test_plan, file_name)
+                write_plan(stale_state_test_plan, file_name)
         else:
             stale_state_test_plan = generate_stale_state_test_plan(
                 test_context, controller_hear, controller_write, "after"
@@ -304,7 +290,7 @@ def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestC
                 path, "stale-state-test-plan-{}.yaml".format(str(i))
             )
             if test_context.common_config.persist_test_plans_enabled:
-                dump_to_yaml(stale_state_test_plan, file_name)
+                write_plan(stale_state_test_plan, file_name)
 
             stale_state_test_plan = generate_stale_state_test_plan(
                 test_context, controller_hear, controller_write, "before"
@@ -314,7 +300,7 @@ def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestC
                 path, "stale-state-test-plan-{}.yaml".format(str(i))
             )
             if test_context.common_config.persist_test_plans_enabled:
-                dump_to_yaml(stale_state_test_plan, file_name)
+                write_plan(stale_state_test_plan, file_name)
             baseline_spec_number += 1
             after_p1_spec_number += 1
             after_p2_spec_number += 1

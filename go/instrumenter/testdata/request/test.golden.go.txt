@@ -1,0 +1,32 @@
+package rest
+
+import sieve "sieve.client"
+
+type Result struct {
+	value interface{}
+	err   error
+}
+
+func (r Result) Get() (interface{}, error) { return r.value, r.err }
+func (r Result) Error() error              { return r.err }
+
+type Request struct {
+	verb, pathPrefix, subpath, namespace, resource, resourceName, subresource string
+	namespaceSet                                                              bool
+	obj                                                                       interface{} //sieve
+	payload                                                                   interface{}
+}
+
+func (r *Request) Body(obj interface{}) *Request {
+	r.obj = obj //sieve
+	r.payload = obj
+	return r
+}
+func (r *Request) request() Result { return Result{value: r.payload} }
+func (r *Request) Do() Result {
+	operationID := sieve.NotifyTestBeforeRestCall(r.verb, r.pathPrefix, r.subpath, r.namespace, r.namespaceSet, r.resource, r.resourceName, r.subresource, r.obj) //sieve
+	result := r.request()
+	resultObj, decodingError := result.Get()                                                                                                                                                      //sieve
+	sieve.NotifyTestAfterRestCall(operationID, r.verb, r.pathPrefix, r.subpath, r.namespace, r.namespaceSet, r.resource, r.resourceName, r.subresource, resultObj, decodingError, result.Error()) //sieve
+	return result
+}

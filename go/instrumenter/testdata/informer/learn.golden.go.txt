@@ -1,0 +1,25 @@
+package cache
+
+import (
+	"errors"
+
+	sieve "sieve.client"
+)
+
+type Delta struct {
+	Type   string
+	Object interface{}
+}
+type sharedIndexInformer struct{ Values []interface{} }
+
+func (s *sharedIndexInformer) HandleDeltas(obj interface{}) error {
+	for _, d := range obj.([]Delta) {
+		recvID := sieve.NotifyLearnBeforeControllerRecv(string(d.Type), d.Object) //sieve
+		if d.Type == "error" {
+			return errors.New("bad delta")
+		}
+		s.Values = append(s.Values, d.Object)
+		sieve.NotifyLearnAfterControllerRecv(recvID, string(d.Type), d.Object) //sieve
+	}
+	return nil
+}

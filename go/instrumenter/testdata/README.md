@@ -1,0 +1,12 @@
+# Instrumentation fixtures
+
+Each input models a source shape used by the current integrations. The Learn and
+Test snapshots record the inserted hooks and their order. The test compiles each
+rewritten file against the actual `go/client` module and runs its behavior test
+offline, covering return values, errors, mutation and event ordering.
+
+Run `go test ./...` normally. After reviewing an intentional change to the emitted
+code, update snapshots with `go test -update ./...` and review the resulting diff.
+The initial snapshots were captured before modifying the source writer; atomic
+file replacement must not change the emitted code. These fixtures do not claim
+support for arbitrary Kubernetes or controller-runtime source layouts.

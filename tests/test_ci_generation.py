@@ -1,11 +1,11 @@
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 import yaml
-from sieve_tool import ci
 
+from sieve_tool import ci
 
 ROOT = Path(__file__).resolve().parents[1]
 

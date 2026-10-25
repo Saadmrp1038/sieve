@@ -30,6 +30,8 @@ jobs:
         run: uv run --locked ruff check .
       - name: Check Python formatting
         run: uv run --locked ruff format --check .
+      - name: Check typed plan and configuration boundaries
+        run: uv run --locked mypy
       - name: Python regressions
         run: uv run --locked pytest
       - name: Client race checks
@@ -37,10 +39,15 @@ jobs:
         run: GOWORK=off go test -race ./...
       - name: Instrumentation checks
         working-directory: go/instrumenter
-        run: GOWORK=off go test ./...
+        run: GOWORK=off go test -race ./...
       - name: Coordinator checks
         working-directory: go/coordinator
-        run: GOWORK=off go test ./...
+        run: GOWORK=off go test -race ./...
+      - name: Vet Go packages
+        run: |
+          for module in client coordinator instrumenter; do
+            (cd "go/$module" && GOWORK=off go vet ./...)
+          done
       - name: Build package
         run: uv build --wheel
       - name: Audit locked Python environment

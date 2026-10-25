@@ -27,7 +27,11 @@ func TestHistoricalPlansKeepTheirTriggersWithModernYAML(t *testing.T) {
 			if err := yaml.Unmarshal(data, &raw); err != nil {
 				t.Fatal(err)
 			}
-			plan := parseTestPlan(raw)
+			spec, err := decodePlan(data)
+			if err != nil {
+				t.Fatal(err)
+			}
+			plan := spec.build()
 			actions, ok := raw["actions"].([]interface{})
 			if (!ok && raw["actions"] != nil) || len(plan.actions) != len(actions) {
 				t.Fatal("actions were lost during YAML decoding")

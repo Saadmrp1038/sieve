@@ -14,11 +14,12 @@ uv run --locked sieve --help
 uv run --locked pytest
 uv run --locked ruff check .
 uv run --locked ruff format --check .
+uv run --locked mypy
 uv build --wheel
 uv run --locked pip-audit --local --skip-editable
 (cd go/client && GOWORK=off go test -race ./...)
-(cd go/coordinator && GOWORK=off go test ./...)
-(cd go/instrumenter && GOWORK=off go test ./...)
+(cd go/coordinator && GOWORK=off go test -race ./...)
+(cd go/instrumenter && GOWORK=off go test -race ./...)
 ```
 
 `uv sync` installs the CLI and package in editable mode. pytest imports that
@@ -79,3 +80,35 @@ Process ownership, timeout configuration and failure artifacts are described in
 `sieve_tool.process`; use argument lists and explicit `cwd`, and keep SDK calls
 inside their deadline guards. Lifecycle tests run without Docker; daemon-side
 cancellation controls and operator validation run on Linux.
+
+## Contracts and regression fixtures
+
+Fault plans use the existing YAML field names. `sieve_tool.plans` validates them
+before cluster setup; a batch validates every input before starting its first
+plan. The coordinator independently decodes typed specifications and returns
+field-specific errors. Unknown fields, duplicate YAML keys, invalid expressions
+and wrong scalar types fail at these boundaries. Historical `actions: null`
+plans remain unfaulted schedules. Generators construct typed actions and retain
+their existing occurrence counts and trigger expressions.
+
+Reviewed contract fixtures live in `fixtures/plans/`. The generation snapshots
+were captured before the refactor; do not regenerate them to make a failing
+behavior check pass. Instrumentation fixtures under `go/instrumenter/testdata/`
+check emitted source and execute it against the actual injected client offline.
+Their README describes deliberate snapshot updates.
+
+CI enforces explicit imports, Pyflakes, Bugbear, import ordering and formatting
+through Ruff. Mypy checks plan/configuration/path boundaries strictly; the older
+analysis and oracle internals are not yet fully typed. All three Go modules run
+race checks and `go vet`. Extend the typed boundary checks when moving another
+module to a complete typed interface; avoid blanket suppressions.
+
+A controller's scaffold intentionally has unfinished repository/version fields.
+Fill those fields before loading or building the profile. Controller settings
+and workload-specific policies are validated, including nested fields.
+
+Coordinator Kubernetes calls use request limits and cancellable action contexts.
+Ordinary restarts wait for Ready pods. A reconnect to a paused API retains the
+Running milestone, so it can finish and allow the schedule's resume trigger.
+Intentional pauses have no additional timeout; cancellation remains tied to the
+experiment's lifecycle.

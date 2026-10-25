@@ -1,0 +1,22 @@
+package rest
+
+type Result struct {
+	value interface{}
+	err   error
+}
+
+func (r Result) Get() (interface{}, error) { return r.value, r.err }
+func (r Result) Error() error              { return r.err }
+
+type Request struct {
+	verb, pathPrefix, subpath, namespace, resource, resourceName, subresource string
+	namespaceSet                                                              bool
+	payload                                                                   interface{}
+}
+
+func (r *Request) Body(obj interface{}) *Request { r.payload = obj; return r }
+func (r *Request) request() Result               { return Result{value: r.payload} }
+func (r *Request) Do() Result {
+	result := r.request()
+	return result
+}

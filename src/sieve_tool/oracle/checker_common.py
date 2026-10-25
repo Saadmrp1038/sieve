@@ -1,11 +1,23 @@
-from sieve_tool.common.common import *
 import copy
+import json
+import os
 from collections import Counter
+
+import yaml
 from deepdiff import DeepDiff
+
+from sieve_tool.common.common import (
+    SIEVE_LEARN_VALUE_MASK,
+    TestContext,
+    TestResult,
+    bcolors,
+    cprint,
+    first_pass_learn_result_dir,
+)
 from sieve_tool.common.k8s_event import (
+    SIEVE_API_EVENT_MARK,
     APIEventTypes,
     ControllerWriteTypes,
-    SIEVE_API_EVENT_MARK,
     parse_api_event,
     parse_key,
 )
@@ -247,7 +259,7 @@ def generate_perturbation_description(test_context: TestContext):
             elif pause_at == "afterControllerWrite":
                 action_desc += "after the controller writes "
             else:
-                assert False
+                raise AssertionError()
             if "pauseScope" not in action:
                 action_desc += "any object"
             elif action["pauseScope"] == "all":
@@ -265,7 +277,7 @@ def generate_perturbation_description(test_context: TestContext):
                 action["reconnectAPIServer"],
             )
         else:
-            assert False
+            raise AssertionError()
         action_desc += " when the trigger expression {} is satisfied, where\n".format(
             action["trigger"]["expression"]
         )
@@ -296,7 +308,7 @@ def generate_perturbation_description(test_context: TestContext):
                         )
                     )
                 else:
-                    assert False
+                    raise AssertionError()
                 action_desc += " is called with the {} occurrence.\n".format(
                     convert_occurrence(str(occurrence))
                 )

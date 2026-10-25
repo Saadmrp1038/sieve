@@ -1,9 +1,9 @@
 """Repository assets are explicit; importing the package never changes cwd."""
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
-
 
 _root: ContextVar[Path | None] = ContextVar("sieve_repository", default=None)
 
@@ -34,7 +34,7 @@ def cache_path(*parts: str) -> Path:
 
 
 @contextmanager
-def repository(root: str | Path):
+def repository(root: str | Path) -> Iterator[Path]:
     """Select repository assets without changing the process working directory."""
     root = Path(root).resolve()
     token = _root.set(root)
@@ -44,6 +44,6 @@ def repository(root: str | Path):
         _root.reset(token)
 
 
-def asset_path(path):
+def asset_path(path: str | Path) -> Path:
     path = Path(path)
     return path if path.is_absolute() else repository_root() / path

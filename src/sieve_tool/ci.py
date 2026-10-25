@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-from sieve_tool.reproduce import reprod_map
-import yaml
-import os
-from sieve_tool.common.common import sieve_modes
 from pathlib import Path
+
+import yaml
+
+from sieve_tool.common.common import sieve_modes
+from sieve_tool.reproduce import reprod_map
 
 operators_for_CI = {
     # "cass-operator": ["recreate", "scaledown-scaleup"],

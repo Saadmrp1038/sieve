@@ -42,7 +42,9 @@ func expressionToInfixTokens(exp string) []string {
 			currentToken = currentToken + string(c)
 		}
 	}
-	tokens = append(tokens, currentToken)
+	if currentToken != "" {
+		tokens = append(tokens, currentToken)
+	}
 	return tokens
 }
 

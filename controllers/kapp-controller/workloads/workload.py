@@ -1,7 +1,7 @@
 import sys
-import os
+
+from sieve_tool.common.common import RUNNING
 from sieve_tool.testing.driver import new_built_in_workload
-from sieve_tool.common.common import RUNNING, TERMINATED
 
 test_cases = {
     "create": new_built_in_workload()

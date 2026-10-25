@@ -66,4 +66,5 @@ func (n *ObjectUpdateNotification) getBlockingCh() chan string {
 }
 
 type AsyncDoneNotification struct {
+	err error
 }

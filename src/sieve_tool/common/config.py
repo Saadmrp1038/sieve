@@ -1,15 +1,19 @@
 """Typed harness settings and controller integration configuration."""
 
-from dataclasses import dataclass, fields
-from importlib.resources import files
 import json
 import os
+from dataclasses import field, fields
+from importlib.resources import files
 from pathlib import Path
+from typing import Annotated, Literal, NotRequired, TypedDict
 
-from sieve_tool.paths import repository_root, asset_path
+from pydantic import ConfigDict, Field, with_config
+from pydantic.dataclasses import dataclass
+
+from sieve_tool.paths import asset_path, repository_root
 
 
-@dataclass
+@dataclass(config=ConfigDict(strict=True, extra="forbid"))
 class CommonConfig:
     container_registry: str
     namespace: str
@@ -19,23 +23,23 @@ class CommonConfig:
     end_state_check_enabled: bool
     workload_error_check_enabled: bool
     controller_exception_check_enabled: bool
-    state_update_summary_check_event_list: list
+    state_update_summary_check_event_list: list[str]
     compress_trivial_reconcile_enabled: bool
-    workload_conditional_wait_timeout: int
-    workload_command_wait_timeout: int
+    workload_conditional_wait_timeout: Annotated[int, Field(gt=0)]
+    workload_command_wait_timeout: Annotated[int, Field(gt=0)]
     generate_debugging_information_enabled: bool
     causality_pruning_enabled: bool
     effective_updates_pruning_enabled: bool
     nondeterministic_pruning_enabled: bool
     persist_test_plans_enabled: bool
-    field_key_mask: dict
-    field_path_mask: dict
-    state_update_summary_checker_mask: list
+    field_key_mask: dict[str, list[list[str]]]
+    field_path_mask: dict[str, list[list[str]]]
+    state_update_summary_checker_mask: list[str]
     update_oracle_file_enabled: bool
-    process_timeouts: dict
+    process_timeouts: dict[str, int | float]
 
 
-def get_common_config(override=None):
+def get_common_config(override: str | Path | None = None) -> CommonConfig:
     if override is None:
         override = os.environ.get("SIEVE_HARNESS_CONFIG")
     data = json.loads(
@@ -47,7 +51,7 @@ def get_common_config(override=None):
             override = repository_root() / "configs/local.json"
         except ValueError:
             override = None
-    if explicit_override and not Path(override).is_file():
+    if explicit_override and override is not None and not Path(override).is_file():
         raise FileNotFoundError(f"Sieve settings not found: {override}")
     if override is not None and Path(override).is_file():
         data.update(json.loads(Path(override).read_text()))
@@ -55,132 +59,82 @@ def get_common_config(override=None):
     unknown = set(data) - set(expected)
     if unknown:
         raise ValueError("Unknown Sieve settings: " + ", ".join(sorted(unknown)))
-    for name, kind in expected.items():
-        if type(data.get(name)) is not kind:
-            raise ValueError(f"Setting {name} must be {kind.__name__}")
     from sieve_tool.process import validate_timeouts
 
     validate_timeouts(data["process_timeouts"])
     return CommonConfig(**data)
 
 
+type Mask = dict[str, dict[str, list[list[str]]]]
+type Nonempty = Annotated[str, Field(min_length=1)]
+
+
+@with_config(ConfigDict(extra="forbid"))
+class WorkloadSettings(TypedDict, total=False):
+    num_apiservers: Annotated[int, Field(gt=0)]
+    num_workers: Annotated[int, Field(ge=0)]
+    use_csi_driver: bool
+    process_timeouts: dict[str, int | float]
+
+
+@with_config(ConfigDict(extra="forbid"))
+class InstrumentedAPI(TypedDict):
+    module: Nonempty
+    file_path: Nonempty
+    package: Nonempty
+    func_name: Nonempty
+    receiver_type: str
+    import_map: NotRequired[dict[str, str]]
+
+
+@dataclass(config=ConfigDict(strict=True, extra="forbid"))
 class ControllerConfig:
-    def __init__(
-        self,
-        controller_name,
-        github_link,
-        commit,
-        cherry_pick_commits,
-        kubernetes_version,
-        client_go_version,
-        apimachinery_version,
-        go_mod,
-        vendored_controller_runtime_path,
-        vendored_client_go_path,
-        vendored_sieve_client_path,
-        dockerfile_path,
-        apis_to_instrument,
-        controller_image_name,
-        test_command,
-        loosen_reconciler_boundary,
-        custom_resource_definitions,
-        annotated_reconcile_functions,
-        controller_pod_label,
-        container_name,
-        controller_deployment_file_path,
-        test_setting,
-        end_state_checker_mask,
-        state_update_summary_checker_mask,
-    ):
-        self.controller_name = controller_name
-        self.github_link = github_link
-        self.commit = commit
-        self.cherry_pick_commits = cherry_pick_commits
-        self.kubernetes_version = kubernetes_version
-        self.client_go_version = client_go_version
-        self.apimachinery_version = apimachinery_version
-        self.go_mod = go_mod
-        self.vendored_controller_runtime_path = vendored_controller_runtime_path
-        self.vendored_client_go_path = vendored_client_go_path
-        self.vendored_sieve_client_path = vendored_sieve_client_path
-        self.dockerfile_path = dockerfile_path
-        self.apis_to_instrument = apis_to_instrument
-        self.controller_image_name = controller_image_name
-        self.test_command = test_command
-        self.loosen_reconciler_boundary = loosen_reconciler_boundary
-        self.custom_resource_definitions = custom_resource_definitions
-        self.annotated_reconcile_functions = annotated_reconcile_functions
-        self.controller_pod_label = controller_pod_label
-        self.container_name = container_name
-        self.controller_deployment_file_path = controller_deployment_file_path
-        self.test_setting = test_setting
-        self.end_state_checker_mask = end_state_checker_mask
-        self.state_update_summary_checker_mask = state_update_summary_checker_mask
-
-
-def load_controller_config(controller_config_dir):
-    controller_config_path = asset_path(controller_config_dir) / "config.json"
-    controller_config = json.load(open(controller_config_path))
-    command = controller_config["test_command"]
-    if (
-        not isinstance(command, list)
-        or not command
-        or not all(isinstance(arg, str) for arg in command)
-    ):
-        raise ValueError("test_command must be a nonempty argument list")
-    return ControllerConfig(
-        controller_name=controller_config["name"],
-        github_link=controller_config["github_link"],
-        commit=controller_config["commit"],
-        cherry_pick_commits=controller_config["cherry_pick_commits"]
-        if "cherry_pick_commits" in controller_config
-        else [],
-        kubernetes_version=controller_config["kubernetes_version"],
-        client_go_version=controller_config["client_go_version"],
-        apimachinery_version=controller_config["apimachinery_version"]
-        if "apimachinery_version" in controller_config
-        else None,
-        go_mod=controller_config["go_mod"] if "go_mod" in controller_config else "mod",
-        vendored_controller_runtime_path=controller_config[
-            "vendored_controller_runtime_path"
-        ]
-        if "vendored_controller_runtime_path" in controller_config
-        else None,
-        vendored_client_go_path=controller_config["vendored_client_go_path"]
-        if "vendored_client_go_path" in controller_config
-        else None,
-        vendored_sieve_client_path=controller_config["vendored_sieve_client_path"]
-        if "vendored_sieve_client_path" in controller_config
-        else None,
-        dockerfile_path=controller_config["dockerfile_path"],
-        apis_to_instrument=controller_config["apis_to_instrument"]
-        if "apis_to_instrument" in controller_config
-        else [],
-        controller_image_name=controller_config["controller_image_name"],
-        test_command=controller_config["test_command"],
-        loosen_reconciler_boundary=controller_config["loosen_reconciler_boundary"]
-        if "loosen_reconciler_boundary" in controller_config
-        else False,
-        custom_resource_definitions=controller_config["custom_resource_definitions"],
-        annotated_reconcile_functions=controller_config[
-            "annotated_reconcile_functions"
-        ],
-        controller_pod_label=controller_config["controller_pod_label"],
-        container_name=controller_config["container_name"]
-        if "container_name" in controller_config
-        else None,
-        controller_deployment_file_path=controller_config[
-            "controller_deployment_file_path"
-        ],
-        test_setting=controller_config["test_setting"]
-        if "test_setting" in controller_config
-        else {},
-        end_state_checker_mask=controller_config["end_state_checker_mask"]
-        if "end_state_checker_mask" in controller_config
-        else {},
-        state_update_summary_checker_mask=controller_config[
-            "state_update_summary_checker_mask"
-        ]
-        if "state_update_summary_checker_mask" in controller_config
-        else {},
+    controller_name: Nonempty
+    github_link: Nonempty
+    commit: Nonempty
+    kubernetes_version: Nonempty
+    client_go_version: Nonempty
+    dockerfile_path: Nonempty
+    controller_image_name: Nonempty
+    test_command: Annotated[list[Nonempty], Field(min_length=1)]
+    custom_resource_definitions: list[Nonempty]
+    annotated_reconcile_functions: dict[Nonempty, Nonempty]
+    controller_pod_label: Nonempty
+    controller_deployment_file_path: Nonempty
+    cherry_pick_commits: list[Nonempty] = field(default_factory=list)
+    apimachinery_version: Nonempty | None = None
+    go_mod: Literal["mod", "vendor"] = "mod"
+    vendored_controller_runtime_path: Nonempty | None = None
+    vendored_client_go_path: Nonempty | None = None
+    vendored_sieve_client_path: Nonempty | None = None
+    apis_to_instrument: list[InstrumentedAPI] = field(default_factory=list)
+    loosen_reconciler_boundary: bool = False
+    container_name: Nonempty | None = None
+    test_setting: dict[str, WorkloadSettings] = field(default_factory=dict)
+    end_state_checker_mask: Mask = field(default_factory=dict)
+    state_update_summary_checker_mask: dict[str, list[str]] = field(
+        default_factory=dict
     )
+
+    def __post_init__(self) -> None:
+        from sieve_tool.process import validate_timeouts
+
+        for settings in self.test_setting.values():
+            validate_timeouts(settings.get("process_timeouts", {}))
+
+
+def load_controller_config(controller_config_dir: str | Path) -> ControllerConfig:
+    source = asset_path(controller_config_dir) / "config.json"
+    try:
+        data = json.loads(source.read_text())
+        if not isinstance(data, dict):
+            raise ValueError("controller profile must be an object")
+        if "controller_name" in data:
+            raise ValueError("use the profile field name, not controller_name")
+        data = {
+            ("controller_name" if key == "name" else key): value
+            for key, value in data.items()
+        }
+        return ControllerConfig(**data)
+    except ValueError as error:
+        raise ValueError(f"Invalid controller profile {source}: {error}") from error

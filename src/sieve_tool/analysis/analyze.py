@@ -1,20 +1,44 @@
 import copy
+import json
 import os
 from typing import List
-from sieve_tool.common.common import (
-    TestContext,
-    fail,
-    sieve_built_in_test_patterns,
-    rmtree_if_exists,
-)
-from sieve_tool.faults.intermediate_state import intermediate_state_analysis
-from sieve_tool.faults.stale_state import stale_state_analysis
-from sieve_tool.faults.unobserved_state import unobserved_state_analysis
-from sieve_tool.common.k8s_event import *
+
 from sieve_tool.analysis.event_graph import (
     EventGraph,
     EventVertex,
 )
+from sieve_tool.common.common import (
+    TestContext,
+    rmtree_if_exists,
+    sieve_built_in_test_patterns,
+)
+from sieve_tool.common.k8s_event import (
+    ALLOWED_ERROR_TYPE,
+    HEAR_READ_FILTER_FLAG,
+    SIEVE_AFTER_ANNOTATED_API_INVOCATION_MARK,
+    SIEVE_AFTER_CACHE_READ_MARK,
+    SIEVE_AFTER_HEAR_MARK,
+    SIEVE_AFTER_RECONCILE_MARK,
+    SIEVE_AFTER_REST_READ_MARK,
+    SIEVE_AFTER_REST_WRITE_MARK,
+    SIEVE_BEFORE_ANNOTATED_API_INVOCATION_MARK,
+    SIEVE_BEFORE_HEAR_MARK,
+    SIEVE_BEFORE_RECONCILE_MARK,
+    SIEVE_BEFORE_REST_WRITE_MARK,
+    consistent_event_type,
+    parse_controller_cache_read,
+    parse_controller_hear,
+    parse_controller_hear_id_only,
+    parse_controller_non_k8s_write,
+    parse_controller_non_k8s_write_id_only,
+    parse_controller_read,
+    parse_controller_write,
+    parse_controller_write_id_only,
+    parse_reconcile,
+)
+from sieve_tool.faults.intermediate_state import intermediate_state_analysis
+from sieve_tool.faults.stale_state import stale_state_analysis
+from sieve_tool.faults.unobserved_state import unobserved_state_analysis
 
 
 def sanity_check_sieve_server_log(path):
@@ -55,10 +79,8 @@ def sanity_check_sieve_server_log(path):
         assert controller_write_status[key] == 1 or controller_write_status[key] == 2
     for key in controller_hear_status:
         assert controller_hear_status[key] == 1 or controller_hear_status[key] == 2
-    for key in reconcile_status:
-        assert (
-            reconcile_status[reconcile_fun] == 0 or reconcile_status[reconcile_fun] == 1
-        )
+    for status in reconcile_status.values():
+        assert status in (0, 1)
 
 
 def parse_receiver_events(path):

@@ -1,36 +1,41 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"time"
 )
 
 type StateMachine struct {
+	errors                 chan error
 	states                 []Action
 	nextState              int
 	stateNotificationCh    chan TriggerNotification
 	timeoutNotificationCh  chan TriggerNotification
 	asyncDoneCh            chan *AsyncDoneNotification
 	asyncActionInExecution bool
-	actionConext           *ActionContext
+	actionContext          *ActionContext
 }
 
 func NewStateMachine(testPlan *TestPlan, stateNotificationCh chan TriggerNotification, asyncDoneCh chan *AsyncDoneNotification, actionContext *ActionContext) *StateMachine {
 	return &StateMachine{
+		errors:                 make(chan error, 1),
 		states:                 testPlan.actions,
 		nextState:              0,
 		stateNotificationCh:    stateNotificationCh,
 		timeoutNotificationCh:  make(chan TriggerNotification, 500),
 		asyncDoneCh:            asyncDoneCh,
 		asyncActionInExecution: false,
-		actionConext:           actionContext,
+		actionContext:          actionContext,
 	}
 }
 
 func (sm *StateMachine) waitForTimeout(timeoutValue int, triggerName string) {
-	time.Sleep(time.Duration(timeoutValue) * time.Second)
-	sm.timeoutNotificationCh <- &TimeoutNotification{
-		conditionName: triggerName,
+	if err := actionSleep(sm.actionContext.ctx, timeoutValue); err != nil {
+		return
+	}
+	select {
+	case sm.timeoutNotificationCh <- &TimeoutNotification{conditionName: triggerName}:
+	case <-sm.actionContext.ctx.Done():
 	}
 }
 
@@ -44,23 +49,26 @@ func (sm *StateMachine) setTimeoutForTimeoutTriggers() {
 	}
 }
 
-func (sm *StateMachine) processNotification(notification TriggerNotification) {
+func (sm *StateMachine) processNotification(notification TriggerNotification) error {
 	defer func() {
 		if blockingCh := notification.getBlockingCh(); blockingCh != nil {
 			log.Println("release the blocking ch")
-			blockingCh <- "release"
+			select {
+			case blockingCh <- "release":
+			case <-sm.actionContext.ctx.Done():
+			}
 		}
 	}()
 	if sm.states == nil {
-		return
+		return nil
 	}
 	if sm.nextState >= len(sm.states) {
 		// all the actions are finished
-		return
+		return nil
 	}
 	if sm.asyncActionInExecution {
 		// do not process triggers before the previous async action gets finished
-		return
+		return nil
 	}
 
 	action := sm.states[sm.nextState]
@@ -77,7 +85,9 @@ func (sm *StateMachine) processNotification(notification TriggerNotification) {
 			log.Printf("trigger %s is satisfied\n", triggerName)
 			if triggerGraph.fullyTriggered() {
 				log.Printf("all triggers are satisfied for action %d\n", sm.nextState)
-				action.run(sm.actionConext)
+				if err := action.run(sm.actionContext); err != nil {
+					return fmt.Errorf("action %d (%T): %w", sm.nextState, action, err)
+				}
 				if !action.isAsync() {
 					sm.nextState += 1
 					if sm.nextState >= len(sm.states) {
@@ -94,9 +104,13 @@ func (sm *StateMachine) processNotification(notification TriggerNotification) {
 			}
 		}
 	}
+	return nil
 }
 
-func (sm *StateMachine) processAsyncDone(notification *AsyncDoneNotification) {
+func (sm *StateMachine) processAsyncDone(notification *AsyncDoneNotification) error {
+	if notification.err != nil {
+		return fmt.Errorf("async action %d: %w", sm.nextState, notification.err)
+	}
 	sm.nextState += 1
 	sm.asyncActionInExecution = false
 	if sm.nextState >= len(sm.states) {
@@ -104,17 +118,25 @@ func (sm *StateMachine) processAsyncDone(notification *AsyncDoneNotification) {
 	} else {
 		sm.setTimeoutForTimeoutTriggers()
 	}
+	return nil
 }
 
 func (sm *StateMachine) run() {
 	for {
+		var err error
 		select {
-		case stateNotification := <-sm.stateNotificationCh:
-			sm.processNotification(stateNotification)
-		case timeoutNotification := <-sm.timeoutNotificationCh:
-			sm.processNotification(timeoutNotification)
-		case asyncDoneNotification := <-sm.asyncDoneCh:
-			sm.processAsyncDone(asyncDoneNotification)
+		case <-sm.actionContext.ctx.Done():
+			return
+		case notification := <-sm.stateNotificationCh:
+			err = sm.processNotification(notification)
+		case notification := <-sm.timeoutNotificationCh:
+			err = sm.processNotification(notification)
+		case notification := <-sm.asyncDoneCh:
+			err = sm.processAsyncDone(notification)
+		}
+		if err != nil {
+			sm.errors <- err
+			return
 		}
 	}
 }

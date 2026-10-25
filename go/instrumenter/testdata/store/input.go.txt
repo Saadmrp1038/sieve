@@ -1,0 +1,34 @@
+package cache
+
+type storage struct{ items map[string]interface{} }
+
+func (s *storage) List() []interface{} {
+	result := []interface{}{}
+	for _, obj := range s.items {
+		result = append(result, obj)
+	}
+	return result
+}
+func (s *storage) Get(key string) (interface{}, bool)                   { obj, ok := s.items[key]; return obj, ok }
+func (s *storage) ByIndex(indexName, key string) ([]interface{}, error) { return s.List(), nil }
+
+type cache struct{ cacheStorage *storage }
+
+func (c *cache) GetByKey(key string) (interface{}, bool, error) {
+	item, exists := c.cacheStorage.Get(key)
+	return item, exists, nil
+}
+func (c *cache) List() []interface{} { return c.cacheStorage.List() }
+func (c *cache) ByIndex(indexName, key string) ([]interface{}, error) {
+	return c.cacheStorage.ByIndex(indexName, key)
+}
+func (c *cache) Add(obj interface{}) error    { c.cacheStorage.items["key"] = obj; return nil }
+func (c *cache) Update(obj interface{}) error { c.cacheStorage.items["key"] = obj; return nil }
+func (c *cache) Delete(obj interface{}) error { delete(c.cacheStorage.items, "key"); return nil }
+func (c *cache) Replace(list []interface{}, resourceVersion string) error {
+	c.cacheStorage.items = map[string]interface{}{}
+	for _, obj := range list {
+		c.cacheStorage.items["key"] = obj
+	}
+	return nil
+}

@@ -1,18 +1,20 @@
 import copy
 import json
-from pathlib import Path
 import tempfile
-from types import SimpleNamespace
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from sieve_tool.common.common import SIEVE_LEARN_VALUE_MASK
+from sieve_tool.oracle import liveness_checker
 from sieve_tool.oracle.checker_common import (
     canonicalize_controller_related_list,
     second_pass_learn_trim,
+)
+from sieve_tool.oracle.checker_common import (
     test_run_validation as validate_test_run,
 )
-from sieve_tool.oracle import liveness_checker
 
 
 class OracleRegressionTests(unittest.TestCase):

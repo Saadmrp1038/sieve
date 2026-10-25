@@ -1,8 +1,22 @@
 import json
 import os
-from sieve_tool.common.event_delta import *
-from sieve_tool.common.common import *
-from sieve_tool.common.k8s_event import *
+from typing import Dict, Optional, Union
+
+from sieve_tool.common.common import TestContext
+from sieve_tool.common.k8s_event import (
+    EVENT_NONE_TYPE,
+    APIEventTypes,
+    ControllerHear,
+    ControllerHearTypes,
+    ControllerWrite,
+    ControllerWriteTypes,
+    detectable_controller_hear_types,
+    detectable_controller_write_types,
+    extract_generate_name,
+    generate_key,
+    is_generated_random_name,
+)
+from sieve_tool.plans import ObjectCondition, UpdateCondition
 
 
 def convert_deltafifo_etype_to_API_etype(etype: str) -> str:
@@ -22,21 +36,21 @@ def event_diff_validation_check(prev_etype: str, cur_etype: str):
         or prev_etype == ControllerHearTypes.DELETED
     ):
         # this should never happen
-        assert False, "There should not be consecutive Deleted | Added"
+        raise AssertionError("There should not be consecutive Deleted | Added")
     if (
         prev_etype == ControllerHearTypes.DELETED
         and cur_etype != ControllerHearTypes.ADDED
         and cur_etype != ControllerHearTypes.UPDATED
     ):
         # this should never happen
-        assert False, "Deleted must be followed with Added | Updated"
+        raise AssertionError("Deleted must be followed with Added | Updated")
     if (
         prev_etype != EVENT_NONE_TYPE
         and prev_etype != ControllerHearTypes.DELETED
         and cur_etype == ControllerHearTypes.ADDED
     ):
         # this should never happen
-        assert False, "Added must be the first or follow Deleted"
+        raise AssertionError("Added must be the first or follow Deleted")
 
 
 def detectable_event_diff(
@@ -111,3 +125,32 @@ def nondeterministic_key(
     elif end_state[event.key] == "SIEVE-IGNORE":
         return True
     return False
+
+
+def object_condition(
+    event: ControllerHear | ControllerWrite, *, convert_state: bool = False
+) -> ObjectCondition | UpdateCondition:
+    """Describe an observed object change without changing occurrence counting."""
+    resource = generate_key(event.rtype, event.namespace, event.name)
+    if event.etype in {ControllerHearTypes.ADDED, ControllerWriteTypes.CREATE}:
+        return ObjectCondition(
+            condition_type="onObjectCreate",
+            resource_key=resource,
+            occurrence=event.signature_counter,
+        )
+    if event.etype in {ControllerHearTypes.DELETED, ControllerWriteTypes.DELETE}:
+        return ObjectCondition(
+            condition_type="onObjectDelete",
+            resource_key=resource,
+            occurrence=event.signature_counter,
+        )
+    condition = UpdateCondition(
+        condition_type="onObjectUpdate",
+        resource_key=resource,
+        occurrence=event.signature_counter,
+        prev_state_diff=json.dumps(event.slim_prev_obj_map, sort_keys=True),
+        cur_state_diff=json.dumps(event.slim_cur_obj_map, sort_keys=True),
+    )
+    if convert_state:
+        return condition.model_copy(update={"convert_state_to_api_form": True})
+    return condition

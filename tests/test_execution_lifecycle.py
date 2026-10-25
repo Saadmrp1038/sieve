@@ -1,17 +1,18 @@
 """Fault cases at the harness boundary, independent of a Kubernetes cluster."""
 
 import json
-from pathlib import Path
 import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 from unittest.mock import patch
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import kubernetes
 import pytest
+from urllib3.exceptions import HTTPError
 
 from sieve_tool.kubernetes import api
+from sieve_tool.oracle.checker_common import test_run_validation as validate_run
 from sieve_tool.paths import repository
 from sieve_tool.process import (
     ProcessError,
@@ -23,8 +24,7 @@ from sieve_tool.process import (
     reset_cleanup_budget,
     run,
 )
-from sieve_tool.runtime import runner, cluster
-from sieve_tool.oracle.checker_common import test_run_validation as validate_run
+from sieve_tool.runtime import cluster, runner
 
 
 def test_setup_failure_survives_failed_cleanup():
@@ -160,7 +160,7 @@ def test_sdk_request_timeout_has_no_hidden_retries(tmp_path):
             client = api(kubernetes.client.CoreV1Api)
             assert client.api_client.configuration.retries == 0
             started = time.monotonic()
-            with pytest.raises(Exception):
+            with pytest.raises((ProcessTimeout, HTTPError)):
                 client.list_namespaced_pod(
                     "default", _request_timeout=request_timeout()
                 )
@@ -244,6 +244,7 @@ def test_diagnostics_preserve_status_and_events_before_cluster_deletion(
     tmp_path, monkeypatch
 ):
     import sys
+
     from sieve_tool.runtime.workload import collect_diagnostics
 
     command = tmp_path / "bin/kubectl"
@@ -279,7 +280,8 @@ def test_diagnostics_preserve_status_and_events_before_cluster_deletion(
 
 def test_explicit_workload_step_budget_preserves_unrelated_defaults(tmp_path):
     import sys
-    from sieve_tool.testing.driver import new_built_in_workload, common_config
+
+    from sieve_tool.testing.driver import common_config, new_built_in_workload
 
     original = common_config.workload_command_wait_timeout
     workload = new_built_in_workload().cmd(

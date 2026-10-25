@@ -1,19 +1,18 @@
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Union
+
+from sieve_tool.common.event_delta import diff_event
 from sieve_tool.common.k8s_event import (
+    EVENT_NONE_TYPE,
     ControllerHear,
-    ControllerWrite,
     ControllerNonK8sWrite,
     ControllerRead,
+    ControllerWrite,
     ReconcileBegin,
     ReconcileEnd,
-    EVENT_NONE_TYPE,
-    generate_key,
-    get_event_signature,
     conflicting_event,
+    get_event_signature,
     get_mask_by_resource_key,
-    parse_key,
 )
-from sieve_tool.common.event_delta import diff_event
 
 INTER_RECONCILER_EDGE = "INTER-RECONCILER"
 INTRA_RECONCILER_EDGE = "INTRA-RECONCILER"
@@ -357,7 +356,7 @@ class EventGraph:
             elif event_vertex.is_reconcile_end():
                 self.reconcile_end_vertices.append(event_vertex)
             else:
-                assert False
+                raise AssertionError()
             event_vertex_list.append(event_vertex)
         for i in range(1, len(event_vertex_list)):
             prev_vertex = event_vertex_list[i - 1]

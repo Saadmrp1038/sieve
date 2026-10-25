@@ -2,10 +2,11 @@
 
 import json
 import os
-from pathlib import Path
-from sieve_tool.process import run
 import tempfile
+from pathlib import Path
+
 from sieve_tool.paths import cache_path, repository_root
+from sieve_tool.process import run
 
 
 def run_instrumenter(config):

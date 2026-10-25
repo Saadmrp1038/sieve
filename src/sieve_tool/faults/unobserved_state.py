@@ -1,16 +1,34 @@
 import json
 import os
 from typing import List
-from sieve_tool.common.event_delta import *
-from sieve_tool.common.common import *
-from sieve_tool.common.k8s_event import *
+
 from sieve_tool.analysis.event_graph import (
     EventGraph,
     EventVertex,
 )
+from sieve_tool.common.common import TestContext, bcolors, cprint
+from sieve_tool.common.k8s_event import (
+    ALLOWED_ERROR_TYPE,
+    ControllerHear,
+    ControllerHearTypes,
+    generate_key,
+)
 from sieve_tool.faults.common import (
-    nondeterministic_key,
     detectable_event_diff,
+    nondeterministic_key,
+    object_condition,
+)
+from sieve_tool.plans import (
+    FaultPlan,
+    ObjectCondition,
+    ObservationPoint,
+    PauseControllerAction,
+    ResumeControllerAction,
+    Trigger,
+    TriggerDefinition,
+    UpdateCondition,
+    single_trigger,
+    write_plan,
 )
 
 
@@ -77,147 +95,74 @@ def overwrite_filtering_pass(event_vertices: List[EventVertex]):
 def generate_unobserved_state_test_plan(
     test_context: TestContext,
     controller_hear: ControllerHear,
-):
-    resource_key = generate_key(
+) -> FaultPlan:
+    resource = generate_key(
         controller_hear.rtype, controller_hear.namespace, controller_hear.name
     )
-    condition_for_trigger1 = {}
-    trigger_for_action2 = {
-        "definitions": None,
-        "expression": None,
-    }
     if controller_hear.etype == ControllerHearTypes.ADDED:
-        condition_for_trigger1["conditionType"] = "onObjectCreate"
-        condition_for_trigger1["resourceKey"] = resource_key
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-        trigger_for_action2["definitions"] = [
-            {
-                "triggerName": "trigger2",
-                "condition": {
-                    "conditionType": "onObjectUpdate",
-                    "resourceKey": resource_key,
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-            {
-                "triggerName": "trigger3",
-                "condition": {
-                    "conditionType": "onObjectDelete",
-                    "resourceKey": resource_key,
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-        ]
-        trigger_for_action2["expression"] = "trigger2|trigger3"
+        next_condition = UpdateCondition(
+            condition_type="onObjectUpdate", resource_key=resource, occurrence=1
+        )
+        final_condition = ObjectCondition(
+            condition_type="onObjectDelete", resource_key=resource, occurrence=1
+        )
     elif controller_hear.etype == ControllerHearTypes.DELETED:
-        condition_for_trigger1["conditionType"] = "onObjectDelete"
-        condition_for_trigger1["resourceKey"] = resource_key
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-        trigger_for_action2["definitions"] = [
-            {
-                "triggerName": "trigger2",
-                "condition": {
-                    "conditionType": "onObjectCreate",
-                    "resourceKey": resource_key,
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-            {
-                "triggerName": "trigger3",
-                "condition": {
-                    "conditionType": "onObjectUpdate",
-                    "resourceKey": resource_key,
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-        ]
-        trigger_for_action2["expression"] = "trigger2|trigger3"
+        next_condition = ObjectCondition(
+            condition_type="onObjectCreate", resource_key=resource, occurrence=1
+        )
+        final_condition = UpdateCondition(
+            condition_type="onObjectUpdate", resource_key=resource, occurrence=1
+        )
     else:
-        condition_for_trigger1["conditionType"] = "onObjectUpdate"
-        condition_for_trigger1["resourceKey"] = resource_key
-        condition_for_trigger1["prevStateDiff"] = json.dumps(
-            controller_hear.slim_prev_obj_map, sort_keys=True
+        next_condition = UpdateCondition(
+            condition_type="onAnyFieldModification",
+            resource_key=resource,
+            occurrence=1,
+            prev_state_diff=json.dumps(
+                controller_hear.slim_cur_obj_map, sort_keys=True
+            ),
         )
-        condition_for_trigger1["curStateDiff"] = json.dumps(
-            controller_hear.slim_cur_obj_map, sort_keys=True
+        final_condition = ObjectCondition(
+            condition_type="onObjectDelete", resource_key=resource, occurrence=1
         )
-        condition_for_trigger1["occurrence"] = controller_hear.signature_counter
-        trigger_for_action2["definitions"] = [
-            {
-                "triggerName": "trigger2",
-                "condition": {
-                    "conditionType": "onAnyFieldModification",
-                    "resourceKey": resource_key,
-                    "prevStateDiff": json.dumps(
-                        controller_hear.slim_cur_obj_map, sort_keys=True
-                    ),
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-            {
-                "triggerName": "trigger3",
-                "condition": {
-                    "conditionType": "onObjectDelete",
-                    "resourceKey": resource_key,
-                    "occurrence": 1,
-                },
-                "observationPoint": {
-                    "when": "afterControllerRecv",
-                    "by": "informer",
-                },
-            },
-        ]
-        trigger_for_action2["expression"] = "trigger2|trigger3"
-    return {
-        "workload": test_context.test_workload,
-        "actions": [
-            {
-                "actionType": "pauseController",
-                "pauseAt": "beforeControllerRead",
-                "pauseScope": resource_key,
-                "avoidOngoingRead": True,
-                "trigger": {
-                    "definitions": [
-                        {
-                            "triggerName": "trigger1",
-                            "condition": condition_for_trigger1,
-                            "observationPoint": {
-                                "when": "beforeControllerRecv",
-                                "by": "informer",
-                            },
-                        }
+    observation = ObservationPoint(when="afterControllerRecv", by="informer")
+    return FaultPlan(
+        workload=test_context.test_workload,
+        actions=[
+            PauseControllerAction(
+                action_type="pauseController",
+                pause_at="beforeControllerRead",
+                pause_scope=resource,
+                avoid_ongoing_read=True,
+                trigger=single_trigger(
+                    "trigger1",
+                    object_condition(controller_hear),
+                    "beforeControllerRecv",
+                    "informer",
+                ),
+            ),
+            ResumeControllerAction(
+                action_type="resumeController",
+                pause_at="beforeControllerRead",
+                pause_scope=resource,
+                trigger=Trigger(
+                    definitions=[
+                        TriggerDefinition(
+                            trigger_name="trigger2",
+                            condition=next_condition,
+                            observation_point=observation,
+                        ),
+                        TriggerDefinition(
+                            trigger_name="trigger3",
+                            condition=final_condition,
+                            observation_point=observation,
+                        ),
                     ],
-                    "expression": "trigger1",
-                },
-            },
-            {
-                "actionType": "resumeController",
-                "pauseAt": "beforeControllerRead",
-                "pauseScope": resource_key,
-                "trigger": trigger_for_action2,
-            },
+                    expression="trigger2|trigger3",
+                ),
+            ),
         ],
-    }
+    )
 
 
 def unobserved_state_analysis(
@@ -252,7 +197,7 @@ def unobserved_state_analysis(
             path, "unobserved-state-test-plan-{}.yaml".format(str(i))
         )
         if test_context.common_config.persist_test_plans_enabled:
-            dump_to_yaml(unobserved_state_test_plan, file_name)
+            write_plan(unobserved_state_test_plan, file_name)
 
     cprint(
         "Generated {} unobserved-state test plan(s) in {}".format(i, path),

@@ -1,12 +1,10 @@
-import os
 import json
-import time
-from sieve_tool.common.common import cprint, bcolors, rmtree_if_exists
 import shutil
-from sieve_tool.process import run as run_process
 import sys
-from pathlib import Path
+import time
+
 from sieve_tool.paths import repository_root
+from sieve_tool.process import run as run_process
 from sieve_tool.runtime import runner
 
 

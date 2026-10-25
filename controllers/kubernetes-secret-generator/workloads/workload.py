@@ -2,10 +2,10 @@
 
 import base64
 import json
-from pathlib import Path
 import sys
 import time
 import traceback
+from pathlib import Path
 
 import yaml
 
@@ -189,9 +189,9 @@ if __name__ == "__main__":
         output.with_name("workload-observations.json").write_text(
             json.dumps(observations, indent=2) + "\n"
         )
-    except Exception:
+    except Exception as failure:
         error = traceback.format_exc()
         output.write_text(error)
         print(error, file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from failure
     output.write_text("FINISH-SIEVE-TEST\n")

@@ -1,7 +1,7 @@
 import json
-import resource
-from typing import Dict, List, Set, Union
 from pathlib import PurePath
+from typing import Dict, List, Set, Union
+
 from sieve_tool.common.event_delta import conflicting_event_payload
 
 HEAR_READ_FILTER_FLAG = True
@@ -841,7 +841,7 @@ def parse_controller_read(line: str) -> ControllerRead:
             tokens[7],
         )
     else:
-        assert False, "read type should be: Get, List"
+        raise AssertionError("read type should be: Get, List")
 
 
 def parse_controller_non_k8s_write(line: str) -> ControllerNonK8sWrite:
@@ -884,7 +884,7 @@ def parse_controller_cache_read(line: str) -> ControllerRead:
             tokens[5],
         )
     else:
-        assert False, "read type should be: Get, List"
+        raise AssertionError("read type should be: Get, List")
 
 
 def parse_controller_hear_id_only(line: str) -> ControllerHearIDOnly:

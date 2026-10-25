@@ -1,34 +1,60 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/rpc"
 	"os"
+	"os/signal"
+	"syscall"
 
 	sieve "sieve.client"
 )
 
-// Sieve server runs on one of the kind-control-plane node (not in the pod).
-// The server reads the config `server.yaml` and decides which listener to use.
-// The listener will handle the RPC from sieve client (called by controllers or k8s components).
-func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-	log.Println("registering rpc server...")
-	args := os.Args
-	phase := args[1]
+func serve(ctx context.Context, phase string) error {
+	server := rpc.NewServer()
+	var actionErrors <-chan error
 	switch phase {
 	case sieve.LEARN:
-		rpc.Register(NewLearnListener())
+		if err := server.Register(NewLearnListener()); err != nil {
+			return err
+		}
 	case sieve.TEST:
-		rpc.Register(NewTestCoordinator())
+		listener, err := NewTestCoordinator(ctx)
+		if err != nil {
+			return err
+		}
+		actionErrors = listener.Server.stateMachine.errors
+		if err := server.Register(listener); err != nil {
+			return err
+		}
 	default:
-		log.Fatalf("Cannot recognize mode: %s\n", phase)
+		return fmt.Errorf("unrecognized mode %q", phase)
 	}
-	log.Println("setting up connection...")
-	addr, err := net.ResolveTCPAddr("tcp", ":12345")
-	checkError(err)
-	inbound, err := net.ListenTCP("tcp", addr)
-	checkError(err)
-	rpc.Accept(inbound)
+	inbound, err := net.Listen("tcp", ":12345")
+	if err != nil {
+		return err
+	}
+	defer inbound.Close()
+	go server.Accept(inbound)
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-actionErrors:
+		return fmt.Errorf("Sieve action failed: %w", err)
+	}
+}
+
+func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+	if len(os.Args) != 2 {
+		log.Fatal("usage: sieve-coordinator learn|test")
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := serve(ctx, os.Args[1]); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -1,34 +1,39 @@
-from sieve_tool.kubernetes import api as kubernetes_api, load_config
-from typing import Tuple
-import kubernetes
-from sieve_tool.common.common import (
-    POD,
-    PVC,
-    STS,
-    SECRET,
-    SERVICE,
-    NO_ERROR_MESSAGE,
-    TERMINATED,
-    RUNNING,
-    BOUND,
-    EXIST,
-)
-import time
-import traceback
-from sieve_tool.common.config import get_common_config
 import datetime
 import json
+import time
+import traceback
+from pathlib import Path
+from typing import Tuple
+
+import kubernetes
+
+from sieve_tool.common.common import (
+    BOUND,
+    EXIST,
+    NO_ERROR_MESSAGE,
+    POD,
+    PVC,
+    RUNNING,
+    SECRET,
+    SERVICE,
+    STS,
+    TERMINATED,
+)
+from sieve_tool.common.config import get_common_config
+from sieve_tool.kubernetes import api as kubernetes_api
+from sieve_tool.kubernetes import load_config
 from sieve_tool.paths import repository_root
 from sieve_tool.process import (
-    run as run_process,
-    validate_timeouts,
     ProcessError,
     ProcessTimeout,
     deadline,
     execution,
     request_timeout,
+    validate_timeouts,
 )
-from pathlib import Path
+from sieve_tool.process import (
+    run as run_process,
+)
 
 common_config = get_common_config()
 
@@ -213,7 +218,7 @@ class TestWaitForStatus:
                 if all_ready:
                     return True
         else:
-            assert False, "status not supported yet"
+            raise AssertionError("status not supported yet")
         return False
 
     def check_pvc(self):
@@ -230,7 +235,7 @@ class TestWaitForStatus:
             if pvc is not None and pvc.status.phase == self.status:
                 return True
         else:
-            assert False, "status not supported yet"
+            raise AssertionError("status not supported yet")
         return False
 
     @bounded_wait
@@ -256,7 +261,7 @@ class TestWaitForStatus:
                 if self.check_pvc():
                     break
             else:
-                assert False, "type not supported yet"
+                raise AssertionError("type not supported yet")
             time.sleep(5)
         time.sleep(5)
         print("wait takes %f seconds" % (time.monotonic() - s))
@@ -304,7 +309,7 @@ class TestWaitForNumber:
                 if self.check_pod():
                     break
             else:
-                assert False, "type not supported yet"
+                raise AssertionError("type not supported yet")
             time.sleep(5)
         time.sleep(5)
         print("wait takes %f seconds" % (time.monotonic() - s))
@@ -351,7 +356,7 @@ class TestWaitForStorage:
                 if self.check_sts():
                     break
             else:
-                assert False, "type not supported yet"
+                raise AssertionError("type not supported yet")
             time.sleep(5)
         time.sleep(5)
         print("wait takes %f seconds" % (time.monotonic() - s))
@@ -425,7 +430,7 @@ class TestWaitForExistence:
                 if self.check_service():
                     break
             else:
-                assert False, "type not supported yet"
+                raise AssertionError("type not supported yet")
             time.sleep(5)
         time.sleep(5)
         print("wait takes %f seconds" % (time.monotonic() - s))

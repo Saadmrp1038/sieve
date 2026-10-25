@@ -1,9 +1,32 @@
-from sieve_tool.common.common import *
+import copy
 import json
-from sieve_tool.oracle.checker_common import *
-from sieve_tool.common.k8s_event import get_mask_by_resource_key, parse_key
-from deepdiff import DeepDiff
+import os
 from pathlib import PurePath
+
+from deepdiff import DeepDiff
+
+from sieve_tool.common.common import (
+    METADATA_FIELDS,
+    SIEVE_LEARN_VALUE_MASK,
+    TestContext,
+    first_pass_learn_result_dir,
+    match_mask_regex,
+    sieve_modes,
+)
+from sieve_tool.common.k8s_event import (
+    SIEVE_API_EVENT_MARK,
+    APIEventTypes,
+    get_mask_by_resource_key,
+    parse_api_event,
+    parse_key,
+)
+from sieve_tool.oracle.checker_common import (
+    generate_alarm,
+    get_current_controller_related_list,
+    get_reference_controller_related_list,
+    kind_native_objects,
+    second_pass_learn_trim,
+)
 
 
 def generate_state(test_context: TestContext):
@@ -137,7 +160,6 @@ def check_single_state(state, resource_keys, checker_name, customized_checker):
     for resource_key in resource_keys:
         tokens = resource_key.split("/")
         rtype = tokens[0]
-        ns = tokens[1]
         name = tokens[2]
         final_state[resource_key] = state[rtype][name]
     if not customized_checker(final_state):
@@ -498,7 +520,7 @@ def compare_states(test_context: TestContext):
                 )
             else:
                 print(delta_type)
-                assert False
+                raise AssertionError()
 
     resource_existence_messages.sort()
     fields_diff_messages.sort()

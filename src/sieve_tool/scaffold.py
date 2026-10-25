@@ -1,8 +1,8 @@
 """Create controller integrations in the current source layout."""
 
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 def create(directory, name):
