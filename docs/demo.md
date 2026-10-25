@@ -39,7 +39,7 @@ uv run --locked sieve build -m test
 uv run --locked sieve build -c rabbitmq-operator -m test --revision 4f13b9a942ad34fece0171d2174aa0264b10e947
 ```
 The above commands download Kubernetes and controller source code, instrument the source code and build the images.
-For Kubernetes, we use the branch `v1.18.9`. For the controller, we use `--revision` to specify the commit id. 
+For Kubernetes, we use the branch `v1.18.9`. For the controller, we use `--revision` to specify the commit id.
 
 Then run the test
 ```
