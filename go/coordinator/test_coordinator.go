@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	sieve "sieve.client"
 )
@@ -14,9 +16,8 @@ type TestCoordinator struct {
 }
 
 type ActionContext struct {
-	namespace                     string
-	leadingAPIServer              string
-	followingAPIServer            string
+	ctx                           context.Context
+	restart                       func(context.Context, string, string) error
 	apiserverLocks                map[string]map[string]chan string
 	apiserverLockedMap            map[string]map[string]bool
 	controllerOngoingReadLock     *sync.Mutex
@@ -28,7 +29,7 @@ type ActionContext struct {
 
 type testCoordinator struct {
 	testPlan                      *TestPlan
-	actionConext                  *ActionContext
+	actionContext                 *ActionContext
 	stateNotificationCh           chan TriggerNotification
 	objectStates                  map[string]map[string]map[string]string
 	objectStatesLock              sync.RWMutex
@@ -45,7 +46,7 @@ type testCoordinator struct {
 	stateMachine                  *StateMachine
 }
 
-func NewTestCoordinator() (*TestCoordinator, error) {
+func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 	data, err := os.ReadFile("server.yaml")
 	if err != nil {
 		return nil, err
@@ -55,6 +56,14 @@ func NewTestCoordinator() (*TestCoordinator, error) {
 		return nil, err
 	}
 	testPlan := spec.build()
+	requestTimeout, err := coordinatorTimeout("SIEVE_REQUEST_TIMEOUT", 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	operationTimeout, err := coordinatorTimeout("SIEVE_OPERATION_TIMEOUT", 10*time.Minute)
+	if err != nil {
+		return nil, err
+	}
 	asyncDoneCh := make(chan *AsyncDoneNotification)
 	controllerOngoingReadLock := &sync.Mutex{}
 	pauseControllerSharedDataLock := &sync.Mutex{}
@@ -62,10 +71,15 @@ func NewTestCoordinator() (*TestCoordinator, error) {
 	controllerShouldPauseMap := make(map[string]map[string]bool)
 	apiserverLocks := make(map[string]map[string]chan string)
 	apiserverLockedMap := make(map[string]map[string]bool)
-	actionConext := &ActionContext{
-		namespace:                     "default",
-		leadingAPIServer:              "kind-control-plane",
-		followingAPIServer:            "kind-control-plane3",
+	actionContext := &ActionContext{
+		ctx: ctx,
+		restart: func(ctx context.Context, label, followingAPI string) error {
+			executor, err := newControllerActions("default", "kind-control-plane", requestTimeout, operationTimeout)
+			if err != nil {
+				return err
+			}
+			return executor.restart(ctx, label, followingAPI)
+		},
 		controllerPausingChs:          controllerPausingChs,
 		controllerShouldPauseMap:      controllerShouldPauseMap,
 		pauseControllerSharedDataLock: pauseControllerSharedDataLock,
@@ -78,7 +92,7 @@ func NewTestCoordinator() (*TestCoordinator, error) {
 	stateNotificationCh := make(chan TriggerNotification, 500)
 	server := &testCoordinator{
 		testPlan:                      testPlan,
-		actionConext:                  actionConext,
+		actionContext:                 actionContext,
 		stateNotificationCh:           stateNotificationCh,
 		objectStates:                  map[string]map[string]map[string]string{},
 		controllerOngoingReadLock:     controllerOngoingReadLock,
@@ -91,7 +105,7 @@ func NewTestCoordinator() (*TestCoordinator, error) {
 		mergedFieldKeyMask:            mergedFieldKeyMask,
 		mergedFieldPathMaskAPIFrom:    convertFieldPathMaskToAPIForm(mergedFieldPathMask),
 		mergedFieldKeyMaskAPIForm:     convertFieldKeyMaskToAPIForm(mergedFieldKeyMask),
-		stateMachine:                  NewStateMachine(testPlan, stateNotificationCh, asyncDoneCh, actionConext),
+		stateMachine:                  NewStateMachine(testPlan, stateNotificationCh, asyncDoneCh, actionContext),
 	}
 	listener := &TestCoordinator{
 		Server: server,

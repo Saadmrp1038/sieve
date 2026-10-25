@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"time"
 )
 
 const (
@@ -208,7 +207,7 @@ type Action interface {
 	getTriggerGraph() *TriggerGraph
 	getTriggerDefinitions() map[string]TriggerDefinition
 	isAsync() bool
-	run(*ActionContext)
+	run(*ActionContext) error
 }
 
 type PauseAPIServerAction struct {
@@ -233,10 +232,12 @@ func (a *PauseAPIServerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *PauseAPIServerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *PauseAPIServerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the PauseAPIServerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
 	if _, ok := actionContext.apiserverLockedMap[a.apiServerName]; !ok {
 		actionContext.apiserverLockedMap[a.apiServerName] = map[string]bool{}
@@ -250,20 +251,19 @@ func (a *PauseAPIServerAction) runInternal(actionContext *ActionContext, async b
 	}
 	actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] = true
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	log.Println("PauseAPIServerAction done")
+	return nil
 }
 
-func (a *PauseAPIServerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *PauseAPIServerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type ResumeAPIServerAction struct {
@@ -288,30 +288,31 @@ func (a *ResumeAPIServerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *ResumeAPIServerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *ResumeAPIServerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the ResumeAPIServerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
 	log.Printf("Close channel for %s %s\n", a.apiServerName, a.pauseScope)
 	actionContext.apiserverLocks[a.apiServerName][a.pauseScope] <- "release"
 	close(actionContext.apiserverLocks[a.apiServerName][a.pauseScope])
 	actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] = false
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	log.Println("ResumeAPIServerAction done")
+	return nil
 }
 
-func (a *ResumeAPIServerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *ResumeAPIServerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type PauseControllerAction struct {
@@ -337,10 +338,12 @@ func (a *PauseControllerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *PauseControllerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *PauseControllerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the PauseControllerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
 
 	actionContext.pauseControllerSharedDataLock.Lock()
@@ -359,10 +362,12 @@ func (a *PauseControllerAction) runInternal(actionContext *ActionContext, async 
 	actionContext.pauseControllerSharedDataLock.Unlock()
 
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	if a.avoidOngoingRead {
 		actionContext.controllerOngoingReadLock.Lock()
@@ -370,14 +375,11 @@ func (a *PauseControllerAction) runInternal(actionContext *ActionContext, async 
 		actionContext.controllerOngoingReadLock.Unlock()
 	}
 	log.Println("PauseControllerAction done")
+	return nil
 }
 
-func (a *PauseControllerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *PauseControllerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type ResumeControllerAction struct {
@@ -402,10 +404,12 @@ func (a *ResumeControllerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *ResumeControllerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *ResumeControllerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the ResumeControllerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
 	log.Printf("Close channel for %s %s\n", a.pauseAt, a.pauseScope)
 
@@ -416,20 +420,19 @@ func (a *ResumeControllerAction) runInternal(actionContext *ActionContext, async
 	actionContext.pauseControllerSharedDataLock.Unlock()
 
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	log.Println("ResumeControllerAction done")
+	return nil
 }
 
-func (a *ResumeControllerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *ResumeControllerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type RestartControllerAction struct {
@@ -453,27 +456,30 @@ func (a *RestartControllerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *RestartControllerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *RestartControllerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the RestartControllerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
-	restartAndreconnectController(actionContext.namespace, a.controllerLabel, actionContext.leadingAPIServer, "", false)
+	if err := actionContext.restart(actionContext.ctx, a.controllerLabel, ""); err != nil {
+		return err
+	}
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	log.Println("RestartControllerAction done")
+	return nil
 }
 
-func (a *RestartControllerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *RestartControllerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type ReconnectControllerAction struct {
@@ -498,27 +504,30 @@ func (a *ReconnectControllerAction) isAsync() bool {
 	return a.async
 }
 
-func (a *ReconnectControllerAction) runInternal(actionContext *ActionContext, async bool) {
+func (a *ReconnectControllerAction) runInternal(actionContext *ActionContext, async bool) error {
 	log.Println("run the ReconnectControllerAction")
 	if a.waitBefore > 0 {
-		time.Sleep(time.Duration(a.waitBefore) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitBefore); err != nil {
+			return err
+		}
 	}
-	restartAndreconnectController(actionContext.namespace, a.controllerLabel, actionContext.leadingAPIServer, a.reconnectAPIServer, true)
+	if err := actionContext.restart(actionContext.ctx, a.controllerLabel, a.reconnectAPIServer); err != nil {
+		return err
+	}
 	if a.waitAfter > 0 {
-		time.Sleep(time.Duration(a.waitAfter) * time.Second)
+		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
+			return err
+		}
 	}
 	if async {
-		actionContext.asyncDoneCh <- &AsyncDoneNotification{}
+		actionContext.completeAsync(nil)
 	}
 	log.Println("ReconnectControllerAction done")
+	return nil
 }
 
-func (a *ReconnectControllerAction) run(actionContext *ActionContext) {
-	if a.async {
-		go a.runInternal(actionContext, true)
-	} else {
-		a.runInternal(actionContext, false)
-	}
+func (a *ReconnectControllerAction) run(actionContext *ActionContext) error {
+	return dispatchAction(actionContext, a.async, func() error { return a.runInternal(actionContext, a.async) })
 }
 
 type TestPlan struct {

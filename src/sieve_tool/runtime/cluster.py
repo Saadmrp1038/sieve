@@ -172,6 +172,10 @@ def start_coordinator(test_context):
         [
             "docker",
             "exec",
+            "-e",
+            f"SIEVE_REQUEST_TIMEOUT={limit('request')}",
+            "-e",
+            f"SIEVE_OPERATION_TIMEOUT={limit('cluster')}",
             "kind-control-plane",
             "bash",
             "-c",
