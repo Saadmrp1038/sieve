@@ -1,0 +1,5 @@
+fixture.go:1: [SIEVE-BEFORE-RECONCILE]	example.(*A).Reconcile	1
+fixture.go:1: [SIEVE-BEFORE-ANNOTATED-API-INVOCATION]	99
+fixture.go:1: [SIEVE-AFTER-ANNOTATED-API-INVOCATION]	99	example/api	client.go	*Client	Create	example.(*A).Reconcile
+fixture.go:1: [SIEVE-AFTER-RECONCILE]	example.(*A).Reconcile	1
+fixture.go:1: [SIEVE-BEFORE-ANNOTATED-API-INVOCATION]	500

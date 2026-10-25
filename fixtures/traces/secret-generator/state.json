@@ -1,0 +1,1143 @@
+{
+  "configmap/default/kube-root-ca.crt": {
+    "BinaryData": null,
+    "Data": {
+      "ca.crt": "Zml4dHVyZS12YWx1ZS0xMA=="
+    },
+    "Immutable": null,
+    "annotations": {
+      "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:data": {
+            ".": {},
+            "f:ca.crt": {}
+          },
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubernetes.io/description": {}
+            }
+          }
+        },
+        "manager": "kube-controller-manager",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kube-root-ca.crt",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "configmap/default/kubernetes-secret-generator-lock": {
+    "BinaryData": null,
+    "Data": {},
+    "Immutable": null,
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:ownerReferences": {
+              ".": {},
+              "k:{\"uid\":\"0fbf9764-3e93-4141-a818-bd1509580848\"}": "SIEVE-IGNORE",
+              "k:{\"uid\":\"4d5318b4-f9f6-4815-a051-d96f5b095c1a\"}": "SIEVE-IGNORE"
+            }
+          }
+        },
+        "manager": "manager",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator-lock",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "SIEVE-IGNORE",
+        "uid": "SIEVE-IGNORE"
+      }
+    ],
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "configmap/default/sieve-testing-global-config": {
+    "BinaryData": null,
+    "Data": {
+      "sieveTestPlan": "Zml4dHVyZS12YWx1ZS0xMQ=="
+    },
+    "Immutable": null,
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"sieveTestPlan\":\"Zml4dHVyZS12YWx1ZS0xMQ==\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"sieve-testing-global-config\",\"namespace\":\"default\"}}"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:data": {
+            ".": {},
+            "f:sieveTestPlan": {}
+          },
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            }
+          }
+        },
+        "manager": "kubectl-client-side-apply",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "sieve-testing-global-config",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "deployment/default/kubernetes-secret-generator": {
+    "Spec": {
+      "MinReadySeconds": 0,
+      "Paused": false,
+      "ProgressDeadlineSeconds": 600,
+      "Replicas": 1,
+      "RevisionHistoryLimit": 10,
+      "RollbackTo": null,
+      "Selector": {
+        "matchLabels": {
+          "sievetag": "kubernetes-secret-generator"
+        }
+      },
+      "Strategy": {
+        "RollingUpdate": {
+          "MaxSurge": "25%",
+          "MaxUnavailable": "25%"
+        },
+        "Type": "RollingUpdate"
+      },
+      "Template": {
+        "Spec": {
+          "ActiveDeadlineSeconds": null,
+          "Affinity": null,
+          "AutomountServiceAccountToken": null,
+          "Containers": [
+            {
+              "Args": null,
+              "Command": null,
+              "Env": [
+                {
+                  "Name": "WATCH_NAMESPACE",
+                  "Value": "default",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "POD_NAME",
+                  "Value": "",
+                  "ValueFrom": {
+                    "ConfigMapKeyRef": null,
+                    "FieldRef": {
+                      "APIVersion": "v1",
+                      "FieldPath": "metadata.name"
+                    },
+                    "ResourceFieldRef": null,
+                    "SecretKeyRef": null
+                  }
+                },
+                {
+                  "Name": "OPERATOR_NAME",
+                  "Value": "kubernetes-secret-generator",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "KUBERNETES_SERVICE_HOST",
+                  "Value": "kind-control-plane",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "KUBERNETES_SERVICE_PORT",
+                  "Value": "6443",
+                  "ValueFrom": null
+                }
+              ],
+              "EnvFrom": [
+                {
+                  "ConfigMapRef": {
+                    "Name": "sieve-testing-global-config",
+                    "Optional": null
+                  },
+                  "Prefix": "",
+                  "SecretRef": null
+                }
+              ],
+              "Image": "sieve-quality/kubernetes-secret-generator:learn",
+              "ImagePullPolicy": "IfNotPresent",
+              "Lifecycle": null,
+              "LivenessProbe": null,
+              "Name": "manager",
+              "Ports": null,
+              "ReadinessProbe": null,
+              "Resources": {
+                "Limits": null,
+                "Requests": null
+              },
+              "SecurityContext": null,
+              "StartupProbe": null,
+              "Stdin": false,
+              "StdinOnce": false,
+              "TTY": false,
+              "TerminationMessagePath": "/dev/termination-log",
+              "TerminationMessagePolicy": "File",
+              "VolumeDevices": null,
+              "VolumeMounts": null,
+              "WorkingDir": ""
+            }
+          ],
+          "DNSConfig": null,
+          "DNSPolicy": "ClusterFirst",
+          "EnableServiceLinks": null,
+          "EphemeralContainers": null,
+          "HostAliases": null,
+          "Hostname": "",
+          "ImagePullSecrets": null,
+          "InitContainers": null,
+          "NodeName": "",
+          "NodeSelector": null,
+          "OS": null,
+          "Overhead": null,
+          "PreemptionPolicy": null,
+          "Priority": null,
+          "PriorityClassName": "",
+          "ReadinessGates": null,
+          "RestartPolicy": "Always",
+          "RuntimeClassName": null,
+          "SchedulerName": "default-scheduler",
+          "SecurityContext": {
+            "FSGroup": null,
+            "FSGroupChangePolicy": null,
+            "HostIPC": false,
+            "HostNetwork": false,
+            "HostPID": false,
+            "RunAsGroup": null,
+            "RunAsNonRoot": null,
+            "RunAsUser": null,
+            "SELinuxOptions": null,
+            "SeccompProfile": null,
+            "ShareProcessNamespace": null,
+            "SupplementalGroups": null,
+            "Sysctls": null,
+            "WindowsOptions": null
+          },
+          "ServiceAccountName": "kubernetes-secret-generator",
+          "SetHostnameAsFQDN": null,
+          "Subdomain": "",
+          "TerminationGracePeriodSeconds": 30,
+          "Tolerations": null,
+          "TopologySpreadConstraints": null,
+          "Volumes": null
+        },
+        "creationTimestamp": null,
+        "labels": {
+          "sievetag": "kubernetes-secret-generator"
+        }
+      }
+    },
+    "Status": {
+      "AvailableReplicas": 1,
+      "CollisionCount": null,
+      "Conditions": [
+        {
+          "LastTransitionTime": "SIEVE-IGNORE",
+          "LastUpdateTime": "SIEVE-IGNORE",
+          "Message": "Deployment has minimum availability.",
+          "Reason": "MinimumReplicasAvailable",
+          "Status": "True",
+          "Type": "Available"
+        },
+        {
+          "LastTransitionTime": "SIEVE-IGNORE",
+          "LastUpdateTime": "SIEVE-IGNORE",
+          "Message": "ReplicaSet \"kubernetes-secret-generator-59cbfc84dd\" has successfully progressed.",
+          "Reason": "NewReplicaSetAvailable",
+          "Status": "True",
+          "Type": "Progressing"
+        }
+      ],
+      "ObservedGeneration": 1,
+      "ReadyReplicas": 1,
+      "Replicas": 1,
+      "UnavailableReplicas": 0,
+      "UpdatedReplicas": 1
+    },
+    "annotations": {
+      "deployment.kubernetes.io/revision": "1",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"kubernetes-secret-generator\",\"namespace\":\"default\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"sievetag\":\"kubernetes-secret-generator\"}},\"template\":{\"metadata\":{\"labels\":{\"sievetag\":\"kubernetes-secret-generator\"}},\"spec\":{\"containers\":[{\"env\":[{\"name\":\"WATCH_NAMESPACE\",\"value\":\"default\"},{\"name\":\"POD_NAME\",\"valueFrom\":{\"fieldRef\":{\"fieldPath\":\"metadata.name\"}}},{\"name\":\"OPERATOR_NAME\",\"value\":\"kubernetes-secret-generator\"},{\"name\":\"KUBERNETES_SERVICE_HOST\",\"value\":\"kind-control-plane\"},{\"name\":\"KUBERNETES_SERVICE_PORT\",\"value\":\"6443\"}],\"envFrom\":[{\"configMapRef\":{\"name\":\"sieve-testing-global-config\"}}],\"image\":\"sieve-quality/kubernetes-secret-generator:learn\",\"imagePullPolicy\":\"IfNotPresent\",\"name\":\"manager\"}],\"serviceAccountName\":\"kubernetes-secret-generator\"}}}}"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "generation": 1,
+    "managedFields": [
+      {
+        "apiVersion": "apps/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            }
+          },
+          "f:spec": {
+            "f:progressDeadlineSeconds": {},
+            "f:replicas": {},
+            "f:revisionHistoryLimit": {},
+            "f:selector": {},
+            "f:strategy": {
+              "f:rollingUpdate": {
+                ".": {},
+                "f:maxSurge": {},
+                "f:maxUnavailable": {}
+              },
+              "f:type": {}
+            },
+            "f:template": {
+              "f:metadata": {
+                "f:labels": {
+                  ".": {},
+                  "f:sievetag": {}
+                }
+              },
+              "f:spec": {
+                "f:containers": {
+                  "k:{\"name\":\"manager\"}": {
+                    ".": {},
+                    "f:env": {
+                      ".": {},
+                      "k:{\"name\":\"KUBERNETES_SERVICE_HOST\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"KUBERNETES_SERVICE_PORT\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"OPERATOR_NAME\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"POD_NAME\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:valueFrom": {
+                          ".": {},
+                          "f:fieldRef": {}
+                        }
+                      },
+                      "k:{\"name\":\"WATCH_NAMESPACE\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      }
+                    },
+                    "f:envFrom": {},
+                    "f:image": {},
+                    "f:imagePullPolicy": {},
+                    "f:name": {},
+                    "f:resources": {},
+                    "f:terminationMessagePath": {},
+                    "f:terminationMessagePolicy": {}
+                  }
+                },
+                "f:dnsPolicy": {},
+                "f:restartPolicy": {},
+                "f:schedulerName": {},
+                "f:securityContext": {},
+                "f:serviceAccount": {},
+                "f:serviceAccountName": {},
+                "f:terminationGracePeriodSeconds": {}
+              }
+            }
+          }
+        },
+        "manager": "kubectl-client-side-apply",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      },
+      {
+        "apiVersion": "apps/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              "f:deployment.kubernetes.io/revision": {}
+            }
+          },
+          "f:status": {
+            "f:availableReplicas": {},
+            "f:conditions": {
+              ".": {},
+              "k:{\"type\":\"Available\"}": {
+                ".": {},
+                "f:lastTransitionTime": {},
+                "f:lastUpdateTime": {},
+                "f:message": {},
+                "f:reason": {},
+                "f:status": {},
+                "f:type": {}
+              },
+              "k:{\"type\":\"Progressing\"}": {
+                ".": {},
+                "f:lastTransitionTime": {},
+                "f:lastUpdateTime": {},
+                "f:message": {},
+                "f:reason": {},
+                "f:status": {},
+                "f:type": {}
+              }
+            },
+            "f:observedGeneration": {},
+            "f:readyReplicas": {},
+            "f:replicas": {},
+            "f:updatedReplicas": {}
+          }
+        },
+        "manager": "kube-controller-manager",
+        "operation": "Update",
+        "subresource": "status",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "endpoints/default/kubernetes": {
+    "Subsets": [
+      {
+        "Addresses": [
+          {
+            "Hostname": "",
+            "IP": "172.18.0.2",
+            "NodeName": null,
+            "TargetRef": null
+          }
+        ],
+        "NotReadyAddresses": null,
+        "Ports": [
+          {
+            "AppProtocol": null,
+            "Name": "https",
+            "Port": 6443,
+            "Protocol": "TCP"
+          }
+        ]
+      }
+    ],
+    "creationTimestamp": "SIEVE-IGNORE",
+    "labels": {
+      "endpointslice.kubernetes.io/skip-mirror": "true"
+    },
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:labels": {
+              ".": {},
+              "f:endpointslice.kubernetes.io/skip-mirror": {}
+            }
+          },
+          "f:subsets": {}
+        },
+        "manager": "kube-apiserver",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "endpointslice/default/kubernetes": {
+    "AddressType": "IPv4",
+    "Endpoints": [
+      {
+        "Addresses": [
+          "172.18.0.2"
+        ],
+        "Conditions": {
+          "Ready": true,
+          "Serving": null,
+          "Terminating": null
+        },
+        "DeprecatedTopology": null,
+        "Hints": null,
+        "Hostname": null,
+        "NodeName": null,
+        "TargetRef": null,
+        "Zone": null
+      }
+    ],
+    "Ports": [
+      {
+        "AppProtocol": null,
+        "Name": "https",
+        "Port": 6443,
+        "Protocol": "TCP"
+      }
+    ],
+    "creationTimestamp": "SIEVE-IGNORE",
+    "generation": 1,
+    "labels": {
+      "kubernetes.io/service-name": "kubernetes"
+    },
+    "managedFields": [
+      {
+        "apiVersion": "discovery.k8s.io/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:addressType": {},
+          "f:endpoints": {},
+          "f:metadata": {
+            "f:labels": {
+              ".": {},
+              "f:kubernetes.io/service-name": {}
+            }
+          },
+          "f:ports": {}
+        },
+        "manager": "kube-apiserver",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "pod/default/kubernetes-secret-generator-59cbfc84dd-wdftp": "SIEVE-IGNORE",
+  "replicaset/default/kubernetes-secret-generator-59cbfc84dd": {
+    "Spec": {
+      "MinReadySeconds": 0,
+      "Replicas": 1,
+      "Selector": {
+        "matchLabels": {
+          "pod-template-hash": "59cbfc84dd",
+          "sievetag": "kubernetes-secret-generator"
+        }
+      },
+      "Template": {
+        "Spec": {
+          "ActiveDeadlineSeconds": null,
+          "Affinity": null,
+          "AutomountServiceAccountToken": null,
+          "Containers": [
+            {
+              "Args": null,
+              "Command": null,
+              "Env": [
+                {
+                  "Name": "WATCH_NAMESPACE",
+                  "Value": "default",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "POD_NAME",
+                  "Value": "",
+                  "ValueFrom": {
+                    "ConfigMapKeyRef": null,
+                    "FieldRef": {
+                      "APIVersion": "v1",
+                      "FieldPath": "metadata.name"
+                    },
+                    "ResourceFieldRef": null,
+                    "SecretKeyRef": null
+                  }
+                },
+                {
+                  "Name": "OPERATOR_NAME",
+                  "Value": "kubernetes-secret-generator",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "KUBERNETES_SERVICE_HOST",
+                  "Value": "kind-control-plane",
+                  "ValueFrom": null
+                },
+                {
+                  "Name": "KUBERNETES_SERVICE_PORT",
+                  "Value": "6443",
+                  "ValueFrom": null
+                }
+              ],
+              "EnvFrom": [
+                {
+                  "ConfigMapRef": {
+                    "Name": "sieve-testing-global-config",
+                    "Optional": null
+                  },
+                  "Prefix": "",
+                  "SecretRef": null
+                }
+              ],
+              "Image": "sieve-quality/kubernetes-secret-generator:learn",
+              "ImagePullPolicy": "IfNotPresent",
+              "Lifecycle": null,
+              "LivenessProbe": null,
+              "Name": "manager",
+              "Ports": null,
+              "ReadinessProbe": null,
+              "Resources": {
+                "Limits": null,
+                "Requests": null
+              },
+              "SecurityContext": null,
+              "StartupProbe": null,
+              "Stdin": false,
+              "StdinOnce": false,
+              "TTY": false,
+              "TerminationMessagePath": "/dev/termination-log",
+              "TerminationMessagePolicy": "File",
+              "VolumeDevices": null,
+              "VolumeMounts": null,
+              "WorkingDir": ""
+            }
+          ],
+          "DNSConfig": null,
+          "DNSPolicy": "ClusterFirst",
+          "EnableServiceLinks": null,
+          "EphemeralContainers": null,
+          "HostAliases": null,
+          "Hostname": "",
+          "ImagePullSecrets": null,
+          "InitContainers": null,
+          "NodeName": "",
+          "NodeSelector": null,
+          "OS": null,
+          "Overhead": null,
+          "PreemptionPolicy": null,
+          "Priority": null,
+          "PriorityClassName": "",
+          "ReadinessGates": null,
+          "RestartPolicy": "Always",
+          "RuntimeClassName": null,
+          "SchedulerName": "default-scheduler",
+          "SecurityContext": {
+            "FSGroup": null,
+            "FSGroupChangePolicy": null,
+            "HostIPC": false,
+            "HostNetwork": false,
+            "HostPID": false,
+            "RunAsGroup": null,
+            "RunAsNonRoot": null,
+            "RunAsUser": null,
+            "SELinuxOptions": null,
+            "SeccompProfile": null,
+            "ShareProcessNamespace": null,
+            "SupplementalGroups": null,
+            "Sysctls": null,
+            "WindowsOptions": null
+          },
+          "ServiceAccountName": "kubernetes-secret-generator",
+          "SetHostnameAsFQDN": null,
+          "Subdomain": "",
+          "TerminationGracePeriodSeconds": 30,
+          "Tolerations": null,
+          "TopologySpreadConstraints": null,
+          "Volumes": null
+        },
+        "creationTimestamp": null,
+        "labels": {
+          "pod-template-hash": "59cbfc84dd",
+          "sievetag": "kubernetes-secret-generator"
+        }
+      }
+    },
+    "Status": {
+      "AvailableReplicas": 1,
+      "Conditions": null,
+      "FullyLabeledReplicas": 1,
+      "ObservedGeneration": 1,
+      "ReadyReplicas": 1,
+      "Replicas": 1
+    },
+    "annotations": {
+      "deployment.kubernetes.io/desired-replicas": "1",
+      "deployment.kubernetes.io/max-replicas": "2",
+      "deployment.kubernetes.io/revision": "1"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "generation": 1,
+    "labels": {
+      "pod-template-hash": "59cbfc84dd",
+      "sievetag": "kubernetes-secret-generator"
+    },
+    "managedFields": [
+      {
+        "apiVersion": "apps/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:deployment.kubernetes.io/desired-replicas": {},
+              "f:deployment.kubernetes.io/max-replicas": {},
+              "f:deployment.kubernetes.io/revision": {}
+            },
+            "f:labels": {
+              ".": {},
+              "f:pod-template-hash": {},
+              "f:sievetag": {}
+            },
+            "f:ownerReferences": {
+              ".": {},
+              "k:{\"uid\":\"e29c3940-4a40-4ca5-b1db-a58a589c054f\"}": "SIEVE-IGNORE",
+              "k:{\"uid\":\"f949365c-16db-43ae-918c-46116584d096\"}": "SIEVE-IGNORE"
+            }
+          },
+          "f:spec": {
+            "f:replicas": {},
+            "f:selector": {},
+            "f:template": {
+              "f:metadata": {
+                "f:labels": {
+                  ".": {},
+                  "f:pod-template-hash": {},
+                  "f:sievetag": {}
+                }
+              },
+              "f:spec": {
+                "f:containers": {
+                  "k:{\"name\":\"manager\"}": {
+                    ".": {},
+                    "f:env": {
+                      ".": {},
+                      "k:{\"name\":\"KUBERNETES_SERVICE_HOST\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"KUBERNETES_SERVICE_PORT\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"OPERATOR_NAME\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      },
+                      "k:{\"name\":\"POD_NAME\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:valueFrom": {
+                          ".": {},
+                          "f:fieldRef": {}
+                        }
+                      },
+                      "k:{\"name\":\"WATCH_NAMESPACE\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:value": {}
+                      }
+                    },
+                    "f:envFrom": {},
+                    "f:image": {},
+                    "f:imagePullPolicy": {},
+                    "f:name": {},
+                    "f:resources": {},
+                    "f:terminationMessagePath": {},
+                    "f:terminationMessagePolicy": {}
+                  }
+                },
+                "f:dnsPolicy": {},
+                "f:restartPolicy": {},
+                "f:schedulerName": {},
+                "f:securityContext": {},
+                "f:serviceAccount": {},
+                "f:serviceAccountName": {},
+                "f:terminationGracePeriodSeconds": {}
+              }
+            }
+          }
+        },
+        "manager": "kube-controller-manager",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      },
+      {
+        "apiVersion": "apps/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:status": {
+            "f:availableReplicas": {},
+            "f:fullyLabeledReplicas": {},
+            "f:observedGeneration": {},
+            "f:readyReplicas": {},
+            "f:replicas": {}
+          }
+        },
+        "manager": "kube-controller-manager",
+        "operation": "Update",
+        "subresource": "status",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator-59cbfc84dd",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "apps/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "Deployment",
+        "name": "kubernetes-secret-generator",
+        "uid": "SIEVE-IGNORE"
+      }
+    ],
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "role/default/kubernetes-secret-generator": {
+    "Rules": [
+      {
+        "APIGroups": [
+          ""
+        ],
+        "NonResourceURLs": null,
+        "ResourceNames": null,
+        "Resources": [
+          "configmaps"
+        ],
+        "Verbs": [
+          "create",
+          "delete",
+          "get"
+        ]
+      },
+      {
+        "APIGroups": [
+          ""
+        ],
+        "NonResourceURLs": null,
+        "ResourceNames": null,
+        "Resources": [
+          "pods"
+        ],
+        "Verbs": [
+          "delete",
+          "get"
+        ]
+      },
+      {
+        "APIGroups": [
+          "monitoring.coreos.com"
+        ],
+        "NonResourceURLs": null,
+        "ResourceNames": null,
+        "Resources": [
+          "servicemonitors"
+        ],
+        "Verbs": [
+          "get",
+          "create"
+        ]
+      }
+    ],
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"annotations\":{},\"name\":\"kubernetes-secret-generator\",\"namespace\":\"default\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"configmaps\"],\"verbs\":[\"create\",\"delete\",\"get\"]},{\"apiGroups\":[\"\"],\"resources\":[\"pods\"],\"verbs\":[\"delete\",\"get\"]},{\"apiGroups\":[\"monitoring.coreos.com\"],\"resources\":[\"servicemonitors\"],\"verbs\":[\"get\",\"create\"]}]}"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            }
+          },
+          "f:rules": {}
+        },
+        "manager": "kubectl-client-side-apply",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "rolebinding/default/kubernetes-secret-generator": {
+    "RoleRef": {
+      "APIGroup": "rbac.authorization.k8s.io",
+      "Kind": "Role",
+      "Name": "kubernetes-secret-generator"
+    },
+    "Subjects": [
+      {
+        "APIGroup": "",
+        "Kind": "ServiceAccount",
+        "Name": "kubernetes-secret-generator",
+        "Namespace": ""
+      }
+    ],
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"annotations\":{},\"name\":\"kubernetes-secret-generator\",\"namespace\":\"default\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"kubernetes-secret-generator\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"kubernetes-secret-generator\"}]}"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "rbac.authorization.k8s.io/v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            }
+          },
+          "f:roleRef": {},
+          "f:subjects": {}
+        },
+        "manager": "kubectl-client-side-apply",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "secret/default/sieve-generated-secret": {
+    "Data": {
+      "marker": "Zml4dHVyZS12YWx1ZS04",
+      "password": "Zml4dHVyZS12YWx1ZS0xMA=="
+    },
+    "Immutable": null,
+    "Type": "Opaque",
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:data": {
+            ".": {},
+            "f:marker": {},
+            "f:password": {}
+          },
+          "f:metadata": {
+            "f:ownerReferences": {
+              ".": {},
+              "k:{\"uid\":\"212cbd84-9634-476c-bea4-452d84d271a0\"}": "SIEVE-IGNORE",
+              "k:{\"uid\":\"adfd4ae7-8182-44da-9526-22f0b68e0274\"}": "SIEVE-IGNORE"
+            }
+          },
+          "f:type": {}
+        },
+        "manager": "manager",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "sieve-generated-secret",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "secretgenerator.mittwald.de/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "StringSecret",
+        "name": "sieve-generated-secret",
+        "uid": "SIEVE-IGNORE"
+      }
+    ],
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "service/default/kubernetes": {
+    "Spec": {
+      "AllocateLoadBalancerNodePorts": null,
+      "ClusterIP": "10.96.0.1",
+      "ClusterIPs": [
+        "10.96.0.1"
+      ],
+      "ExternalIPs": null,
+      "ExternalName": "",
+      "ExternalTrafficPolicy": "",
+      "HealthCheckNodePort": 0,
+      "IPFamilies": [
+        "IPv4"
+      ],
+      "IPFamilyPolicy": "SingleStack",
+      "InternalTrafficPolicy": "Cluster",
+      "LoadBalancerClass": null,
+      "LoadBalancerIP": "",
+      "LoadBalancerSourceRanges": null,
+      "Ports": [
+        {
+          "AppProtocol": null,
+          "Name": "https",
+          "NodePort": 0,
+          "Port": 443,
+          "Protocol": "TCP",
+          "TargetPort": 6443
+        }
+      ],
+      "PublishNotReadyAddresses": false,
+      "Selector": null,
+      "SessionAffinity": "None",
+      "SessionAffinityConfig": null,
+      "Type": "ClusterIP"
+    },
+    "Status": {
+      "Conditions": null,
+      "LoadBalancer": {
+        "Ingress": null
+      }
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "labels": {
+      "component": "apiserver",
+      "provider": "kubernetes"
+    },
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:labels": {
+              ".": {},
+              "f:component": {},
+              "f:provider": {}
+            }
+          },
+          "f:spec": {
+            "f:clusterIP": {},
+            "f:internalTrafficPolicy": {},
+            "f:ipFamilyPolicy": {},
+            "f:ports": {
+              ".": {},
+              "k:{\"port\":443,\"protocol\":\"TCP\"}": {
+                ".": {},
+                "f:name": {},
+                "f:port": {},
+                "f:protocol": {},
+                "f:targetPort": {}
+              }
+            },
+            "f:sessionAffinity": {},
+            "f:type": {}
+          }
+        },
+        "manager": "kube-apiserver",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "serviceaccount/default/default": {
+    "AutomountServiceAccountToken": null,
+    "ImagePullSecrets": null,
+    "Secrets": null,
+    "creationTimestamp": "SIEVE-IGNORE",
+    "name": "default",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "serviceaccount/default/kubernetes-secret-generator": {
+    "AutomountServiceAccountToken": null,
+    "ImagePullSecrets": null,
+    "Secrets": null,
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"ServiceAccount\",\"metadata\":{\"annotations\":{},\"name\":\"kubernetes-secret-generator\",\"namespace\":\"default\"}}"
+    },
+    "creationTimestamp": "SIEVE-IGNORE",
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            }
+          }
+        },
+        "manager": "kubectl-client-side-apply",
+        "operation": "Update",
+        "time": "SIEVE-IGNORE"
+      }
+    ],
+    "name": "kubernetes-secret-generator",
+    "namespace": "default",
+    "resourceVersion": "SIEVE-IGNORE",
+    "uid": "SIEVE-IGNORE"
+  },
+  "stringsecret/default/sieve-generated-secret": {
+    "apiVersion": "secretgenerator.mittwald.de/v1alpha1",
+    "kind": "StringSecret",
+    "metadata": {
+      "annotations": {},
+      "creationTimestamp": "SIEVE-IGNORE",
+      "generation": 1,
+      "managedFields": [],
+      "name": "sieve-generated-secret",
+      "namespace": "default",
+      "resourceVersion": "SIEVE-IGNORE",
+      "uid": "SIEVE-IGNORE"
+    },
+    "spec": {
+      "data": {
+        "marker": "Zml4dHVyZS12YWx1ZS03"
+      },
+      "fields": [
+        {
+          "encoding": "hex",
+          "fieldName": "password",
+          "length": "16"
+        }
+      ],
+      "forceRegenerate": true
+    },
+    "status": {
+      "secret": {
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "name": "sieve-generated-secret",
+        "namespace": "default",
+        "resourceVersion": "SIEVE-IGNORE",
+        "uid": "SIEVE-IGNORE"
+      }
+    }
+  }
+}
