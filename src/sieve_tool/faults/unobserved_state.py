@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List
+from collections.abc import Sequence
 
 from sieve_tool.analysis.event_graph import (
     EventGraph,
@@ -8,7 +8,6 @@ from sieve_tool.analysis.event_graph import (
 )
 from sieve_tool.common.common import TestContext, bcolors, cprint
 from sieve_tool.events import (
-    ALLOWED_ERROR_TYPE,
     ControllerHear,
     ControllerHearTypes,
     generate_key,
@@ -33,8 +32,8 @@ from sieve_tool.plans import (
 
 
 def unobserved_state_detectable_pass(
-    test_context: TestContext, event_vertices: List[EventVertex]
-):
+    test_context: TestContext, event_vertices: Sequence[EventVertex[ControllerHear]]
+) -> list[EventVertex[ControllerHear]]:
     print("Running unobserved state detectable pass...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -57,7 +56,9 @@ def unobserved_state_detectable_pass(
     return candidate_vertices
 
 
-def causality_hear_filtering_pass(event_vertices: List[EventVertex]):
+def causality_hear_filtering_pass(
+    event_vertices: Sequence[EventVertex[ControllerHear]],
+) -> list[EventVertex[ControllerHear]]:
     print("Running optional pass: causality-filtering...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -67,22 +68,9 @@ def causality_hear_filtering_pass(event_vertices: List[EventVertex]):
     return candidate_vertices
 
 
-def impact_filtering_pass(event_vertices: List[EventVertex]):
-    print("Running optional pass: impact-filtering...")
-    candidate_vertices = []
-    for vertex in event_vertices:
-        at_least_one_successful_write = False
-        for out_inter_edge in vertex.out_inter_reconciler_edges:
-            resulted_write = out_inter_edge.sink.content
-            if resulted_write.error in ALLOWED_ERROR_TYPE:
-                at_least_one_successful_write = True
-        if at_least_one_successful_write:
-            candidate_vertices.append(vertex)
-    print("{} -> {} receipts".format(len(event_vertices), len(candidate_vertices)))
-    return candidate_vertices
-
-
-def overwrite_filtering_pass(event_vertices: List[EventVertex]):
+def overwrite_filtering_pass(
+    event_vertices: Sequence[EventVertex[ControllerHear]],
+) -> list[EventVertex[ControllerHear]]:
     print("Running optional pass: overwrite-filtering...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -99,6 +87,8 @@ def generate_unobserved_state_test_plan(
     resource = generate_key(
         controller_hear.rtype, controller_hear.namespace, controller_hear.name
     )
+    next_condition: ObjectCondition | UpdateCondition
+    final_condition: ObjectCondition | UpdateCondition
     if controller_hear.etype == ControllerHearTypes.ADDED:
         next_condition = UpdateCondition(
             condition_type="onObjectUpdate", resource_key=resource, occurrence=1
@@ -167,7 +157,7 @@ def generate_unobserved_state_test_plan(
 
 def unobserved_state_analysis(
     event_graph: EventGraph, path: str, test_context: TestContext
-):
+) -> tuple[int, int, int, int]:
     candidate_vertices = event_graph.controller_hear_vertices
     candidate_vertices = overwrite_filtering_pass(candidate_vertices)
     baseline_spec_number = len(candidate_vertices)

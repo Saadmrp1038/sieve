@@ -1,5 +1,6 @@
 import os
-from typing import List, Tuple
+from collections.abc import Sequence
+from typing import Literal
 
 from sieve_tool.analysis.event_graph import (
     EventGraph,
@@ -14,6 +15,7 @@ from sieve_tool.events import (
     ControllerHearTypes,
     ControllerWrite,
     ControllerWriteTypes,
+    ReconcileEnd,
     generate_key,
 )
 from sieve_tool.faults.common import (
@@ -33,11 +35,13 @@ from sieve_tool.plans import (
     write_plan,
 )
 
+type HearDeletePair = tuple[EventVertex[ControllerHear], EventVertex[ControllerWrite]]
+
 
 def stale_state_detectable_pass(
     test_context: TestContext,
-    event_pairs: List[Tuple[EventVertex, EventVertex]],
-):
+    event_pairs: Sequence[HearDeletePair],
+) -> list[HearDeletePair]:
     print("Running stale state detectable pass...")
     candidate_pairs = []
     for pair in event_pairs:
@@ -60,7 +64,7 @@ def stale_state_detectable_pass(
     return candidate_pairs
 
 
-def get_stale_state_baseline(event_graph: EventGraph):
+def get_stale_state_baseline(event_graph: EventGraph) -> list[HearDeletePair]:
     controller_hear_vertices = event_graph.controller_hear_vertices
     controller_write_vertices = event_graph.controller_write_vertices
     candidate_pairs = []
@@ -81,8 +85,8 @@ def get_stale_state_baseline(event_graph: EventGraph):
 
 
 def causality_pair_filtering_pass(
-    event_pairs: List[Tuple[EventVertex, EventVertex]],
-):
+    event_pairs: Sequence[HearDeletePair],
+) -> list[HearDeletePair]:
     print("Running optional pass: causality-filtering...")
     candidate_pairs = []
     for pair in event_pairs:
@@ -95,9 +99,9 @@ def causality_pair_filtering_pass(
 
 
 def reversed_effect_filtering_pass(
-    event_pairs: List[Tuple[EventVertex, EventVertex]],
+    event_pairs: Sequence[HearDeletePair],
     event_graph: EventGraph,
-):
+) -> list[HearDeletePair]:
     print("Running optional pass: reversed-effect-filtering...")
     candidate_pairs = []
     hear_key_to_vertices = event_graph.controller_hear_key_to_vertices
@@ -127,26 +131,30 @@ def reversed_effect_filtering_pass(
     return candidate_pairs
 
 
-def decide_stale_state_timing(source_vertex: EventVertex, sink_vertex: EventVertex):
+def decide_stale_state_timing(
+    source_vertex: EventVertex[ControllerHear],
+    sink_vertex: EventVertex[ControllerWrite],
+) -> Literal["after", "before", "both"]:
     assert source_vertex.is_controller_hear()
     assert sink_vertex.is_controller_write()
     assert sink_vertex.content.etype == ControllerWriteTypes.DELETE
     if source_vertex.content.slim_prev_obj_map is None:
         return "after"
+    assert source_vertex.content.slim_cur_obj_map is not None
     if not same_key(
         source_vertex.content.slim_prev_obj_map, source_vertex.content.slim_cur_obj_map
     ):
         return "after"
     reconcile_cnt = 0
-    cur_vertex = sink_vertex
+    cur_vertex: EventVertex = sink_vertex
     while True:
         if len(cur_vertex.out_intra_reconciler_edges) == 1:
             next_vertex = cur_vertex.out_intra_reconciler_edges[0].sink
-            if next_vertex.is_reconcile_end():
+            if isinstance(next_vertex.content, ReconcileEnd):
                 reconcile_cnt += 1
                 if reconcile_cnt == 2:
                     return "after"
-            elif next_vertex.is_controller_write():
+            elif isinstance(next_vertex.content, ControllerWrite):
                 if (
                     next_vertex.content.etype == ControllerWriteTypes.CREATE
                     and next_vertex.content.key == sink_vertex.content.key
@@ -235,7 +243,9 @@ def generate_stale_state_test_plan(
     )
 
 
-def stale_state_analysis(event_graph: EventGraph, path: str, test_context: TestContext):
+def stale_state_analysis(
+    event_graph: EventGraph, path: str, test_context: TestContext
+) -> tuple[int, int, int, int]:
     candidate_pairs = get_stale_state_baseline(event_graph)
     baseline_spec_number = len(candidate_pairs)
     after_p1_spec_number = -1

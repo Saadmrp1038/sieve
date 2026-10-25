@@ -1,5 +1,5 @@
 import os
-from typing import List
+from collections.abc import Sequence
 
 from sieve_tool.analysis.event_graph import (
     EventGraph,
@@ -29,8 +29,8 @@ from sieve_tool.plans import (
 
 
 def intermediate_state_detectable_pass(
-    test_context: TestContext, event_vertices: List[EventVertex]
-):
+    test_context: TestContext, event_vertices: Sequence[EventVertex[ControllerWrite]]
+) -> list[EventVertex[ControllerWrite]]:
     print("Running intermediate state detectable pass...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -54,7 +54,9 @@ def intermediate_state_detectable_pass(
     return candidate_vertices
 
 
-def effective_write_filtering_pass(event_vertices: List[EventVertex]):
+def effective_write_filtering_pass(
+    event_vertices: Sequence[EventVertex[ControllerWrite]],
+) -> list[EventVertex[ControllerWrite]]:
     print("Running optional pass:  effective-write-filtering...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -62,11 +64,13 @@ def effective_write_filtering_pass(event_vertices: List[EventVertex]):
         if is_creation_or_deletion(vertex.content.etype):
             candidate_vertices.append(vertex)
         else:
+            assert vertex.content.prev_obj_map is not None
+            assert vertex.content.obj_map is not None
             unmasked_prev_object, unmasked_cur_object = diff_event(
                 vertex.content.prev_obj_map,
                 vertex.content.obj_map,
-                None,
-                None,
+                set(),
+                set(),
                 True,
                 False,
             )
@@ -96,7 +100,9 @@ def effective_write_filtering_pass(event_vertices: List[EventVertex]):
     return candidate_vertices
 
 
-def no_error_write_filtering_pass(event_vertices: List[EventVertex]):
+def no_error_write_filtering_pass(
+    event_vertices: Sequence[EventVertex[ControllerWrite]],
+) -> list[EventVertex[ControllerWrite]]:
     print("Running optional pass:  no-error-write-filtering...")
     candidate_vertices = []
     for vertex in event_vertices:
@@ -159,7 +165,7 @@ def generate_intermediate_state_test_plan_for_annotated_api_invocation(
 
 def intermediate_state_analysis(
     event_graph: EventGraph, path: str, test_context: TestContext
-):
+) -> tuple[int, int, int, int]:
     candidate_write_vertices = event_graph.controller_write_vertices
     candidate_annotated_api_invocation_vertices = (
         event_graph.controller_non_k8s_write_vertices
@@ -205,8 +211,8 @@ def intermediate_state_analysis(
         if test_context.common_config.persist_test_plans_enabled:
             write_plan(intermediate_state_test_plan, file_name)
 
-    for vertex in candidate_annotated_api_invocation_vertices:
-        annotated_api_invocation = vertex.content
+    for annotated_vertex in candidate_annotated_api_invocation_vertices:
+        annotated_api_invocation = annotated_vertex.content
         intermediate_state_test_plan = (
             generate_intermediate_state_test_plan_for_annotated_api_invocation(
                 test_context, annotated_api_invocation

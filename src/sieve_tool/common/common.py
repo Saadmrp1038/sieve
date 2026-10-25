@@ -172,7 +172,7 @@ def add_mod_recursively(dir_name, mod):
             add_mod(os.path.join(root, f), mod)
 
 
-def rmtree_if_exists(dir_name):
+def rmtree_if_exists(dir_name: str | os.PathLike[str]) -> None:
     if os.path.exists(dir_name):
         shutil.rmtree(dir_name)
 
@@ -231,7 +231,7 @@ def fail(message):
     print(bcolors.FAIL + "[FAIL] " + message + bcolors.ENDC)
 
 
-def cprint(message, color):
+def cprint(message: str, color: str) -> None:
     print(color + message + bcolors.ENDC)
 
 
