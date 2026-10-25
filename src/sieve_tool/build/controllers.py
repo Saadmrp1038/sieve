@@ -5,7 +5,7 @@ import shutil
 
 from sieve_tool.common.common import rmtree_if_exists, sieve_modes
 from sieve_tool.common.config import ControllerConfig
-from sieve_tool.paths import repository_root
+from sieve_tool.paths import repository_root, asset_path
 from sieve_tool.process import bounded, run
 from .dependencies import install_module
 from .instrumenter import run_instrumenter
@@ -92,7 +92,7 @@ def remove_replacement_in_go_mod_file(file):
 
 def copy_build_files(controller_config_dir, config):
     target = application(config)
-    source = Path(controller_config_dir) / "build"
+    source = asset_path(controller_config_dir) / "build"
     shutil.copy(source / "build.sh", target / "build.sh")
     shutil.copy(source / "Dockerfile", target / config.dockerfile_path)
 

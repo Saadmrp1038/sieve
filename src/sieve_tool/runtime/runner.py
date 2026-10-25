@@ -26,7 +26,7 @@ from sieve_tool.oracle.oracle import (
 from sieve_tool.oracle.checker_common import print_error_and_debugging_info
 from .cluster import setup_cluster, teardown_cluster, generate_testing_cluster_config
 from .workload import run_workload, collect_diagnostics
-from sieve_tool.paths import repository_root
+from sieve_tool.paths import repository_root, asset_path
 from sieve_tool.process import cleanup_budget, execution, reset_cleanup_budget
 from .cluster import cluster_lease
 
@@ -323,6 +323,8 @@ def run(
     Prepare the test context based on the input options and the configurations
     and start to run the test.
     """
+    controller_config_dir = str(asset_path(controller_config_dir).resolve())
+    result_root_dir = str(Path(result_root_dir).expanduser().resolve())
     common_config = common_config or get_common_config()
     controller_config = load_controller_config(controller_config_dir)
     if test_workload is None:

@@ -313,7 +313,10 @@ class ManagedProcess:
             return
         groups = self.groups()
         self.signal_groups(groups, signal.SIGTERM)
-        end = time.monotonic() + remaining(limit("terminate"))
+        grace = limit("terminate")
+        if _in_cleanup.get():
+            grace = min(grace, remaining(grace))
+        end = time.monotonic() + grace
         self.proc.poll()
         while (
             any(self.group_alive(group) for group in groups) and time.monotonic() < end
@@ -396,6 +399,7 @@ def run(argv, *, check=True, capture_output=False, **kwargs):
 
 
 _cleanup_end = ContextVar("sieve_cleanup_deadline", default=None)
+_in_cleanup = ContextVar("sieve_in_cleanup", default=False)
 
 
 def reset_cleanup_budget():
@@ -408,8 +412,12 @@ def cleanup_budget():
     if end is None:
         end = time.monotonic() + limit("cleanup")
         _cleanup_end.set(end)
-    with deadline(max(0, end - time.monotonic()), fresh=True):
-        yield
+    token = _in_cleanup.set(True)
+    try:
+        with deadline(max(0, end - time.monotonic()), fresh=True):
+            yield
+    finally:
+        _in_cleanup.reset(token)
 
 
 @contextmanager

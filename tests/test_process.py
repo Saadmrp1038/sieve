@@ -208,3 +208,24 @@ open(sys.argv[1],'w').write(str(p.pid))
     while running(pid) and time.monotonic() < end:
         time.sleep(0.02)
     assert not running(pid)
+
+
+def test_expired_operation_still_allows_a_graceful_shutdown(tmp_path):
+    marker = tmp_path / "graceful"
+    code = """import signal,sys,time
+from pathlib import Path
+def stop(*args):
+ time.sleep(0.05)
+ Path(sys.argv[1]).write_text('flushed')
+ raise SystemExit(0)
+signal.signal(signal.SIGTERM,stop)
+while True:time.sleep(1)
+"""
+    with execution({"terminate": 0.3}, tmp_path / "logs"), deadline(0.4):
+        with pytest.raises(ProcessTimeout):
+            run(
+                [sys.executable, "-c", code, str(marker)],
+                operation="grace after deadline",
+                timeout=10,
+            )
+    assert marker.read_text() == "flushed"

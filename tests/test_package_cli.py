@@ -181,3 +181,31 @@ def test_configmap_carries_json_without_changing_the_yaml_plan(tmp_path):
     payload = json.loads(manifest["data"]["sieveTestPlan"])
     assert payload == yaml.safe_load(text)
     assert plan.read_text() == text
+
+
+def test_library_run_resolves_assets_without_switching_caller_directory(
+    tmp_path, monkeypatch
+):
+    checkout = tmp_path / "repo"
+    profile = checkout / "controllers/kubernetes-secret-generator"
+    profile.mkdir(parents=True)
+    (profile / "config.json").write_text(
+        (ROOT / "controllers/kubernetes-secret-generator/config.json").read_text()
+    )
+    caller = tmp_path / "caller"
+    caller.mkdir()
+    monkeypatch.chdir(caller)
+    with repository(checkout), patch.object(runner, "run_test", return_value=None):
+        _, context = runner.run(
+            "controllers/kubernetes-secret-generator",
+            "create-update-recreate",
+            "results",
+            "vanilla",
+            str(tmp_path / "plan.yaml"),
+            "registry",
+            True,
+            False,
+        )
+    assert Path(context.controller_config_dir) == profile
+    assert Path(context.result_root_dir) == caller / "results"
+    assert Path.cwd() == caller
