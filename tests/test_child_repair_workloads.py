@@ -45,6 +45,14 @@ if verb == "apply":
                          {"uid": "parent-1", "kind": "StringSecret", "controller": True}]},
         "data": {"marker": base64.b64encode(b"initial").decode(),
                  "password": base64.b64encode(b"0123456789abcdef").decode()}}
+    if parent["kind"] == "RabbitmqCluster":
+        state["child"] = {
+            "apiVersion": "v1", "kind": "Service",
+            "metadata": {"name": "rabbitmq-cluster", "namespace": "default",
+                         "uid": "child-1", "ownerReferences": [
+                             {"uid": "parent-1", "kind": "RabbitmqCluster", "controller": True}]},
+            "spec": {"selector": {"app.kubernetes.io/name": "rabbitmq-cluster"},
+                     "ports": [{"port": 5672, "name": "amqp"}]}}
     result = parent
 elif verb == "logs":
     state["workers_ready"] = True
@@ -53,16 +61,31 @@ elif verb == "logs":
         print(json.dumps({"msg": "Starting workers", "controller": name}))
     raise SystemExit(0)
 elif verb == "get":
+    if args[1] == "endpoints":
+        if state["scenario"] == "no-endpoints" and state["child"]["metadata"]["uid"] == "child-2":
+            print(json.dumps({"subsets": []}))
+            raise SystemExit(0)
+        print(json.dumps({"subsets": [{"addresses": [{"ip": "10.0.0.7"}],
+                                      "ports": [{"port": 5672}]}]}))
+        raise SystemExit(0)
     if args[1] == "secret" and state.pop("restore_marker", False):
         state["child"]["data"]["marker"] = base64.b64encode(b"initial").decode()
-    result = state["parent" if args[1] == "stringsecret" else "child"]
+    if args[1] == "service" and state.pop("restore_selector", False):
+        state["child"]["spec"]["selector"] = {"app.kubernetes.io/name": "rabbitmq-cluster"}
+    result = state["parent" if args[1] in ("stringsecret", "rabbitmqcluster") else "child"]
 elif verb == "patch" and args[1] == "secret":
     patch = json.loads(args[args.index("-p") + 1])
     if state["scenario"] != "no-mutation":
         state["child"]["data"].update(patch["data"])
     result = copy.deepcopy(state["child"])
     state["restore_marker"] = state["scenario"] == "repair"
-elif verb == "delete" and args[1] == "secret":
+elif verb == "patch" and args[1] == "service":
+    patch = json.loads(args[args.index("-p") + 1])
+    if state["scenario"] != "no-mutation":
+        state["child"]["spec"]["selector"] = patch[0]["value"]
+    result = copy.deepcopy(state["child"])
+    state["restore_selector"] = state["scenario"] == "repair"
+elif verb == "delete" and args[1] in ("secret", "service"):
     result = copy.deepcopy(state["child"])
     state["child"]["metadata"]["uid"] = "child-2"
     state["parent"]["status"]["secret"]["uid"] = "child-2"
@@ -88,12 +111,17 @@ print(json.dumps(result) if result is not None else "")
     }
 
 
-def run_workload(tmp_path, environment, workload="delete-child"):
+def run_workload(
+    tmp_path,
+    environment,
+    workload="delete-child",
+    controller="kubernetes-secret-generator",
+):
     output = tmp_path / "result" / "workload.log"
     result = subprocess.run(
         [
             sys.executable,
-            str(ROOT / "controllers/kubernetes-secret-generator/workloads/workload.py"),
+            str(ROOT / "controllers" / controller / "workloads/workload.py"),
             workload,
             str(output),
             "--repair-timeout",
@@ -129,14 +157,19 @@ def test_deleted_secret_is_replaced_under_the_unchanged_parent(
     assert evidence["parent_after"]["status"]["secret"]["uid"] == "child-2"
 
 
+@pytest.mark.parametrize(
+    "controller", ["kubernetes-secret-generator", "rabbitmq-operator"]
+)
 def test_missing_repair_fails_and_preserves_the_observed_state(
-    tmp_path, kubectl_boundary
+    tmp_path, kubectl_boundary, controller
 ):
     state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
     state.write_text(
         json.dumps({"scenario": "no-repair", "parent": None, "child": None})
     )
-    result, output, evidence = run_workload(tmp_path, kubectl_boundary)
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, controller=controller
+    )
     assert result.returncode == 1
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "repair_timeout"
@@ -154,34 +187,53 @@ def test_secret_data_drift_is_observed_then_repaired(tmp_path, kubectl_boundary)
     assert evidence["parent_after"]["spec"] == evidence["parent_before"]["spec"]
 
 
-def test_repair_cannot_pass_after_the_parent_changed(tmp_path, kubectl_boundary):
+@pytest.mark.parametrize(
+    "controller", ["kubernetes-secret-generator", "rabbitmq-operator"]
+)
+def test_repair_cannot_pass_after_the_parent_changed(
+    tmp_path, kubectl_boundary, controller
+):
     state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
     state.write_text(
         json.dumps({"scenario": "parent-changed", "parent": None, "child": None})
     )
-    result, output, evidence = run_workload(tmp_path, kubectl_boundary)
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, controller=controller
+    )
     assert result.returncode == 1
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "parent_changed"
 
 
-def test_delete_requires_a_new_child_identity(tmp_path, kubectl_boundary):
+@pytest.mark.parametrize(
+    "controller", ["kubernetes-secret-generator", "rabbitmq-operator"]
+)
+def test_delete_requires_a_new_child_identity(tmp_path, kubectl_boundary, controller):
     state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
     state.write_text(
         json.dumps({"scenario": "same-child", "parent": None, "child": None})
     )
-    result, output, evidence = run_workload(tmp_path, kubectl_boundary)
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, controller=controller
+    )
     assert result.returncode == 1
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "repair_timeout"
 
 
-def test_drift_cannot_pass_without_an_observed_mutation(tmp_path, kubectl_boundary):
+@pytest.mark.parametrize(
+    "controller", ["kubernetes-secret-generator", "rabbitmq-operator"]
+)
+def test_drift_cannot_pass_without_an_observed_mutation(
+    tmp_path, kubectl_boundary, controller
+):
     state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
     state.write_text(
         json.dumps({"scenario": "no-mutation", "parent": None, "child": None})
     )
-    result, output, evidence = run_workload(tmp_path, kubectl_boundary, "drift-child")
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, "drift-child", controller
+    )
     assert result.returncode == 1
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "mutation_failed"
@@ -205,3 +257,53 @@ def test_matching_uid_from_another_owner_kind_is_not_repair(tmp_path, kubectl_bo
     result, output, evidence = run_workload(tmp_path, kubectl_boundary)
     assert result.returncode == 1
     assert evidence["status"] == "repair_timeout"
+
+
+def test_deleted_rabbitmq_service_is_replaced_with_ready_endpoints(
+    tmp_path, kubectl_boundary
+):
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, controller="rabbitmq-operator"
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert output.read_text() == "FINISH-SIEVE-TEST\n"
+    assert evidence["status"] == "repaired"
+    assert evidence["child_before"]["metadata"]["uid"] == "child-1"
+    assert evidence["child_after"]["metadata"]["uid"] == "child-2"
+    assert evidence["child_after"]["spec"]["selector"] == {
+        "app.kubernetes.io/name": "rabbitmq-cluster"
+    }
+    assert evidence["endpoints_after"]["subsets"][0]["addresses"] == [
+        {"ip": "10.0.0.7"}
+    ]
+
+
+def test_rabbitmq_service_selector_drift_is_observed_then_repaired(
+    tmp_path, kubectl_boundary
+):
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, "drift-child", "rabbitmq-operator"
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert evidence["mutation_response"]["spec"]["selector"] == {
+        "sieve-test-invalid": "true"
+    }
+    assert evidence["child_after"]["spec"]["selector"] == {
+        "app.kubernetes.io/name": "rabbitmq-cluster"
+    }
+    assert evidence["parent_after"]["spec"] == evidence["parent_before"]["spec"]
+
+
+def test_recreated_service_without_ready_endpoints_is_not_success(
+    tmp_path, kubectl_boundary
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps({"scenario": "no-endpoints", "parent": None, "child": None})
+    )
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, controller="rabbitmq-operator"
+    )
+    assert result.returncode == 1
+    assert evidence["status"] == "repair_timeout"
+    assert evidence["endpoints_after"] == {"subsets": []}

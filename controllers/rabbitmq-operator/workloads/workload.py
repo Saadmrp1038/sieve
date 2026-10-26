@@ -114,4 +114,8 @@ test_cases = {
     )
     .wait_for_sts_storage_size("rabbitmq-cluster-server", "15Gi"),
 }
+if sys.argv[1] in ("delete-child", "drift-child"):
+    from child_repair import main
+
+    raise SystemExit(main(sys.argv[1:]))
 test_cases[sys.argv[1]].run(sys.argv[2])
