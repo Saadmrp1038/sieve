@@ -16,6 +16,7 @@ from sieve_tool.events import (
     generate_key,
     is_generated_random_name,
 )
+from sieve_tool.oracle.artifacts import read_state
 from sieve_tool.plans import ObjectCondition, UpdateCondition
 
 
@@ -108,14 +109,7 @@ def nondeterministic_key(
     test_context: TestContext, event: ControllerHear | ControllerWrite
 ) -> bool:
     generate_name = extract_generate_name(event.obj_map)
-    end_state = json.load(
-        open(
-            os.path.join(
-                test_context.oracle_dir,
-                "state.json",
-            )
-        )
-    )
+    end_state = read_state(os.path.join(test_context.oracle_dir, "state.json"))
     if event.key not in end_state:
         # TODO: get rid of the heuristic
         if generate_name is not None and is_generated_random_name(

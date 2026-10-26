@@ -98,9 +98,9 @@ check emitted source and execute it against the actual injected client offline.
 Their README describes deliberate snapshot updates.
 
 CI enforces explicit imports, Pyflakes, Bugbear, import ordering and formatting
-through Ruff. Mypy checks plans, configuration, paths, event records, trace decoding, analysis
-and fault generators strictly. Oracle internals are not yet fully typed. All three Go modules run
-race checks and `go vet`. Extend the typed boundary checks when moving another
+through Ruff. Mypy checks plans, configuration, paths, event records, trace
+decoding, analysis, fault generators, oracle comparisons/artifact boundaries and
+result models strictly. All three Go modules run race checks and `go vet`. Extend the typed boundary checks when moving another
 module to a complete typed interface; avoid blanket suppressions.
 
 A controller's scaffold intentionally has unfinished repository/version fields.
@@ -121,3 +121,11 @@ Trace failures should identify the source line and operation. Preserve valid
 interrupted histories, opaque reconciliation IDs and line-position ordering.
 See [trace interpretation](docs/architecture.md#trace-interpretation) for the
 supported shapes and existing limitations.
+
+Oracle verdict contracts live in `fixtures/oracle-contracts/`. They freeze learned
+state, counts, masks, exclusions, exact alarm strings and saved result fields.
+Keep comparison and learning functions independent of paths, files and cluster
+state. Their inputs are typed artifact values plus an explicit comparison policy;
+only the orchestration module loads selected artifacts. Malformed selected
+artifacts are harness input failures, not operator alarms. Preserve failure
+classification and negative controls when changing these boundaries.

@@ -1,20 +1,16 @@
 import copy
-import json
-import tempfile
 import unittest
-from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
 
 from sieve_tool.common.common import SIEVE_LEARN_VALUE_MASK
 from sieve_tool.oracle import liveness_checker
-from sieve_tool.oracle.checker_common import (
+from sieve_tool.oracle.learning import (
     canonicalize_controller_related_list,
     second_pass_learn_trim,
 )
-from sieve_tool.oracle.checker_common import (
-    test_run_validation as validate_test_run,
-)
+from sieve_tool.oracle.policy import ComparisonPolicy
+from sieve_tool.oracle.validation import validate_execution
+from sieve_tool.plans import parse_plan
 
 
 class OracleRegressionTests(unittest.TestCase):
@@ -80,18 +76,12 @@ class OracleRegressionTests(unittest.TestCase):
             )
 
     def test_controller_family_includes_both_baselines(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            for name, family in (
-                ("learn", ["pod/default/second"]),
-                ("learn_prev", ["pod/default/first"]),
-            ):
-                (root / name).mkdir()
-                (root / name / "controller_family.json").write_text(json.dumps(family))
-            result = canonicalize_controller_related_list(
-                SimpleNamespace(result_dir=str(root / "learn"))
-            )
-            self.assertEqual(result, ["pod/default/first", "pod/default/second"])
+        self.assertEqual(
+            canonicalize_controller_related_list(
+                ["pod/default/first"], ["pod/default/second"]
+            ),
+            ["pod/default/first", "pod/default/second"],
+        )
 
     def test_controller_pods_are_excluded_from_counts_but_operand_pods_are_checked(
         self,
@@ -112,40 +102,41 @@ class OracleRegressionTests(unittest.TestCase):
             ),
             common_config=SimpleNamespace(field_key_mask={}, field_path_mask={}),
         )
-        with (
-            patch.object(
-                liveness_checker, "get_canonicalized_state", return_value=reference
+        policy = ComparisonPolicy(
+            "test", context.common_config, context.controller_config
+        )
+        reference_family = ["pod/default/controller-a", "pod/default/controller-b"]
+        current_family = ["pod/default/controller-c"]
+        self.assertEqual(
+            liveness_checker.compare_states(
+                reference, current, policy, reference_family, current_family
             ),
-            patch.object(liveness_checker, "get_testing_state", return_value=current),
-            patch.object(
-                liveness_checker,
-                "get_reference_controller_related_list",
-                return_value=["pod/default/controller-a", "pod/default/controller-b"],
-            ),
-            patch.object(
-                liveness_checker,
-                "get_current_controller_related_list",
-                return_value=["pod/default/controller-c"],
-            ),
-        ):
-            self.assertEqual(liveness_checker.compare_states(context), [])
-            del current["pod/default/operand-b"]
-            messages = liveness_checker.compare_states(context)
-            self.assertEqual(len(messages), 1)
-            self.assertIn("fewer objects than reference", messages[0])
-            self.assertIn("operand-a", messages[0])
+            [],
+        )
+        del current["pod/default/operand-b"]
+        messages = liveness_checker.compare_states(
+            reference, current, policy, reference_family, current_family
+        )
+        self.assertEqual(len(messages), 1)
+        self.assertIn("fewer objects than reference", messages[0])
+        self.assertIn("operand-a", messages[0])
 
     def validate(self, server, actions):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "sieve-server.log").write_text(server)
-            (root / "workload.log").write_text("FINISH-SIEVE-TEST\n")
-            return validate_test_run(
-                SimpleNamespace(
-                    result_dir=directory,
-                    test_plan_content={"actions": actions},
-                )
-            )
+        actions = copy.deepcopy(actions)
+        for action in actions:
+            action["trigger"] = {
+                "expression": "t",
+                "definitions": [
+                    {
+                        "triggerName": "t",
+                        "condition": {"conditionType": "onTimeout", "timeoutValue": 1},
+                    }
+                ],
+            }
+            if action["actionType"] == "restartController":
+                action["controllerLabel"] = "test"
+        plan = parse_plan({"workload": "test", "actions": actions})
+        return validate_execution(server, "FINISH-SIEVE-TEST\n", plan)
 
     def test_completed_actions_without_blocked_read_are_incomplete_injection(self):
         actions = [

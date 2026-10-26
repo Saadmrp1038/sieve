@@ -12,7 +12,7 @@ import pytest
 from urllib3.exceptions import HTTPError
 
 from sieve_tool.kubernetes import api
-from sieve_tool.oracle.checker_common import test_run_validation as validate_run
+from sieve_tool.oracle.oracle import validate_run
 from sieve_tool.paths import repository
 from sieve_tool.process import (
     ProcessError,
@@ -115,7 +115,10 @@ def test_nonzero_workload_exit_cannot_be_overridden_by_finish_marker(tmp_path):
         json.dumps({"status": "failed", "returncode": 7})
     )
     assert validate_run(
-        SimpleNamespace(result_dir=str(tmp_path), test_plan_content={"actions": []})
+        SimpleNamespace(
+            result_dir=str(tmp_path),
+            test_plan_content={"workload": "test", "actions": []},
+        )
     ) == (True, False)
 
 

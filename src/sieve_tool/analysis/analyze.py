@@ -19,12 +19,12 @@ from sieve_tool.events import (
     ControllerHear,
     ControllerNonK8sWrite,
     ControllerWrite,
-    Mask,
     consistent_event_type,
 )
 from sieve_tool.faults.intermediate_state import intermediate_state_analysis
 from sieve_tool.faults.stale_state import stale_state_analysis
 from sieve_tool.faults.unobserved_state import unobserved_state_analysis
+from sieve_tool.oracle.artifacts import read_mask
 from sieve_tool.trace import read_trace
 
 type HearWritePair = tuple[EventVertex[ControllerHear], EventVertex[WriteEvent]]
@@ -122,8 +122,7 @@ def generate_write_hear_pairs(event_graph: EventGraph) -> list[WriteHearPair]:
 def build_controller_event_graph(
     test_context: TestContext, log_path: str | Path, oracle_dir: str | Path
 ) -> EventGraph:
-    with (Path(oracle_dir) / "mask.json").open() as stream:
-        learned_masked_paths: Mask = json.load(stream)
+    learned_masked_paths = read_mask(Path(oracle_dir) / "mask.json")
 
     projection = assemble_trace(
         read_trace(log_path),
