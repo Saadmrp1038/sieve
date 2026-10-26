@@ -11,3 +11,4 @@ dist/
 runs/
 configs/local.json
 infra/ansible/ansible_hosts
+.agents/
