@@ -11,7 +11,9 @@ The harness and integration are separate checkouts. Both revisions are required
 full, lowercase, 40-character Git commit SHAs. Branches, tags and abbreviated
 hashes are rejected. The workflow checks actual `HEAD` values and clean source
 before executing the integration, then uploads both source records with results.
-The Sieve checkout always comes from `Saadmrp1038/sieve`.
+The Sieve checkout always comes from `Saadmrp1038/sieve`. Integration assets are
+installed from the verified Git archive, excluding ignored host files. The profile
+must be standalone; symbolic links must remain within it.
 
 GitHub's reusable-workflow context belongs to the caller. Pass the Sieve commit
 explicitly; an external integration repository's event SHA identifies different

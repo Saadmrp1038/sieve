@@ -33,6 +33,10 @@ jobs:
         env:
           EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: uv run --locked sieve ci verify-revision --expected "$EXPECTED_REVISION"
+      - name: Install workflow validator
+        run: GOWORK=off go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Validate workflows
+        run: actionlint -shellcheck=""
       - name: Lint Python
         run: uv run --locked ruff check .
       - name: Check Python formatting

@@ -65,6 +65,8 @@ files = [
     "src/sieve_tool/faults",
     "src/sieve_tool/oracle",
     "src/sieve_tool/results.py",
+    "src/sieve_tool/revisions.py",
+    "src/sieve_tool/acceptance",
 ]
 strict = true
 follow_imports = "silent"

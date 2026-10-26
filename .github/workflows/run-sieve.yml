@@ -82,9 +82,9 @@ jobs:
         run: |
           mkdir -p configs
           printf '%s\n' '{"workload_command_wait_timeout": 1500}' > configs/local.json
-          test -n "$CONTROLLER" && [[ "$CONTROLLER" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]
-          rm -rf "controllers/$CONTROLLER"
-          cp -R ".cache/integration/$INTEGRATION_DIR" "controllers/$CONTROLLER"
+          uv run --locked --no-dev sieve ci install-integration \
+            --checkout .cache/integration --expected "$INTEGRATION_REVISION" \
+            --subdirectory "$INTEGRATION_DIR" --controller "$CONTROLLER"
       - name: Build learning image
         run: uv run --locked --no-dev sieve build -c "$CONTROLLER" -m learn
       - name: Learn baseline and plans
