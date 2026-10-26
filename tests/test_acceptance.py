@@ -320,6 +320,7 @@ def test_failures_clean_only_owned_aliases_and_keep_cached_images(
     if failure == "image-mismatch":
         tags[next(iter(manifest.images))] = "sha256:" + "0" * 64
     removed = []
+    credential_paths = []
 
     def command(argv, **kwargs):
         stdout = ""
@@ -343,6 +344,7 @@ def test_failures_clean_only_owned_aliases_and_keep_cached_images(
     monkeypatch.setattr(runner, "run", command)
 
     def stage(*args):
+        credential_paths.append(Path(args[-2]["KUBECONFIG"]))
         raise (
             Cancelled(15)
             if failure == "cancel"
@@ -356,6 +358,14 @@ def test_failures_clean_only_owned_aliases_and_keep_cached_images(
         runner.execute(
             ROOT, SOURCE["revision"], path, "smoke", output, get_common_config()
         )
+    if failure in {"stage", "cancel"}:
+        assert len(credential_paths) == 1
+    assert all(
+        path.is_relative_to(ROOT / ".cache/acceptance-credentials")
+        and not path.is_relative_to(output)
+        and not path.parent.exists()
+        for path in credential_paths
+    )
     assert all(tag.startswith("sieve-acceptance-run-") for tag in removed)
     assert not any(tag.startswith("sieve-acceptance-run-") for tag in tags)
     assert tags["unrelated:latest"] == original["unrelated:latest"]

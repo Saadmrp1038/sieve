@@ -76,6 +76,9 @@ verification report when requested. It never suppresses or rewrites raw alarms.
 `verification.json` contains independently derived counts and per-plan evidence.
 `DONE` is written only after verification or final failure/cancellation. Logs,
 raw results, both baselines and references remain available after failures.
+The temporary cluster kubeconfig stays in the ignored private cache outside
+uploaded evidence and is removed
+when the supervising command exits.
 Only this run's unique image aliases are removed; cache images are retained.
 Sieve owns cluster/build-helper cleanup and refuses a pre-existing `kind` cluster.
 A host loss or forced kill can require inspection of saved ownership records;

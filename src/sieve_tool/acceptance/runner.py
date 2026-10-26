@@ -6,6 +6,7 @@ import sys
 from dataclasses import asdict
 from importlib.resources import files
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from sieve_tool.acceptance.evidence import (
@@ -278,10 +279,17 @@ def execute(
         runtime_registry=runtime_registry,
     )
     save_json(output / "run.json", record.model_dump(mode="json"))
+    credentials_parent = root / ".cache/acceptance-credentials"
+    credentials_parent.mkdir(parents=True, exist_ok=True)
     aliases: list[str] = []
     primary: BaseException | None = None
     try:
-        with execution(common.process_timeouts, output / "commands"):
+        with (
+            TemporaryDirectory(
+                prefix="sieve-acceptance-kubeconfig-", dir=credentials_parent
+            ) as credentials,
+            execution(common.process_timeouts, output / "commands"),
+        ):
             _no_cluster()
             if _inspect(references) != manifest.images:
                 raise ValueError("Docker image IDs do not match the supplied manifest")
@@ -306,7 +314,7 @@ def execute(
                 "--oracle-root",
                 str(output / "oracles"),
             ]
-            env = {"KUBECONFIG": str(output / "kubeconfig"), "GOWORK": "off"}
+            env = {"KUBECONFIG": str(Path(credentials) / "config"), "GOWORK": "off"}
             cases = suite.select(selection)
             for case in cases:
                 target = output / "plans" / case.relative_path
