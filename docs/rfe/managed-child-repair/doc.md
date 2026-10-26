@@ -76,8 +76,12 @@ but does not register an owned-Secret watch. Successful create/update calls do
 not schedule periodic reconciliation. Its README describes propagation after
 parent creation or updates, without an explicit unchanged-parent repair promise.
 Independent Secret deletion or drift may therefore fail even without Sieve
-faults. Record that outcome; establish the intended contract before calling it
-an operator bug. Do not patch the operator to make a baseline pass.
+faults. Treat missing desired-state convergence as a credible operator-bug
+candidate, and distinguish the observed failure from the inferred cause,
+intended contract and novelty. README ambiguity alone does not establish that
+the behavior is intentional. Do not patch the operator to make a baseline pass.
+The [upstream investigation](secret-generator-upstream.md) checks existing
+reports, release versions and an independent published-image reproduction.
 
 RabbitMQ registers an owned-Service watch and sets the Service selector during
 reconciliation. Target the client-facing Service, not persistent volumes or

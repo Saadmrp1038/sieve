@@ -35,10 +35,13 @@ Successful repair is checked for another 15 seconds before finishing;
 `--settle-seconds SECONDS` controls that interval for direct invocations.
 
 The pinned controller watches StringSecret changes rather than owned Secrets.
-Its documented contract covers parent-triggered creation and updates. A failed
-unchanged-parent repair is therefore an observed limitation until its intended
-contract establishes a defect. Run these workloads without faults first; do not
-learn an oracle from a failed baseline or change the parent to force repair.
+Its documented contract describes parent-triggered creation and updates.
+Missing unchanged-parent repair is a credible reconciliation-bug candidate;
+README ambiguity alone does not establish that this behavior is intentional.
+Run these workloads without faults first; do not learn an oracle from a failed
+baseline or change the parent to force repair. See the
+[upstream investigation](../../docs/rfe/managed-child-repair/secret-generator-upstream.md)
+for existing reports, version identities and an independent released-image test.
 
 ## Build and run
 
