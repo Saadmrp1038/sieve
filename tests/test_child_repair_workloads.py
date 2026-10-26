@@ -42,7 +42,7 @@ if verb == "apply":
         "apiVersion": "v1", "kind": "Secret",
         "metadata": {"name": "sieve-generated-secret", "namespace": "default",
                      "uid": "child-1", "ownerReferences": [
-                         {"uid": "parent-1", "kind": "StringSecret", "controller": True}]},
+                         {"uid": "parent-1", "name": "sieve-generated-secret", "kind": "StringSecret", "controller": True}]},
         "data": {"marker": base64.b64encode(b"initial").decode(),
                  "password": base64.b64encode(b"0123456789abcdef").decode()}}
     if parent["kind"] == "RabbitmqCluster":
@@ -50,7 +50,7 @@ if verb == "apply":
             "apiVersion": "v1", "kind": "Service",
             "metadata": {"name": "rabbitmq-cluster", "namespace": "default",
                          "uid": "child-1", "ownerReferences": [
-                             {"uid": "parent-1", "kind": "RabbitmqCluster", "controller": True}]},
+                             {"uid": "parent-1", "name": "rabbitmq-cluster", "kind": "RabbitmqCluster", "controller": True}]},
             "spec": {"selector": {"app.kubernetes.io/name": "rabbitmq-cluster"},
                      "ports": [{"port": 5672, "name": "amqp"}]}}
     result = parent
@@ -85,8 +85,15 @@ elif verb == "patch" and args[1] == "service":
         state["child"]["spec"]["selector"] = patch[0]["value"]
     result = copy.deepcopy(state["child"])
     state["restore_selector"] = state["scenario"] == "repair"
-elif verb == "delete" and args[1] in ("secret", "service"):
-    result = copy.deepcopy(state["child"])
+elif verb == "delete":
+    if "-o" in args and args[args.index("-o") + 1] != "name":
+        raise SystemExit("unexpected -o output mode; kubectl delete supports only name")
+    assert args[1] == "--raw"
+    options = json.load(sys.stdin)
+    if options["preconditions"]["uid"] != state["child"]["metadata"]["uid"]:
+        raise SystemExit("UID precondition failed")
+    result = {"apiVersion": "v1", "kind": "Status", "status": "Success",
+              "details": {"uid": state["child"]["metadata"]["uid"]}}
     state["child"]["metadata"]["uid"] = "child-2"
     state["parent"]["status"]["secret"]["uid"] = "child-2"
     if state["scenario"] == "no-repair":
@@ -152,7 +159,7 @@ def test_deleted_secret_is_replaced_under_the_unchanged_parent(
     assert evidence["parent_after"]["metadata"]["uid"] == "parent-1"
     assert evidence["parent_after"]["metadata"]["generation"] == 1
     assert evidence["child_before"]["metadata"]["uid"] == "child-1"
-    assert evidence["mutation_response"]["metadata"]["uid"] == "child-1"
+    assert evidence["mutation_response"]["details"]["uid"] == "child-1"
     assert evidence["child_after"]["metadata"]["uid"] == "child-2"
     assert evidence["parent_after"]["status"]["secret"]["uid"] == "child-2"
 
@@ -237,6 +244,7 @@ def test_drift_cannot_pass_without_an_observed_mutation(
     assert result.returncode == 1
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "mutation_failed"
+    assert evidence["mutation_response"]["metadata"]["uid"] == "child-1"
 
 
 def test_workload_waits_for_informer_workers_before_creating_the_parent(
@@ -307,3 +315,22 @@ def test_recreated_service_without_ready_endpoints_is_not_success(
     assert result.returncode == 1
     assert evidence["status"] == "repair_timeout"
     assert evidence["endpoints_after"] == {"subsets": []}
+
+
+@pytest.mark.parametrize(
+    "controller", ["kubernetes-secret-generator", "rabbitmq-operator"]
+)
+def test_unrepaired_field_drift_fails_with_the_mutated_child_preserved(
+    tmp_path, kubectl_boundary, controller
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps({"scenario": "no-repair", "parent": None, "child": None})
+    )
+    result, output, evidence = run_workload(
+        tmp_path, kubectl_boundary, "drift-child", controller
+    )
+    assert result.returncode == 1
+    assert "FINISH-SIEVE-TEST" not in output.read_text()
+    assert evidence["status"] == "repair_timeout"
+    assert evidence["child_after"] == evidence["mutation_response"]
