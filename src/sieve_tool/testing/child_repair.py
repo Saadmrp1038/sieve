@@ -1,6 +1,7 @@
 """Run one managed-child mutation and retain evidence of recovery or failure."""
 
 import argparse
+import base64
 import json
 import math
 import time
@@ -54,6 +55,44 @@ def kubectl(*arguments: str, payload: Resource | None = None) -> str:
 def get(kind: str, name: str) -> Resource | None:
     raw = kubectl("get", kind, name, "--ignore-not-found", "-o", "json")
     return json.loads(raw) if raw.strip() else None
+
+
+def mutate_secret(name: str, workload: str, child: Resource, field: str) -> Mutation:
+    if workload == "delete-child":
+        return delete_child("secrets", name, child["metadata"]["uid"])
+    value = base64.b64encode(b"drift").decode()
+    response = json.loads(
+        kubectl(
+            "patch",
+            "secret",
+            name,
+            "--type=json",
+            "-p",
+            json.dumps(
+                [
+                    {
+                        "op": "test",
+                        "path": "/metadata/uid",
+                        "value": child["metadata"]["uid"],
+                    },
+                    {"op": "replace", "path": "/data/" + field, "value": value},
+                ]
+            ),
+            "-o",
+            "json",
+        )
+    )
+    return Mutation(response, response["data"].get(field) == value)
+
+
+def ready(resource: Resource | None) -> bool:
+    return resource is not None and any(
+        c.get("type") == "Ready"
+        and c.get("status") == "True"
+        and c.get("observedGeneration", resource["metadata"].get("generation"))
+        == resource["metadata"].get("generation")
+        for c in resource.get("status", {}).get("conditions", [])
+    )
 
 
 class RepairTarget(Protocol):

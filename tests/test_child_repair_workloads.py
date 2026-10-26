@@ -397,11 +397,15 @@ def test_repair_must_remain_consistent_through_the_settling_period(
 
 def run_current_workload(tmp_path, environment, operator, workload="delete-child"):
     output = tmp_path / operator / "workload.log"
+    command = (
+        [str(ROOT / "controllers/external-secrets/workloads/workload.py")]
+        if operator == "external-secrets"
+        else [str(ROOT / "experiments/active-operators/workload.py"), operator]
+    )
     result = subprocess.run(
         [
             sys.executable,
-            str(ROOT / "experiments/active-operators/workload.py"),
-            operator,
+            *command,
             workload,
             str(output),
             "--repair-timeout",

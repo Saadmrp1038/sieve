@@ -2,7 +2,6 @@
 
 import argparse
 import base64
-import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,85 +11,14 @@ from sieve_tool.process import run as run_process
 from sieve_tool.testing.child_repair import (
     Mutation,
     Observation,
-    RepairTarget,
     Resource,
     Wait,
-    delete_child,
     get,
     kubectl,
+    mutate_secret,
+    ready,
     run,
 )
-
-
-class ExternalSecretsTarget:
-    name = "sieve-external-secret"
-
-    def setup(self, wait: Wait) -> None:
-        store = {
-            "apiVersion": "external-secrets.io/v1",
-            "kind": "SecretStore",
-            "metadata": {"name": "sieve-local-store", "namespace": "default"},
-            "spec": {
-                "provider": {
-                    "fake": {
-                        "data": [
-                            {
-                                "key": "/sieve/value",
-                                "value": "expected-value",
-                                "version": "v1",
-                            }
-                        ]
-                    }
-                }
-            },
-        }
-        kubectl("apply", "-f", "-", payload=store)
-        wait(
-            lambda: ready(get("secretstore", "sieve-local-store")),
-            "fake SecretStore ready",
-        )
-        kubectl(
-            "apply",
-            "-f",
-            "-",
-            payload={
-                "apiVersion": "external-secrets.io/v1",
-                "kind": "ExternalSecret",
-                "metadata": {"name": self.name, "namespace": "default"},
-                "spec": {
-                    "refreshPolicy": "Periodic",
-                    "refreshInterval": "5s",
-                    "secretStoreRef": {
-                        "kind": "SecretStore",
-                        "name": "sieve-local-store",
-                    },
-                    "target": {"name": self.name, "creationPolicy": "Owner"},
-                    "data": [
-                        {
-                            "secretKey": "marker",
-                            "remoteRef": {"key": "/sieve/value", "version": "v1"},
-                        }
-                    ],
-                },
-            },
-        )
-
-    def observe(self) -> Observation:
-        return {
-            "parent_after": get("externalsecret", self.name),
-            "child_after": get("secret", self.name),
-        }
-
-    def healthy(self, observation: Mapping[str, Resource | None]) -> bool:
-        parent, child = observation["parent_after"], observation["child_after"]
-        return (
-            ready(parent)
-            and child is not None
-            and child.get("data", {}).get("marker") == "ZXhwZWN0ZWQtdmFsdWU="
-        )
-
-    def mutate(self, workload: str, child: Resource) -> Mutation:
-        return mutate_secret(self.name, workload, child, "marker")
 
 
 class CertManagerTarget:
@@ -192,54 +120,11 @@ class CertManagerTarget:
         return mutate_secret(self.name, workload, child, "tls.crt")
 
 
-def mutate_secret(name: str, workload: str, child: Resource, field: str) -> Mutation:
-    if workload == "delete-child":
-        return delete_child("secrets", name, child["metadata"]["uid"])
-    value = base64.b64encode(b"drift").decode()
-    response = json.loads(
-        kubectl(
-            "patch",
-            "secret",
-            name,
-            "--type=json",
-            "-p",
-            json.dumps(
-                [
-                    {
-                        "op": "test",
-                        "path": "/metadata/uid",
-                        "value": child["metadata"]["uid"],
-                    },
-                    {"op": "replace", "path": "/data/" + field, "value": value},
-                ]
-            ),
-            "-o",
-            "json",
-        )
-    )
-    return Mutation(response, response["data"].get(field) == value)
-
-
-def ready(resource: Resource | None) -> bool:
-    return resource is not None and any(
-        c.get("type") == "Ready"
-        and c.get("status") == "True"
-        and c.get("observedGeneration", resource["metadata"].get("generation"))
-        == resource["metadata"].get("generation")
-        for c in resource.get("status", {}).get("conditions", [])
-    )
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operator", choices=["external-secrets", "cert-manager"])
+    parser.add_argument("operator", choices=["cert-manager"])
     arguments, remaining = parser.parse_known_args(argv)
-    target: RepairTarget = (
-        ExternalSecretsTarget()
-        if arguments.operator == "external-secrets"
-        else CertManagerTarget()
-    )
-    return run(remaining, target, timeout=180)
+    return run(remaining, CertManagerTarget(), timeout=180)
 
 
 if __name__ == "__main__":

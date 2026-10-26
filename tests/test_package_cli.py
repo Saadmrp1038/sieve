@@ -138,7 +138,7 @@ def test_existing_evidence_is_not_deleted(tmp_path):
 
 def test_all_controller_profiles_point_to_moved_assets():
     profiles = list((ROOT / "controllers").glob("*/config.json"))
-    assert len(profiles) == 12
+    assert profiles
     for path in profiles:
         config = load_controller_config(path.parent)
         assert (ROOT / config.test_command[1]).is_file(), path

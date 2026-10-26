@@ -1,0 +1,16 @@
+image:
+  repository: ${SIEVE-DR}/external-secrets
+  tag: ${SIEVE-DT}
+  pullPolicy: IfNotPresent
+podLabels:
+  sievetag: external-secrets
+extraEnv:
+  - name: sieveTestPlan
+    valueFrom:
+      configMapKeyRef:
+        name: sieve-testing-global-config
+        key: sieveTestPlan
+  - name: KUBERNETES_SERVICE_HOST
+    value: kind-control-plane
+  - name: KUBERNETES_SERVICE_PORT
+    value: "6443"

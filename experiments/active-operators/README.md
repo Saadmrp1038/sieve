@@ -1,8 +1,10 @@
 # Current-operator recovery checks
 
-These workloads test published releases without Sieve instrumentation. They
-establish repair behavior before porting instrumentation or learning fault
-plans. They are not registered as full Sieve controller profiles.
+The original study tested published releases without Sieve instrumentation.
+External Secrets now has a dedicated [Sieve profile](../../controllers/external-secrets/README.md),
+which reuses its repair workload. The cert-manager experiment remains an
+uninstrumented recovery check. The original study's results do not establish
+fault-injection coverage.
 
 The October 26, 2026 study targets External Secrets v2.14.0 and cert-manager
 v1.21.3 on Kubernetes v1.36.4. Both operators published releases on October 23
@@ -40,8 +42,8 @@ deployed manifests are retained with the study evidence.
 ## Workloads
 
 ```sh
-uv run --locked python experiments/active-operators/workload.py \
-  external-secrets delete-child runs/external-delete/workload.log
+uv run --locked python controllers/external-secrets/workloads/workload.py \
+  delete-child runs/external-delete/workload.log
 uv run --locked python experiments/active-operators/workload.py \
   cert-manager drift-child runs/certificate-drift/workload.log
 ```
