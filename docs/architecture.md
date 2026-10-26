@@ -111,6 +111,11 @@ Existing profiles are historical targets, not a claim of support for current
 Kubernetes API-server/informer internals. Porting those hooks to a new target
 requires separate source and fault validation.
 
+For Kubernetes sources with a native Go workspace, node builds register the
+injected client as a workspace module and add its explicit vendor metadata.
+Older sources keep the existing vendored-client link. The instrumenter and
+coordinator still build with `GOWORK=off` independently of the test subject.
+
 DeepDiff comparisons explicitly use field-level dictionary changes and
 positional list comparisons. Dependency upgrades must keep the oracle's
 ability to detect missing operands, ownership changes, and other real failures.

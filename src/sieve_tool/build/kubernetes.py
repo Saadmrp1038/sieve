@@ -106,7 +106,14 @@ def install_client(version):
         )
     destination = checkout / "staging/src/sieve.client"
     shutil.copytree(repository_root() / "go/client", destination)
-    (checkout / "vendor/sieve.client").symlink_to("../staging/src/sieve.client")
+    workspace = checkout / "go.work"
+    if workspace.exists():
+        with workspace.open("a") as stream:
+            stream.write("\nuse ./staging/src/sieve.client\n")
+        with (checkout / "vendor/modules.txt").open("a") as stream:
+            stream.write("\n# sieve.client v0.0.0\n## explicit; go 1.13\n")
+    else:
+        (checkout / "vendor/sieve.client").symlink_to("../staging/src/sieve.client")
 
 
 @bounded("build")
@@ -139,7 +146,7 @@ def build_node(version, mode, registry, push):
             env={
                 **environment,
                 "GOPATH": str(cache_path("kubernetes")),
-                "GOWORK": "off",
+                "GOWORK": "" if (checkout / "go.work").exists() else "off",
                 "KUBE_GIT_VERSION": f"{version}-sieve-{revision}",
             },
             check=True,
