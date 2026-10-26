@@ -82,6 +82,9 @@ intended contract and novelty. README ambiguity alone does not establish that
 the behavior is intentional. Do not patch the operator to make a baseline pass.
 The [upstream investigation](secret-generator-upstream.md) checks existing
 reports, release versions and an independent published-image reproduction.
+The subsequent [maintained-operator study](maintained-operators.md) records
+current External Secrets and cert-manager recovery checks and their coverage
+limits.
 
 RabbitMQ registers an owned-Service watch and sets the Service selector during
 reconciliation. Target the client-facing Service, not persistent volumes or
