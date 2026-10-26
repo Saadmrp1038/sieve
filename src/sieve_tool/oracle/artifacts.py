@@ -62,7 +62,7 @@ def _invalid_constant(value: str) -> None:
     raise ValueError(f"non-JSON numeric constant {value}")
 
 
-def _read[T](path: str | Path, adapter: TypeAdapter[T]) -> T:
+def read_artifact[T](path: str | Path, adapter: TypeAdapter[T]) -> T:
     source = Path(path)
     try:
         with source.open() as stream:
@@ -83,24 +83,24 @@ def _read[T](path: str | Path, adapter: TypeAdapter[T]) -> T:
 
 
 def read_state(path: str | Path) -> State:
-    return _read(path, _STATE)
+    return read_artifact(path, _STATE)
 
 
 def read_digest(path: str | Path) -> Digest:
-    return _read(path, _DIGEST)
+    return read_artifact(path, _DIGEST)
 
 
 def read_family(path: str | Path) -> ControllerFamily:
-    return _read(path, _FAMILY)
+    return read_artifact(path, _FAMILY)
 
 
 def read_history(path: str | Path) -> History:
-    return _read(path, _HISTORY)
+    return read_artifact(path, _HISTORY)
 
 
 def read_mask(path: str | Path) -> Mask:
-    return _read(path, _MASK)
+    return read_artifact(path, _MASK)
 
 
 def read_outcome(path: str | Path) -> WorkloadOutcome:
-    return _read(path, _OUTCOME)
+    return read_artifact(path, _OUTCOME)

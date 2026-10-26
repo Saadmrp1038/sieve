@@ -1,0 +1,19 @@
+workload: create-update-recreate
+actions:
+- actionType: restartController
+  controllerLabel: kubernetes-secret-generator
+  trigger:
+    definitions:
+    - triggerName: trigger1
+      condition:
+        conditionType: onObjectUpdate
+        resourceKey: stringsecret/default/sieve-generated-secret
+        prevStateDiff: '{"status": {}}'
+        curStateDiff: '{"status": {"secret": {"apiVersion": "v1", "kind": "Secret",
+          "name": "sieve-generated-secret", "namespace": "default", "resourceVersion":
+          "SIEVE-NON-NIL", "uid": "SIEVE-NON-NIL"}}}'
+        occurrence: 2
+      observationPoint:
+        when: afterControllerWrite
+        by: github.com/mittwald/kubernetes-secret-generator/pkg/controller/crd/stringsecret.(*ReconcileStringSecret).Reconcile
+    expression: trigger1
