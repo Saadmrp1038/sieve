@@ -1,6 +1,7 @@
 """The installed Sieve command-line interface."""
 
 import argparse
+import json
 import re
 import sys
 import time
@@ -90,7 +91,14 @@ def parser():
     initialize = operations.add_parser("init", help="Create a controller integration")
     initialize.add_argument("name")
     ci = commands.add_parser("ci", help="Manage generated workflows")
-    ci.add_argument("operation", choices=("generate",))
+    ci_operations = ci.add_subparsers(dest="operation", required=True)
+    ci_operations.add_parser("generate", help="Regenerate build/reproduction workflows")
+    verify = ci_operations.add_parser(
+        "verify-revision", help="Verify a clean checkout at an immutable commit"
+    )
+    verify.add_argument("--checkout", type=Path)
+    verify.add_argument("--expected", required=True)
+    verify.add_argument("--output", type=Path)
     return command
 
 
@@ -281,7 +289,17 @@ def _dispatch(arguments, root, common):
     if arguments.command == "ci":
         from sieve_tool.ci import generate_workflows
 
-        generate_workflows(root / ".github/workflows")
+        if arguments.operation == "generate":
+            generate_workflows(root / ".github/workflows")
+        else:
+            from sieve_tool.revisions import verify_revision
+
+            source = verify_revision(arguments.checkout or root, arguments.expected)
+            if arguments.output is not None:
+                arguments.output.parent.mkdir(parents=True, exist_ok=True)
+                with arguments.output.open("x") as stream:
+                    json.dump(source, stream, indent=2)
+            print(source["revision"])
         return 0
     if arguments.command == "check-plans":
         from sieve_tool.plan_check import check

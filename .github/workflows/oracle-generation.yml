@@ -10,8 +10,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -26,6 +30,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -51,25 +57,23 @@ jobs:
       with:
         name: sieve-cassandra-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/cassandra-operator
         target-folder: cassandra-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   casskop-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -84,6 +88,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -111,25 +117,23 @@ jobs:
       with:
         name: sieve-casskop-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/casskop-operator
         target-folder: casskop-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   mongodb-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -144,6 +148,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -175,25 +181,23 @@ jobs:
       with:
         name: sieve-mongodb-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/mongodb-operator
         target-folder: mongodb-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   nifikop-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -208,6 +212,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -235,25 +241,23 @@ jobs:
       with:
         name: sieve-nifikop-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/nifikop-operator
         target-folder: nifikop-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   rabbitmq-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -268,6 +272,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -295,25 +301,23 @@ jobs:
       with:
         name: sieve-rabbitmq-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/rabbitmq-operator
         target-folder: rabbitmq-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   xtradb-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -328,6 +332,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -359,25 +365,23 @@ jobs:
       with:
         name: sieve-xtradb-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/xtradb-operator
         target-folder: xtradb-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   yugabyte-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -392,6 +396,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -421,25 +427,23 @@ jobs:
       with:
         name: sieve-yugabyte-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/yugabyte-operator
         target-folder: yugabyte-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   zookeeper-operator:
     runs-on: self-hosted
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -454,6 +458,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -479,15 +485,9 @@ jobs:
       with:
         name: sieve-zookeeper-operator-log
         path: runs
-    - name: Remove cluster
-      if: always()
-      run: kind delete cluster
     - uses: JamesIves/github-pages-deploy-action@4.1.5
       name: Persistent oracle data
       with:
         branch: oracle-data
         folder: runs/oracles/zookeeper-operator
         target-folder: zookeeper-operator/oracle
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df

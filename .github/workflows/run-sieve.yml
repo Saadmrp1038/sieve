@@ -11,9 +11,13 @@ on:
         description: Repository containing the integration
         required: true
         type: string
+      sieve-revision:
+        description: Full commit SHA in Saadmrp1038/sieve to execute
+        required: true
+        type: string
       github-ref:
-        description: Integration revision
-        default: main
+        description: Full commit SHA of the integration
+        required: true
         type: string
       subdirectory:
         description: Directory containing config.json, build/, deploy/, and workloads/
@@ -34,16 +38,24 @@ jobs:
       CONTROLLER: ${{ inputs.controller-name }}
       WORKLOAD: ${{ inputs.workload_name }}
       INTEGRATION_DIR: ${{ inputs.subdirectory }}
+      SIEVE_REVISION: ${{ inputs.sieve-revision }}
+      INTEGRATION_REVISION: ${{ inputs.github-ref }}
     steps:
+      - name: Validate immutable revision inputs
+        run: |
+          [[ "$SIEVE_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$INTEGRATION_REVISION" =~ ^[0-9a-f]{40}$ ]]
       - uses: actions/checkout@v6
         with:
           repository: Saadmrp1038/sieve
-          ref: main
+          ref: ${{ inputs.sieve-revision }}
+          persist-credentials: false
       - uses: actions/checkout@v6
         with:
           repository: ${{ inputs.github-repo }}
           ref: ${{ inputs.github-ref }}
           path: .cache/integration
+          persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           enable-cache: true
@@ -60,6 +72,10 @@ jobs:
           sudo mv linux-amd64/helm /usr/local/bin/helm
       - name: Install locked Python environment
         run: uv sync --locked --no-dev
+      - name: Verify selected revisions
+        run: |
+          uv run --locked --no-dev sieve ci verify-revision --expected "$SIEVE_REVISION" --output runs/ci/sieve-revision.json
+          uv run --locked --no-dev sieve ci verify-revision --checkout .cache/integration --expected "$INTEGRATION_REVISION" --output runs/ci/integration-revision.json
       - name: Check environment
         run: uv run --locked --no-dev sieve doctor
       - name: Configure integration
@@ -88,6 +104,3 @@ jobs:
         with:
           name: sieve-results
           path: runs/
-      - name: Remove cluster
-        if: always()
-        run: kind delete cluster

@@ -1,75 +1,61 @@
-# Using GitHub Actions to run Sieve
+# Running Sieve in GitHub Actions
 
-Sieve provides a [reusable workflow](https://github.com/Saadmrp1038/sieve/blob/main/.github/workflows/run-sieve.yml)
-to make it easy to use Sieve to test a controller with GitHub actions. This lets
-developers test out Sieve without having to set up a local environment and also
-integrate testing with Sieve into their CI/CD pipeline.
+The fork's [reusable workflow](../.github/workflows/run-sieve.yml) accepts an
+existing controller integration and runs learning and generated fault plans on
+Ubuntu 22.04. For the maintained Secret Generator acceptance suite and its
+independent evidence checks, see [acceptance validation](acceptance.md).
 
-Testing a controller with Sieve requires the test files laid out as described in
-the [porting guide](https://github.com/Saadmrp1038/sieve/blob/main/docs/port.md).
-The workflow assumes that these files are available in order to test a controller.
-The workflow can run both on Ubuntu and MacOS runners. 
+## Source selection
 
-## Inputs
-The workflow takes the following arguments as inputs:
-1. `platform-os` &emsp;&emsp; (optional, default is `ubuntu-latest`)  
-   Defines the runner platform to be used for the workflow
+The harness and integration are separate checkouts. Both revisions are required
+full, lowercase, 40-character Git commit SHAs. Branches, tags and abbreviated
+hashes are rejected. The workflow checks actual `HEAD` values and clean source
+before executing the integration, then uploads both source records with results.
+The Sieve checkout always comes from `Saadmrp1038/sieve`.
 
-2. `controller-name` &nbsp;(required)  
-   Name of the controller being tested. E.g. `rabbitmq-operator`
+GitHub's reusable-workflow context belongs to the caller. Pass the Sieve commit
+explicitly; an external integration repository's event SHA identifies different
+code. See [GitHub's reuse documentation](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)
+and [checkout's commit examples](https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit).
 
-3. `github-repo` &emsp;&emsp; (required)  
-   URL of the GitHub repository containing the test files (refer [porting guide](https://github.com/Saadmrp1038/sieve/blob/main/docs/port.md))
+| Input | Meaning |
+|---|---|
+| `sieve-revision` | Exact Sieve fork commit to test |
+| `controller-name` | Controller identifier under `controllers/` |
+| `github-repo` | Integration repository in `owner/repository` form |
+| `github-ref` | Exact integration commit |
+| `subdirectory` | Integration directory containing `config.json`, build/deploy assets and workloads |
+| `workload_name` | Workload to execute |
 
-4. `github-ref` &emsp; &emsp; &nbsp;(optional)  
-   The branch, tag or SHA to checkout. Defaults to the SHA or reference to the event triggering the workflow.
+For a caller in this fork, use `${{ github.event.pull_request.head.sha || github.sha }}`
+for `sieve-revision`. For external callers, configure the desired Sieve SHA
+explicitly. Pin the reusable workflow's `uses` reference to a reviewed commit too.
+The workflow does not require Docker Hub credentials for public images.
 
-5. `subdirectory` &emsp; &ensp;(optional)  
-   The sub-directory in the GitHub repository containing the test files.
-
-6. `workload_name` &emsp; (required)  
-   The test workload name that Sieve should use for testing the controller.
-
-The workflow also requires the following two secrets passed as input:
-1. `DOCKER_USER` &emsp;&emsp; (required)
-2. `DOCKER_TOKEN` &emsp;&ensp; (required)
-
-This is used to log in to the Docker Hub.
-
-## Description
-
-The workflow uses the provided input to run Sieve to test the controller. It
-performs the following actions:
- 1. Build the controller with Sieve instrumentation in `learn` mode
- 2. Run the controller in `learn` mode with the provided test workload so that
-    Sieve can generate test plans.
- 3. Build the controller with Sieve instrumentation in `test` mode
- 4. Run the controller in `test` mode with the provided test workload and
-    injected perturbations to identify any bugs in the controller.
-
-Once the workflow completes running, any bugs identified by Sieve will be
-logged under the step "Run sieve in test mode".
-
-## Example
-
-An example invocation of the workflow is below:
-```yml
-name: 'Test Sieve GitHub action on Linux'
-
-on:
-  workflow_dispatch:
-
+```yaml
 jobs:
-  run-sieve:
+  experiment:
     uses: Saadmrp1038/sieve/.github/workflows/run-sieve.yml@main
     with:
-      platform-os: ubuntu-latest
-      controller-name: kapp-controller
-      github-repo: https://github.com/jerrinsg/sieve-action-test.git
-      github-ref: main
-      subdirectory: kapp-controller-simple
-      workload_name: create
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      sieve-revision: ${{ vars.SIEVE_REVISION }}
+      controller-name: example-operator
+      github-repo: your-account/operator-integration
+      github-ref: ${{ vars.INTEGRATION_REVISION }}
+      subdirectory: example-operator
+      workload_name: recreate
 ```
+
+Both variables in this example must contain full commit SHAs. Complete the
+integration using the [porting guide](port.md) and supply compatible instrumented
+Kubernetes node images for its profile. The workflow builds learning/testing
+controller images, learns two baselines, runs each nonempty generated plan family,
+and uploads raw results even after a failure. This generic workflow does not
+replace the maintained acceptance suite's stronger evidence verification.
+
+## Cleanup and caches
+
+Cluster and build-helper cleanup belongs to Sieve's owning process. Workflows do
+not unconditionally delete the shared `kind` cluster or prune the Docker daemon.
+Existing clusters are refused, owned resources are cleaned up on failure and
+cancellation, and images/build caches remain available for reuse. Persistent
+runner cache maintenance is a separate administrator operation.

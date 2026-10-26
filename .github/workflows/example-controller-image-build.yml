@@ -13,8 +13,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -29,6 +33,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -51,16 +57,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c cassandra-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c cassandra-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   casskop-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -75,6 +82,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -97,16 +106,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c casskop-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c casskop-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   mongodb-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -121,6 +131,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -143,16 +155,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c mongodb-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c mongodb-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   nifikop-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -167,6 +180,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -189,16 +204,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c nifikop-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c nifikop-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   rabbitmq-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -213,6 +229,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -235,16 +253,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c rabbitmq-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c rabbitmq-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   xtradb-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -259,6 +278,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -281,16 +302,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c xtradb-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c xtradb-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   yugabyte-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -305,6 +327,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -327,16 +351,17 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c yugabyte-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c yugabyte-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df
   zookeeper-operator:
     runs-on: ubuntu-22.04
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -351,6 +376,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -373,6 +400,3 @@ jobs:
       run: 'uv run --locked --no-dev sieve build -c zookeeper-operator -m test --push -r $IMAGE_NAMESPACE '
     - name: Build Image - vanilla
       run: 'uv run --locked --no-dev sieve build -c zookeeper-operator -m vanilla --push -r $IMAGE_NAMESPACE '
-    - name: Clean images
-      if: always()
-      run: docker image prune -a -f && docker builder prune -a -f && docker system df

@@ -11,8 +11,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -27,6 +31,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -54,8 +60,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -70,6 +80,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -97,8 +109,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -113,6 +129,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -140,8 +158,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -156,6 +178,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -183,8 +207,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -199,6 +227,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -226,8 +256,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -242,6 +276,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -269,8 +305,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -285,6 +325,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
@@ -312,8 +354,12 @@ jobs:
     env:
       GOPATH: /home/runner/go
       KUBECONFIG: /home/runner/.kube/config
+      EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
     - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - name: Setup Go environment
       uses: actions/setup-go@v6
       with:
@@ -328,6 +374,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
     - name: Install locked Python environment
       run: uv sync --locked --no-dev
+    - name: Verify tested revision
+      run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
     - name: Install Kind
       run: 'GO111MODULE="on" go install sigs.k8s.io/kind@v0.33.0
 
