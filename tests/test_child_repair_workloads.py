@@ -23,6 +23,7 @@ import copy
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 path = Path(os.environ["REPAIR_TEST_CLUSTER"])
@@ -61,6 +62,9 @@ elif verb == "logs":
         print(json.dumps({"msg": "Starting workers", "controller": name}))
     raise SystemExit(0)
 elif verb == "get":
+    if args[1] == "secret" and state["scenario"] == "transient-repair" and state.get("disturbed_at"):
+        if time.monotonic() - state["disturbed_at"] > 0.3:
+            state["child"]["data"]["marker"] = base64.b64encode(b"drift").decode()
     if args[1] == "endpoints":
         if state["scenario"] == "no-endpoints" and state["child"]["metadata"]["uid"] == "child-2":
             print(json.dumps({"subsets": []}))
@@ -95,6 +99,7 @@ elif verb == "delete":
     result = {"apiVersion": "v1", "kind": "Status", "status": "Success",
               "details": {"uid": state["child"]["metadata"]["uid"]}}
     state["child"]["metadata"]["uid"] = "child-2"
+    state["disturbed_at"] = time.monotonic()
     state["parent"]["status"]["secret"]["uid"] = "child-2"
     if state["scenario"] == "no-repair":
         state["child"] = None
@@ -123,6 +128,7 @@ def run_workload(
     environment,
     workload="delete-child",
     controller="kubernetes-secret-generator",
+    settle=0,
 ):
     output = tmp_path / "result" / "workload.log"
     result = subprocess.run(
@@ -133,6 +139,8 @@ def run_workload(
             str(output),
             "--repair-timeout",
             "2",
+            "--settle-seconds",
+            str(settle),
         ],
         cwd=ROOT,
         env=environment,
@@ -334,3 +342,16 @@ def test_unrepaired_field_drift_fails_with_the_mutated_child_preserved(
     assert "FINISH-SIEVE-TEST" not in output.read_text()
     assert evidence["status"] == "repair_timeout"
     assert evidence["child_after"] == evidence["mutation_response"]
+
+
+def test_repair_must_remain_consistent_through_the_settling_period(
+    tmp_path, kubectl_boundary
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps({"scenario": "transient-repair", "parent": None, "child": None})
+    )
+    result, output, evidence = run_workload(tmp_path, kubectl_boundary, settle=0.8)
+    assert result.returncode == 1
+    assert evidence["status"] == "repair_lost"
+    assert "FINISH-SIEVE-TEST" not in output.read_text()

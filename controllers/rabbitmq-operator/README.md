@@ -25,6 +25,8 @@ Each wait defaults to 300 seconds. Direct workload invocations accept
 `--repair-timeout SECONDS`. The command saves `repair-observations.json` on both
 success and failure, including the accepted mutation and observed parent,
 Service and endpoints. Only successful repair writes `FINISH-SIEVE-TEST`.
+Repair must remain consistent for another 15 seconds. Direct invocations may
+configure this interval with `--settle-seconds SECONDS`.
 
 Start with a no-fault run. Only a converged workload is eligible for two learned
 baselines and fault testing. Use fresh result and oracle directories; report

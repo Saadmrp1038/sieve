@@ -85,9 +85,12 @@ def run(arguments: Sequence[str], target: RepairTarget, *, timeout: float) -> in
     parser.add_argument("workload", choices=["delete-child", "drift-child"])
     parser.add_argument("output", type=Path)
     parser.add_argument("--repair-timeout", type=float, default=timeout)
+    parser.add_argument("--settle-seconds", type=float, default=15)
     args = parser.parse_args(arguments)
     if not math.isfinite(args.repair_timeout) or args.repair_timeout <= 0:
         parser.error("repair timeout must be finite and positive")
+    if not math.isfinite(args.settle_seconds) or args.settle_seconds < 0:
+        parser.error("settling period must be finite and nonnegative")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     evidence: dict[str, Any] = {"workload": args.workload, "status": "setup_failed"}
 
@@ -156,6 +159,13 @@ def run(arguments: Sequence[str], target: RepairTarget, *, timeout: float) -> in
                 )
             evidence["status"] = "repair_timeout"
             wait_for(lambda: observe(repairing=True), "owned child repair")
+            evidence["status"] = "repair_lost"
+            settled_at = time.monotonic() + args.settle_seconds
+            while time.monotonic() < settled_at:
+                time.sleep(min(1, max(0, settled_at - time.monotonic())))
+                if not observe(repairing=True):
+                    raise RuntimeError("Child repair did not remain consistent")
+            evidence["settle_seconds"] = args.settle_seconds
             evidence["status"] = "repaired"
         except Exception as error:
             evidence["error"] = str(error)

@@ -31,6 +31,8 @@ These workloads write `repair-observations.json`, including the mutation respons
 and observed resources, even on failed repair. The normal `FINISH-SIEVE-TEST`
 marker is written only on success. Each wait defaults to 120 seconds; direct
 workload invocations accept `--repair-timeout SECONDS`.
+Successful repair is checked for another 15 seconds before finishing;
+`--settle-seconds SECONDS` controls that interval for direct invocations.
 
 The pinned controller watches StringSecret changes rather than owned Secrets.
 Its documented contract covers parent-triggered creation and updates. A failed
