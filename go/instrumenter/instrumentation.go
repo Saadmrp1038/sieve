@@ -204,6 +204,12 @@ func instrumentSharedInformerGoForAll(ifilepath, ofilepath, mode string) {
 	funNameAfter := "Notify" + mode + "AfterControllerRecv"
 	f := parseSourceFile(ifilepath, "cache", map[string]string{})
 	_, funcDecl := findFuncDecl(f, "HandleDeltas", "*sharedIndexInformer")
+	if funcDecl == nil {
+		if _, modern := findFuncDecl(f, "handleDeltas", "*sharedIndexInformer"); modern != nil {
+			instrumentModernInformer(filepath.Join(filepath.Dir(ifilepath), "controller.go"), filepath.Join(filepath.Dir(ofilepath), "controller.go"), mode)
+			return
+		}
+	}
 	if funcDecl != nil {
 		for _, stmt := range funcDecl.Body.List {
 			if rangeStmt, ok := stmt.(*dst.RangeStmt); ok {
@@ -443,6 +449,13 @@ func instrumentStoreGoForAll(ifilepath, ofilepath, mode string) {
 }
 
 func instrumentCacheObjectTypes(f *dst.File) {
+	if _, transaction := findFuncDecl(f, "Transaction", "*cache"); transaction != nil {
+		transaction.Body.List = append(sieveStatements(`
+            for _, sieveTransaction := range txns {
+                sieve.NotifyTestCacheObject(c, sieveTransaction.Object)
+            }
+        `), transaction.Body.List...)
+	}
 	for _, method := range []string{"Add", "Update", "Delete"} {
 		_, fun := findFuncDecl(f, method, "*cache")
 		if fun == nil {

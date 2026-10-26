@@ -525,11 +525,17 @@ func generateResourceKeyFromRestCall(verb, resourceType, namespace, name string,
 }
 
 func getResourceTypeFromObj(object interface{}) string {
-	if kind, ok := object.(interface{ GetKind() string }); ok {
-		return strings.ToLower(kind.GetKind())
-	}
-	if object == nil {
+	value := reflect.ValueOf(object)
+	if !value.IsValid() || (value.Kind() == reflect.Ptr && value.IsNil()) {
 		return ""
+	}
+	if kind, ok := object.(interface{ GetKind() string }); ok {
+		if name := kind.GetKind(); name != "" {
+			return strings.ToLower(name)
+		}
+	}
+	if kind := runtimeObjectKind(value); kind != "" {
+		return strings.ToLower(kind)
 	}
 	resourceType := reflect.TypeOf(object).String()
 	tokens := strings.Split(resourceType, ".")

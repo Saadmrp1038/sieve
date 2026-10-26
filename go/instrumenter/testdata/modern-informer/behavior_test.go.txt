@@ -1,0 +1,238 @@
+package fixture
+
+import (
+	"context"
+	"encoding/json"
+	"net"
+	"net/rpc"
+	"sync"
+	"testing"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/cache"
+	fakelistwatch "k8s.io/client-go/tools/cache/testing"
+	sieve "sieve.client"
+)
+
+type receipt struct{ operation, version string }
+type LearnListener struct {
+	informer cache.SharedIndexInformer
+	mutex    sync.Mutex
+	pending  map[int]receipt
+	finished chan string
+	failures chan string
+}
+
+func (l *LearnListener) NotifyLearnBeforeControllerRecv(request *sieve.NotifyLearnBeforeControllerRecvRequest, response *sieve.Response) error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	var object metav1.PartialObjectMetadata
+	if err := json.Unmarshal([]byte(request.Object), &object); err != nil {
+		return err
+	}
+	if request.ResourceType != "secret" {
+		l.failures <- "partial metadata was not identified as Secret"
+	}
+	previous, exists, err := l.informer.GetIndexer().GetByKey("default/example")
+	if err != nil {
+		return err
+	}
+	if exists && previous.(*metav1.PartialObjectMetadata).ResourceVersion == object.ResourceVersion && request.OperationType != "Deleted" {
+		l.failures <- "before receipt ran after the cache mutation"
+	}
+	response.Ok = true
+	response.Number = len(l.pending)
+	l.pending[response.Number] = receipt{request.OperationType, object.ResourceVersion}
+	return nil
+}
+
+func (l *LearnListener) NotifyLearnAfterControllerRecv(request *sieve.NotifyLearnAfterControllerRecvRequest, response *sieve.Response) error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	event, found := l.pending[request.EventID]
+	if !found {
+		l.failures <- "receipt completion has no matching start"
+	}
+	current, exists, err := l.informer.GetIndexer().GetByKey("default/example")
+	if err != nil {
+		return err
+	}
+	if event.operation == "Deleted" {
+		if exists {
+			l.failures <- "deleted Secret is still cached after receipt"
+		}
+	} else if !exists || current.(*metav1.PartialObjectMetadata).ResourceVersion != event.version {
+		l.failures <- "after receipt did not observe the committed cache state"
+	}
+	response.Ok = true
+	l.finished <- event.operation
+	return nil
+}
+
+func TestInformerReceiptsBracketRealCacheUpdates(t *testing.T) {
+	source := fakelistwatch.NewFakeControllerSource()
+	original := &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "example", Namespace: "default"}}
+	original.SetGroupVersionKind(schema.GroupVersionKind{Version: "v1", Kind: "Secret"})
+	source.Add(original)
+	informer := cache.NewSharedIndexInformer(source, original, 0, cache.Indexers{})
+	listener := &LearnListener{informer: informer, pending: map[int]receipt{}, finished: make(chan string, 16), failures: make(chan string, 16)}
+	server := rpc.NewServer()
+	if err := server.RegisterName("LearnListener", listener); err != nil {
+		t.Fatal(err)
+	}
+	network, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer network.Close()
+	go server.Accept(network)
+	payload, _ := json.Marshal(map[string]interface{}{
+		"sieveServerAddr": network.Addr().String(), "crdList": []string{"secret"},
+		"annotatedReconcileStackFrame": []string{"fixture.Reconcile"},
+	})
+	t.Setenv("sieveTestPlan", string(payload))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go informer.RunWithContext(ctx)
+	await := func() string {
+		t.Helper()
+		select {
+		case failure := <-listener.failures:
+			t.Fatal(failure)
+		case operation := <-listener.finished:
+			return operation
+		case <-time.After(15 * time.Second):
+			t.Fatal("cache changed without paired Sieve receipts")
+		}
+		return ""
+	}
+	// Initial list uses AtomicFIFO's ReplacedAll path, not just live deltas.
+	if operation := await(); operation != "Replaced" {
+		t.Fatalf("initial receipt: %s", operation)
+	}
+	changed := original.DeepCopy()
+	changed.Labels = map[string]string{"marker": "changed"}
+	source.Modify(changed)
+	if operation := await(); operation != "Updated" {
+		t.Fatalf("update receipt: %s", operation)
+	}
+	source.Delete(changed)
+	if operation := await(); operation != "Deleted" {
+		t.Fatalf("delete receipt: %s", operation)
+	}
+	select {
+	case failure := <-listener.failures:
+		t.Fatal(failure)
+	default:
+	}
+}
+
+type TestCoordinator struct {
+	entered  chan string
+	release  chan struct{}
+	finished chan string
+}
+
+func (c *TestCoordinator) NotifyTestBeforeControllerReadPause(request *sieve.NotifyTestBeforeControllerReadPauseRequest, response *sieve.Response) error {
+	c.entered <- request.ResourceKey
+	<-c.release
+	response.Ok = true
+	return nil
+}
+
+func (c *TestCoordinator) NotifyTestAfterControllerReadPause(request *sieve.NotifyTestAfterControllerReadPauseRequest, response *sieve.Response) error {
+	c.finished <- request.ResourceKey
+	response.Ok = true
+	return nil
+}
+
+func readSecret(indexer cache.Indexer, finished chan bool) {
+	_, found, _ := indexer.GetByKey("default/example")
+	finished <- found
+}
+
+func TestReadPauseOnModernInformer(t *testing.T) {
+	source := fakelistwatch.NewFakeControllerSource()
+	object := &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "example", Namespace: "default"}}
+	object.SetGroupVersionKind(schema.GroupVersionKind{Version: "v1", Kind: "Secret"})
+	informer := cache.NewSharedIndexInformer(source, object, 0, cache.Indexers{})
+	added, deleted := make(chan struct{}, 1), make(chan struct{}, 1)
+	_, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(interface{}) { added <- struct{}{} },
+		DeleteFunc: func(interface{}) { deleted <- struct{}{} },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	coordinator := &TestCoordinator{entered: make(chan string, 1), release: make(chan struct{}), finished: make(chan string, 1)}
+	server := rpc.NewServer()
+	if err := server.RegisterName("TestCoordinator", coordinator); err != nil {
+		t.Fatal(err)
+	}
+	network, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer network.Close()
+	go server.Accept(network)
+	payload, _ := json.Marshal(map[string]interface{}{
+		"sieveServerAddr": network.Addr().String(), "annotatedReconcileStackFrame": []string{"fixture.readSecret"},
+		"actions": []interface{}{map[string]interface{}{
+			"actionType": "pauseController", "pauseAt": "beforeControllerRead", "pauseScope": "secret/default/example",
+			"trigger": map[string]interface{}{"definitions": []interface{}{map[string]interface{}{
+				"condition":        map[string]interface{}{"conditionType": "onObjectDelete", "resourceKey": "secret/default/example"},
+				"observationPoint": map[string]interface{}{"when": "beforeControllerRead"},
+			}}},
+		}},
+	})
+	t.Setenv("sieveTestPlan", string(payload))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go informer.RunWithContext(ctx)
+	if !cache.WaitForCacheSync(ctx.Done(), informer.HasSynced) {
+		t.Fatal("informer did not sync")
+	}
+	wait := func(channel <-chan struct{}) {
+		t.Helper()
+		select {
+		case <-channel:
+		case <-time.After(10 * time.Second):
+			t.Fatal("informer event missing")
+		}
+	}
+	source.Add(object)
+	wait(added)
+	source.Delete(object)
+	wait(deleted)
+	// No successful Get happened before the final object was deleted. The
+	// transaction instrumentation must retain its resource type for NotFound.
+	result := make(chan bool, 1)
+	go readSecret(informer.GetIndexer(), result)
+	select {
+	case key := <-coordinator.entered:
+		if key != "secret/default/example" {
+			t.Fatal("wrong pause scope: " + key)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("empty cache read bypassed the pause")
+	}
+	select {
+	case <-result:
+		t.Fatal("read completed while held")
+	default:
+	}
+	close(coordinator.release)
+	select {
+	case key := <-coordinator.finished:
+		if key != "secret/default/example" {
+			t.Fatal("wrong release scope: " + key)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("held read was not released")
+	}
+	if <-result {
+		t.Fatal("instrumentation changed NotFound into a successful read")
+	}
+}
