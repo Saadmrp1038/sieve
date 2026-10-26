@@ -1,0 +1,86 @@
+name: Sieve acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Frozen Secret Generator schedules to run
+        type: choice
+        options: [smoke, full]
+        default: smoke
+      build-images:
+        description: Build all six images first instead of using an existing manifest
+        type: boolean
+        default: false
+      images-manifest:
+        description: Absolute image-manifest path on the dedicated runner (required when reusing images)
+        type: string
+        default: ''
+      registry:
+        description: Local Docker namespace for new image builds
+        type: string
+        default: sieve-acceptance
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sieve-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    # Deliberate opt-in: never schedule arbitrary pull requests on this host.
+    runs-on: [self-hosted, linux, x64, sieve-acceptance]
+    timeout-minutes: ${{ inputs.build-images && 360 || 120 }}
+    env:
+      EXPECTED_REVISION: ${{ github.sha }}
+      SELECTION: ${{ inputs.suite }}
+      BUILD_IMAGES: ${{ inputs.build-images }}
+      IMAGES_MANIFEST: ${{ inputs.images-manifest }}
+      IMAGE_REGISTRY: ${{ inputs.registry }}
+      RUN_OUTPUT: runs/acceptance/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache-dependency-path: go/*/go.sum
+      - name: Install locked environment
+        run: uv sync --locked --no-dev
+      - name: Verify dispatch revision
+        run: uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"
+      - name: Check dedicated host tools
+        run: uv run --locked --no-dev sieve doctor
+      - name: Run acceptance suite
+        run: |
+          set -euo pipefail
+          images="$IMAGES_MANIFEST"
+          if [ "$BUILD_IMAGES" = true ]; then
+            images="$RUNNER_TEMP/sieve-images-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.json"
+            uv run --locked --no-dev sieve acceptance build-images \
+              --expected-revision "$EXPECTED_REVISION" --registry "$IMAGE_REGISTRY" --output "$images"
+          else
+            test -n "$images"
+            [[ "$images" = /* ]]
+          fi
+          uv run --locked --no-dev sieve acceptance run \
+            --expected-revision "$EXPECTED_REVISION" --images "$images" \
+            --suite "$SELECTION" --output "$RUN_OUTPUT"
+      - name: Independently verify saved results
+        run: uv run --locked --no-dev sieve acceptance verify --results "$RUN_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sieve-acceptance-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.RUN_OUTPUT }}
+            ${{ runner.temp }}/sieve-images-${{ github.run_id }}-${{ github.run_attempt }}*
+          if-no-files-found: warn

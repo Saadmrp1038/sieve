@@ -1,0 +1,42 @@
+workload: create-update-recreate
+actions:
+- actionType: pauseController
+  pauseAt: beforeControllerRead
+  pauseScope: secret/default/sieve-generated-secret
+  avoidOngoingRead: true
+  trigger:
+    definitions:
+    - triggerName: trigger1
+      condition:
+        conditionType: onObjectUpdate
+        resourceKey: secret/default/sieve-generated-secret
+        prevStateDiff: '{"data": {"marker": "aW5pdGlhbA=="}}'
+        curStateDiff: '{"data": {"marker": "dXBkYXRlZA=="}}'
+        occurrence: 1
+      observationPoint:
+        when: beforeControllerRecv
+        by: informer
+    expression: trigger1
+- actionType: resumeController
+  pauseAt: beforeControllerRead
+  pauseScope: secret/default/sieve-generated-secret
+  trigger:
+    definitions:
+    - triggerName: trigger2
+      condition:
+        conditionType: onAnyFieldModification
+        resourceKey: secret/default/sieve-generated-secret
+        prevStateDiff: '{"data": {"marker": "dXBkYXRlZA=="}}'
+        occurrence: 1
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    - triggerName: trigger3
+      condition:
+        conditionType: onObjectDelete
+        resourceKey: secret/default/sieve-generated-secret
+        occurrence: 1
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    expression: trigger2|trigger3

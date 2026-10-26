@@ -1,6 +1,7 @@
 """The installed Sieve command-line interface."""
 
 import argparse
+import json
 import re
 import sys
 import time
@@ -89,8 +90,39 @@ def parser():
     operations = controller.add_subparsers(dest="operation", required=True)
     initialize = operations.add_parser("init", help="Create a controller integration")
     initialize.add_argument("name")
+    acceptance = commands.add_parser(
+        "acceptance", help="Run or verify the maintained acceptance suite"
+    )
+    acceptance_ops = acceptance.add_subparsers(dest="operation", required=True)
+    image_build = acceptance_ops.add_parser("build-images")
+    image_build.add_argument("--expected-revision", required=True)
+    image_build.add_argument("--registry", required=True)
+    image_build.add_argument("--output", type=Path, required=True)
+    acceptance_run = acceptance_ops.add_parser("run")
+    acceptance_run.add_argument("--expected-revision", required=True)
+    acceptance_run.add_argument("--images", type=Path, required=True)
+    acceptance_run.add_argument("--suite", choices=("smoke", "full"), default="smoke")
+    acceptance_run.add_argument("--output", type=Path, required=True)
+    acceptance_verify = acceptance_ops.add_parser("verify")
+    acceptance_verify.add_argument("--results", type=Path, required=True)
+    acceptance_verify.add_argument("--output", type=Path)
     ci = commands.add_parser("ci", help="Manage generated workflows")
-    ci.add_argument("operation", choices=("generate",))
+    ci_operations = ci.add_subparsers(dest="operation", required=True)
+    ci_operations.add_parser("generate", help="Regenerate build/reproduction workflows")
+    verify = ci_operations.add_parser(
+        "verify-revision", help="Verify a clean checkout at an immutable commit"
+    )
+    verify.add_argument("--checkout", type=Path)
+    verify.add_argument("--expected", required=True)
+    verify.add_argument("--output", type=Path)
+    install = ci_operations.add_parser(
+        "install-integration",
+        help="Install tracked assets from a verified integration commit",
+    )
+    install.add_argument("--checkout", type=Path, required=True)
+    install.add_argument("--expected", required=True)
+    install.add_argument("--subdirectory", required=True)
+    install.add_argument("--controller", required=True)
     return command
 
 
@@ -147,7 +179,7 @@ def _main(argv=None):
             return run()
         root = find_repository(arguments.repo)
         # Resolve user paths before entering the repository's execution scope.
-        for name in ("config", "plan", "oracle_root", "results"):
+        for name in ("config", "plan", "oracle_root", "results", "images", "checkout"):
             if hasattr(arguments, name):
                 setattr(arguments, name, _input(getattr(arguments, name), root))
         if getattr(arguments, "output", None) is not None:
@@ -278,10 +310,60 @@ def _dispatch(arguments, root, common):
 
         create(root / "controllers", arguments.name)
         return 0
+    if arguments.command == "acceptance":
+        from sieve_tool.acceptance import runner as acceptance_runner
+        from sieve_tool.acceptance.evidence import verify
+        from sieve_tool.acceptance.suite import load_suite
+
+        if arguments.operation == "build-images":
+            acceptance_runner.build_images(
+                root,
+                arguments.expected_revision,
+                arguments.registry,
+                arguments.output,
+                common,
+            )
+        elif arguments.operation == "run":
+            report = acceptance_runner.execute(
+                root,
+                arguments.expected_revision,
+                arguments.images,
+                arguments.suite,
+                arguments.output,
+                common,
+            )
+            print(json.dumps({k: v for k, v in report.items() if k != "tests"}))
+        else:
+            report = verify(arguments.results, load_suite(root))
+            if arguments.output is not None:
+                with arguments.output.open("x") as stream:
+                    json.dump(report, stream, indent=2)
+            print(json.dumps({k: v for k, v in report.items() if k != "tests"}))
+        return 0
     if arguments.command == "ci":
         from sieve_tool.ci import generate_workflows
 
-        generate_workflows(root / ".github/workflows")
+        if arguments.operation == "generate":
+            generate_workflows(root / ".github/workflows")
+        elif arguments.operation == "install-integration":
+            from sieve_tool.revisions import install_integration
+
+            install_integration(
+                root,
+                arguments.checkout,
+                arguments.expected,
+                arguments.subdirectory,
+                arguments.controller,
+            )
+        else:
+            from sieve_tool.revisions import verify_revision
+
+            source = verify_revision(arguments.checkout or root, arguments.expected)
+            if arguments.output is not None:
+                arguments.output.parent.mkdir(parents=True, exist_ok=True)
+                with arguments.output.open("x") as stream:
+                    json.dump(source, stream, indent=2)
+            print(source["revision"])
         return 0
     if arguments.command == "check-plans":
         from sieve_tool.plan_check import check

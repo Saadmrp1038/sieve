@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "controller": "kubernetes-secret-generator",
+  "workload": "create-update-recreate",
+  "controller_revision": "f7e44605aa7980c305f0e600de1613e3c0e57efd",
+  "kubernetes_version": "v1.24.10",
+  "cases": [
+    {
+      "name": "intermediate-state-test-plan-1",
+      "family": "intermediate-state",
+      "sha256": "0db0b82c1ff6d115fe320b6af055a63756cacffc539bddc3284db6ff9538a358",
+      "smoke": true
+    },
+    {
+      "name": "intermediate-state-test-plan-2",
+      "family": "intermediate-state",
+      "sha256": "b9eec19ca9b4f42523f3cf60c189644b939d9bcc10ee08b4c5b228371bf4f0a7",
+      "smoke": false
+    },
+    {
+      "name": "intermediate-state-test-plan-3",
+      "family": "intermediate-state",
+      "sha256": "9567fcfd45dd1f7da1db3fe742a7eae8f369951bf1c55c18e841b6226979516b",
+      "smoke": false
+    },
+    {
+      "name": "intermediate-state-test-plan-4",
+      "family": "intermediate-state",
+      "sha256": "65d090adf8fdfd51f1c5700e70e7a4bbbffc47a300c97b76dcdb3331a8717455",
+      "smoke": false
+    },
+    {
+      "name": "intermediate-state-test-plan-5",
+      "family": "intermediate-state",
+      "sha256": "10d787bc4969efe65dcdbd48e97521de8155c4ec3fab7c54b56e825aa654c57f",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-1",
+      "family": "unobserved-state",
+      "sha256": "691570838ddcde9ecbfdba9c11b2228095b547d64f9ba39cabe9121248c81bdd",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-2",
+      "family": "unobserved-state",
+      "sha256": "cfc7be34d0e7ee027c2603331f0210cf817d35fc5249ced4d321fc68660f4389",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-3",
+      "family": "unobserved-state",
+      "sha256": "832decb31508f804780f3b2b15acae9527145898149bf68562c8e65f35d38b1f",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-4",
+      "family": "unobserved-state",
+      "sha256": "2aa708d1fe64ea4ab105272f6ab71a5493c217d6ce9ad471a7de8009ae8064c3",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-5",
+      "family": "unobserved-state",
+      "sha256": "e462d4ee5c368c97c507e26f80726063273aaf41484d7c834144144aa07500ef",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-6",
+      "family": "unobserved-state",
+      "sha256": "47a772df578ac3a7935c5f5bb0878fed3ce260d4ca1242759967b5eb10539510",
+      "smoke": false
+    },
+    {
+      "name": "unobserved-state-test-plan-7",
+      "family": "unobserved-state",
+      "sha256": "0af9d17348ec2819e48440bcb9a120291d657eea4d4a6adc5b5a827c5b76635f",
+      "smoke": true
+    }
+  ]
+}

@@ -56,9 +56,16 @@ def job_template(self_hosted):
         "env": {
             "GOPATH": "/home/runner/go",
             "KUBECONFIG": "/home/runner/.kube/config",
+            "EXPECTED_REVISION": "${{ github.event.pull_request.head.sha || github.sha }}",
         },
         "steps": [
-            {"uses": "actions/checkout@v6"},
+            {
+                "uses": "actions/checkout@v6",
+                "with": {
+                    "ref": "${{ github.event.pull_request.head.sha || github.sha }}",
+                    "persist-credentials": False,
+                },
+            },
             {
                 "name": "Setup Go environment",
                 "uses": "actions/setup-go@v6",
@@ -79,6 +86,10 @@ def job_template(self_hosted):
             {
                 "name": "Install locked Python environment",
                 "run": "uv sync --locked --no-dev",
+            },
+            {
+                "name": "Verify tested revision",
+                "run": 'uv run --locked --no-dev sieve ci verify-revision --expected "$EXPECTED_REVISION"',
             },
             {
                 "name": "Install Kind",
@@ -117,22 +128,6 @@ def persistent_data_step(operator):
     }
 
 
-def remove_cluster_step():
-    return {
-        "name": "Remove cluster",
-        "if": "always()",
-        "run": "kind delete cluster",
-    }
-
-
-def clean_images_step():
-    return {
-        "name": "Clean images",
-        "if": "always()",
-        "run": "docker image prune -a -f && docker builder prune -a -f && docker system df",
-    }
-
-
 def generate_controller_image_build_jobs(self_hosted):
     jobs = {}
     for operator in operators_for_CI:
@@ -151,7 +146,6 @@ def generate_controller_image_build_jobs(self_hosted):
             for mode in build_modes
         ]
         job["steps"].extend(build_image)
-        job["steps"].append(clean_images_step())
         jobs[operator] = job
     return jobs
 
@@ -171,9 +165,7 @@ def generate_oracle_build_jobs(self_hosted):
         ]
         job["steps"].extend(sieve_learn)
         job["steps"].append(collect_log_step(operator))
-        job["steps"].append(remove_cluster_step())
         job["steps"].append(persistent_data_step(operator))
-        job["steps"].append(clean_images_step())
         jobs[operator] = job
     return jobs
 
@@ -195,8 +187,6 @@ def generate_bug_reproduction_jobs(self_hosted):
             )
         job["steps"].extend(sieve_test)
         job["steps"].append(collect_log_step(operator))
-        job["steps"].append(remove_cluster_step())
-        job["steps"].append(clean_images_step())
         jobs[operator] = job
     return jobs
 
@@ -243,7 +233,6 @@ def generate_test_jobs(self_hosted):
             job["steps"].extend(sieve_learn)
             job["steps"].extend(sieve_test)
             job["steps"].append(collect_log_step(operator))
-            job["steps"].append(remove_cluster_step())
         jobs[operator] = job
     return jobs
 

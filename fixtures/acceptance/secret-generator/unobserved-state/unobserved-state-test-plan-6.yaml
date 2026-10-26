@@ -1,0 +1,39 @@
+workload: create-update-recreate
+actions:
+- actionType: pauseController
+  pauseAt: beforeControllerRead
+  pauseScope: stringsecret/default/sieve-generated-secret
+  avoidOngoingRead: true
+  trigger:
+    definitions:
+    - triggerName: trigger1
+      condition:
+        conditionType: onObjectDelete
+        resourceKey: stringsecret/default/sieve-generated-secret
+        occurrence: 1
+      observationPoint:
+        when: beforeControllerRecv
+        by: informer
+    expression: trigger1
+- actionType: resumeController
+  pauseAt: beforeControllerRead
+  pauseScope: stringsecret/default/sieve-generated-secret
+  trigger:
+    definitions:
+    - triggerName: trigger2
+      condition:
+        conditionType: onObjectCreate
+        resourceKey: stringsecret/default/sieve-generated-secret
+        occurrence: 1
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    - triggerName: trigger3
+      condition:
+        conditionType: onObjectUpdate
+        resourceKey: stringsecret/default/sieve-generated-secret
+        occurrence: 1
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    expression: trigger2|trigger3

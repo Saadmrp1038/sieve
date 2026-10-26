@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Install uv
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
@@ -26,6 +29,14 @@ jobs:
             go/instrumenter/go.sum
       - name: Install locked Python environment
         run: uv sync --locked
+      - name: Verify tested revision
+        env:
+          EXPECTED_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: uv run --locked sieve ci verify-revision --expected "$EXPECTED_REVISION"
+      - name: Install workflow validator
+        run: GOWORK=off go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Validate workflows
+        run: actionlint -shellcheck=""
       - name: Lint Python
         run: uv run --locked ruff check .
       - name: Check Python formatting

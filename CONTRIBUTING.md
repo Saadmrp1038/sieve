@@ -129,3 +129,9 @@ state. Their inputs are typed artifact values plus an explicit comparison policy
 only the orchestration module loads selected artifacts. Malformed selected
 artifacts are harness input failures, not operator alarms. Preserve failure
 classification and negative controls when changing these boundaries.
+
+CI verifies immutable checkout revisions and keeps cleanup inside the owning
+Sieve process. After changing generated workflows, regenerate and compare them.
+`actionlint` v1.7.12 validates all workflow YAML, including the on-demand acceptance
+workflow. See [acceptance validation](docs/acceptance.md) for the smoke/full CLI,
+image-cache provenance, deadlines, evidence checks and dedicated runner setup.

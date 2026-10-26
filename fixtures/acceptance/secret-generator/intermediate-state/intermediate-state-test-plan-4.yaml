@@ -1,0 +1,15 @@
+workload: create-update-recreate
+actions:
+- actionType: restartController
+  controllerLabel: kubernetes-secret-generator
+  trigger:
+    definitions:
+    - triggerName: trigger1
+      condition:
+        conditionType: onObjectCreate
+        resourceKey: secret/default/sieve-generated-secret
+        occurrence: 2
+      observationPoint:
+        when: afterControllerWrite
+        by: github.com/mittwald/kubernetes-secret-generator/pkg/controller/crd/stringsecret.(*ReconcileStringSecret).Reconcile
+    expression: trigger1

@@ -10,6 +10,8 @@ source-directory paths as controller identifiers.
 | Module | Responsibility |
 |---|---|
 | `cli` | Parse arguments, choose the checkout, and return meaningful exit codes |
+| `revisions` | Verify immutable source checkouts and install tracked integration assets |
+| `acceptance` | Run frozen Linux regressions and independently verify raw fault evidence |
 | `paths` | Locate repository assets and scope working-directory changes |
 | `build` | Fetch sources, install dependencies, instrument, and build images |
 | `runtime.cluster` | Create kind clusters, deploy the coordinator and controller |

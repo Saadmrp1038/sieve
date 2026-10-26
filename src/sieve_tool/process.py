@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -151,7 +152,9 @@ def cancellation_signals():
 
 
 class ProcessError(RuntimeError):
-    def __init__(self, operation, returncode, log):
+    def __init__(
+        self, operation: str, returncode: int | None, log: str | Path | None
+    ) -> None:
         self.operation, self.returncode, self.log = operation, returncode, log
         super().__init__(f"{operation} failed (exit {returncode}); logs: {log}")
 
@@ -402,8 +405,32 @@ class ManagedProcess:
         self.close("cancelled" if kind else "stopped")
 
 
-def run(argv, *, check=True, capture_output=False, **kwargs):
-    with cancellation_signals(), ManagedProcess(argv, **kwargs) as child:
+def run(
+    argv: Sequence[str | os.PathLike[str]],
+    *,
+    operation: str,
+    check: bool = True,
+    capture_output: bool = False,
+    category: str = "command",
+    timeout: float | None = None,
+    cwd: str | os.PathLike[str] | None = None,
+    env: Mapping[str, str] | None = None,
+    output: str | os.PathLike[str] | None = None,
+    input: str | bytes | None = None,
+) -> Result:
+    with (
+        cancellation_signals(),
+        ManagedProcess(
+            argv,
+            operation=operation,
+            category=category,
+            timeout=timeout,
+            cwd=cwd,
+            env=env,
+            output=output,
+            input=input,
+        ) as child,
+    ):
         return child.wait(check=check, capture_output=capture_output)
 
 
@@ -411,7 +438,7 @@ _cleanup_end = ContextVar("sieve_cleanup_deadline", default=None)
 _in_cleanup = ContextVar("sieve_in_cleanup", default=False)
 
 
-def reset_cleanup_budget():
+def reset_cleanup_budget() -> None:
     _cleanup_end.set(None)
 
 
