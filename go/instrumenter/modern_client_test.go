@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,12 @@ import (
 // Exercise the instrumenter command and client-go's public informer API with
 // the dependency version used by the External Secrets integration.
 func TestModernClientGoInstrumentation(t *testing.T) {
+	for _, version := range []string{"v0.36.2", "v0.37.1"} {
+		t.Run(version, func(t *testing.T) { testModernClientGoInstrumentation(t, version) })
+	}
+}
+
+func testModernClientGoInstrumentation(t *testing.T, version string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	goCommand := filepath.Join(runtime.GOROOT(), "bin", "go")
@@ -22,7 +29,7 @@ func TestModernClientGoInstrumentation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	module := "module fixture\n\ngo 1.27.0\nrequire (\n k8s.io/client-go v0.37.1\n k8s.io/apimachinery v0.37.1\n sieve.client v0.0.0\n)\nreplace sieve.client => " + client + "\n"
+	module := fmt.Sprintf("module fixture\n\ngo 1.27.0\nrequire (\n k8s.io/client-go %s\n k8s.io/apimachinery %s\n sieve.client v0.0.0\n)\nreplace sieve.client => %s\n", version, version, client)
 	if err := os.WriteFile(filepath.Join(directory, "go.mod"), []byte(module), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +45,7 @@ func TestModernClientGoInstrumentation(t *testing.T) {
 		return output
 	}
 	var downloaded struct{ Dir string }
-	if err := json.Unmarshal(command(directory, "mod", "download", "-json", "k8s.io/client-go@v0.37.1"), &downloaded); err != nil {
+	if err := json.Unmarshal(command(directory, "mod", "download", "-json", "k8s.io/client-go@"+version), &downloaded); err != nil {
 		t.Fatal(err)
 	}
 	dependency := filepath.Join(directory, "client-go")
