@@ -94,6 +94,7 @@ type ConditionSpec struct {
 	Occurrence            *planInt  `yaml:"occurrence"`
 	PrevStateDiff         *planText `yaml:"prevStateDiff"`
 	CurStateDiff          *planText `yaml:"curStateDiff"`
+	StateMatch            *planText `yaml:"stateMatch"`
 	ConvertStateToAPIForm *planBool `yaml:"convertStateToAPIForm"`
 	TimeoutValue          *planInt  `yaml:"timeoutValue"`
 	Module                *planText `yaml:"module"`
@@ -291,6 +292,9 @@ func (t *TriggerSpec) validate() error {
 			if point == nil || point.By == "" {
 				return fmt.Errorf("trigger.definitions[%d].observationPoint: required", i)
 			}
+			if definition.Condition.ConditionType == planText(onObjectUpdateTo) && string(point.When) != beforeControllerRecv && string(point.When) != afterControllerRecv && string(point.When) != beforeAPIServerRecv && string(point.When) != afterAPIServerRecv {
+				return fmt.Errorf("onObjectUpdateTo requires an object-receipt observation")
+			}
 			switch string(point.When) {
 			case beforeAPIServerRecv, afterAPIServerRecv, beforeControllerRecv, afterControllerRecv, beforeControllerWrite, afterControllerWrite, beforeControllerRead, afterControllerRead, beforeAnnotatedAPICall, afterAnnotatedAPICall:
 			default:
@@ -308,11 +312,24 @@ func (c *ConditionSpec) validate() error {
 	fields := map[string]bool{
 		"resourceKey": c.ResourceKey != nil, "occurrence": c.Occurrence != nil,
 		"prevStateDiff": c.PrevStateDiff != nil, "curStateDiff": c.CurStateDiff != nil,
+		"stateMatch":            c.StateMatch != nil,
 		"convertStateToAPIForm": c.ConvertStateToAPIForm != nil, "timeoutValue": c.TimeoutValue != nil,
 		"module": c.Module != nil, "filePath": c.FilePath != nil, "receiverType": c.ReceiverType != nil, "funName": c.FunName != nil,
 	}
 	var allowed []string
 	switch string(c.ConditionType) {
+	case onObjectUpdateTo:
+		allowed = []string{"resourceKey", "occurrence", "stateMatch", "convertStateToAPIForm"}
+		if err := requiredText(c.ResourceKey, "resourceKey"); err != nil {
+			return err
+		}
+		if c.StateMatch == nil {
+			return fmt.Errorf("stateMatch: required JSON object")
+		}
+		var state map[string]interface{}
+		if err := json.Unmarshal([]byte(*c.StateMatch), &state); err != nil || len(state) == 0 {
+			return fmt.Errorf("stateMatch: expected a nonempty JSON object")
+		}
 	case onTimeout:
 		allowed = []string{"timeoutValue"}
 		if c.TimeoutValue == nil || *c.TimeoutValue < 0 || *c.TimeoutValue > 9_223_372_036 {

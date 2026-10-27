@@ -8,6 +8,7 @@ const (
 	onObjectCreate         string = "onObjectCreate"
 	onObjectDelete         string = "onObjectDelete"
 	onObjectUpdate         string = "onObjectUpdate"
+	onObjectUpdateTo       string = "onObjectUpdateTo"
 	onAnyFieldModification string = "onAnyFieldModification"
 	onTimeout              string = "onTimeout"
 	onAnnotatedAPICall     string = "onAnnotatedAPICall"
@@ -161,6 +162,29 @@ func (t *ObjectUpdateTrigger) satisfy(triggerNotification TriggerNotification) b
 		}
 	}
 	return false
+}
+
+// An input value can be identified without requiring its previous full-object
+// diff to match. Other fields may change while an independently produced input
+// is delivered to multiple caches.
+type ObjectUpdateToTrigger struct {
+	name, resourceKey, observedWhen, observedBy string
+	stateMatch                                  map[string]interface{}
+	desiredOccurrence, actualOccurrence         int
+}
+
+func (t *ObjectUpdateToTrigger) getTriggerName() string { return t.name }
+
+func (t *ObjectUpdateToTrigger) satisfy(notification TriggerNotification) bool {
+	event, ok := notification.(*ObjectUpdateNotification)
+	if !ok || event.resourceKey != t.resourceKey || event.observedWhen != t.observedWhen || event.observedBy != t.observedBy {
+		return false
+	}
+	if !partOfEventAsMap(t.stateMatch, event.curState) {
+		return false
+	}
+	t.actualOccurrence++
+	return t.actualOccurrence == t.desiredOccurrence
 }
 
 type AnyFieldModificationTrigger struct {
@@ -538,6 +562,16 @@ func (spec TriggerSpecDefinition) build() TriggerDefinition {
 	condition := spec.Condition
 	conditionType := string(condition.ConditionType)
 	switch conditionType {
+	case onObjectUpdateTo:
+		state := strToMap(text(condition.StateMatch, ""))
+		if boolean(condition.ConvertStateToAPIForm) {
+			state = convertObjectStateToAPIForm(state)
+		}
+		return &ObjectUpdateToTrigger{
+			name: string(spec.TriggerName), resourceKey: text(condition.ResourceKey, ""),
+			observedWhen: string(spec.ObservationPoint.When), observedBy: string(spec.ObservationPoint.By),
+			stateMatch: state, desiredOccurrence: integer(condition.Occurrence),
+		}
 	case onObjectCreate:
 		return &ObjectCreateTrigger{
 			name:              string(spec.TriggerName),

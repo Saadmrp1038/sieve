@@ -95,6 +95,24 @@ class TimeoutCondition(PlanModel):
     timeout_value: NonnegativeInt
 
 
+class StateMatchCondition(PlanModel):
+    condition_type: Literal["onObjectUpdateTo"]
+    resource_key: Nonempty
+    occurrence: PositiveInt
+    state_match: str
+    convert_state_to_api_form: bool = Field(
+        default=False, alias="convertStateToAPIForm"
+    )
+
+    @field_validator("state_match")
+    @classmethod
+    def nonempty_object(cls, value: str) -> str:
+        decoded = json.loads(value)
+        if not isinstance(decoded, dict) or not decoded:
+            raise ValueError("stateMatch must encode a nonempty JSON object")
+        return value
+
+
 class APICallCondition(PlanModel):
     condition_type: Literal["onAnnotatedAPICall"]
     module: Nonempty
@@ -105,7 +123,11 @@ class APICallCondition(PlanModel):
 
 
 type Condition = Annotated[
-    ObjectCondition | UpdateCondition | TimeoutCondition | APICallCondition,
+    ObjectCondition
+    | UpdateCondition
+    | StateMatchCondition
+    | TimeoutCondition
+    | APICallCondition,
     Field(discriminator="condition_type"),
 ]
 
@@ -122,6 +144,17 @@ class TriggerDefinition(PlanModel):
                 raise ValueError("onTimeout has no observationPoint")
         elif self.observation_point is None:
             raise ValueError("observationPoint is required for an observed trigger")
+        if isinstance(self.condition, StateMatchCondition) and (
+            self.observation_point is None
+            or self.observation_point.when
+            not in {
+                "beforeAPIServerRecv",
+                "afterAPIServerRecv",
+                "beforeControllerRecv",
+                "afterControllerRecv",
+            }
+        ):
+            raise ValueError("onObjectUpdateTo requires an object-receipt observation")
         return self
 
 
