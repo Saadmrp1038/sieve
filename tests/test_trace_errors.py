@@ -165,3 +165,65 @@ def test_marker_text_inside_a_json_payload_is_not_a_second_record():
     decoded = decode_line(line, "source.log", 0)
     assert decoded.marker == Marker.API_EVENT
     assert decoded.event.obj_map == obj
+
+
+def test_api_reader_decodes_quoted_kubernetes_logs_without_changing_payloads(tmp_path):
+    obj = {
+        "metadata": {"name": "one", "namespace": "default"},
+        "data": {"note": 'a "quote", a \\path, a tab\t and [SIEVE-BEFORE-HEAR]'},
+    }
+    message = "\t".join(
+        [
+            Marker.API_EVENT,
+            "ADDED",
+            "/configmaps/default/one",
+            "configmap",
+            "default",
+            "one",
+            json.dumps(obj),
+        ]
+    )
+    path = tmp_path / "apiserver.log"
+    path.write_text(
+        "ordinary log\nI1026 23:49:16.051349       1 ???:1] "
+        + json.dumps(message)
+        + "\n"
+    )
+    original = path.read_bytes()
+    events = list(iter_api_events(path))
+    assert len(events) == 1
+    assert events[0].key == "configmap/default/one"
+    assert events[0].obj_map == obj
+    assert path.read_bytes() == original
+
+
+def test_api_reader_accepts_go_quoted_hex_escapes(tmp_path):
+    obj = {"metadata": {"name": "one"}, "data": {"note": "DEL:\x7f; Unicode:🦊"}}
+    message = "\t".join(
+        [
+            Marker.API_EVENT,
+            "ADDED",
+            "original",
+            "configmap",
+            "default",
+            "one",
+            json.dumps(obj, ensure_ascii=False),
+        ]
+    )
+    quoted = json.dumps(message, ensure_ascii=False).replace("\x7f", r"\x7f")
+    path = tmp_path / "apiserver.log"
+    path.write_text("I1026 23:49:16.051349       1 ???:1] " + quoted + "\n")
+    assert list(iter_api_events(path))[0].obj_map == obj
+
+
+@pytest.mark.parametrize(
+    "message", ['"[SIEVE-API-EVENT]\\tADDED', json.dumps("[SIEVE-API-EVENT]\tADDED")]
+)
+def test_malformed_quoted_api_record_retains_original_location(tmp_path, message):
+    path = tmp_path / "apiserver.log"
+    path.write_text(
+        "ordinary log\nI1026 23:49:16.051349       1 ???:1] " + message + "\n"
+    )
+    with pytest.raises(TraceError) as error:
+        list(iter_api_events(path))
+    assert f"{path}:2:" in str(error.value)

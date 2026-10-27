@@ -137,6 +137,11 @@ controller records do not affect their input. A malformed selected record raises
 logs are never rewritten. Kubernetes object bodies remain schema-independent
 maps; the surrounding event fields have concrete types.
 
+The decoder also recognizes Kubernetes' quoted klog text envelope. It unwraps
+the message once, including Go ASCII hex escapes, before decoding the existing
+tab-delimited record. Payload strings, marker selection and physical source
+positions are retained; malformed quoted messages remain located input errors.
+
 A record's position is its zero-based physical line number, including ordinary
 log lines. Analysis uses that position for ordering and interval endpoints. The
 existing `start_timestamp` and `end_timestamp` names do not represent wall-clock

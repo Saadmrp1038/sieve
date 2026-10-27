@@ -1,6 +1,8 @@
 """Decode Sieve's existing tab-delimited records with source locations."""
 
+import ast
 import json
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
@@ -175,6 +177,32 @@ def _payload(marker: Marker, fields: list[str]) -> Payload:
             )
 
 
+_KLOG_QUOTED_MESSAGE = re.compile(
+    r'^[IWEF]\d{4} \d{2}:\d{2}:\d{2}\.\d+\s+\d+\s+.+\]\s+"$'
+)
+_GO_LOG_STRING = re.compile(
+    r'"(?:[^"\\\r\n]|\\(?:[abfnrtv"\\]|x[0-7][0-9a-fA-F]|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|[01][0-7]{2}))*"'
+)
+
+
+def _quoted_message(line: str, offset: int) -> str:
+    literal = _GO_LOG_STRING.match(line, offset - 1)
+    if literal is None:
+        raise ValueError("malformed quoted log message")
+    try:
+        message = json.loads(literal.group())
+    except json.JSONDecodeError:
+        # Go's quoting also permits ASCII hex/octal escapes. The lexer limits
+        # this fallback to a string literal; no expressions are evaluated.
+        try:
+            message = ast.literal_eval(literal.group())
+        except ValueError, SyntaxError:
+            raise ValueError("invalid Go quoted log message") from None
+    if not isinstance(message, str):
+        raise ValueError("quoted log message must be a string")
+    return message
+
+
 def decode_line(
     line: str,
     source: str | Path,
@@ -187,8 +215,15 @@ def decode_line(
     offset, marker = min(candidates)
     if markers is not None and marker not in markers:
         return None
-    fields = line[offset:].strip("\n").split("\t")
+    fields: list[str] = []
     try:
+        message = line[offset:].strip("\n")
+        if _KLOG_QUOTED_MESSAGE.fullmatch(line[:offset]):
+            # Recent Kubernetes redirects standard log messages through klog's
+            # quoted text format. Decode that envelope once, leaving JSON
+            # payload escapes for the existing event decoder.
+            message = _quoted_message(line, offset)
+        fields = message.strip("\n").split("\t")
         event = _payload(marker, fields)
     except (ValueError, KeyError, TypeError, AssertionError, IndexError) as error:
         identity = f"event {fields[1]}: " if len(fields) > 1 else ""
