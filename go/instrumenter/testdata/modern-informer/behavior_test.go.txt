@@ -156,6 +156,18 @@ type TestCoordinator struct {
 	entered  chan string
 	release  chan struct{}
 	finished chan string
+	results  chan ReadResult
+}
+
+type ReadResult struct {
+	ResourceKey, ReconcileFun, Object string
+	Exists                            bool
+}
+
+func (c *TestCoordinator) NotifyTestCacheReadResult(request *ReadResult, response *sieve.Response) error {
+	c.results <- *request
+	response.Ok = true
+	return nil
 }
 
 func (c *TestCoordinator) NotifyTestBeforeControllerReadPause(request *sieve.NotifyTestBeforeControllerReadPauseRequest, response *sieve.Response) error {
@@ -171,9 +183,14 @@ func (c *TestCoordinator) NotifyTestAfterControllerReadPause(request *sieve.Noti
 	return nil
 }
 
-func readSecret(indexer cache.Indexer, finished chan bool) {
-	_, found, _ := indexer.GetByKey("default/example")
-	finished <- found
+type returnedRead struct {
+	object interface{}
+	found  bool
+}
+
+func readSecret(indexer cache.Indexer, finished chan returnedRead) {
+	object, found, _ := indexer.GetByKey("default/example")
+	finished <- returnedRead{object, found}
 }
 
 func TestReadPauseOnModernInformer(t *testing.T) {
@@ -181,15 +198,16 @@ func TestReadPauseOnModernInformer(t *testing.T) {
 	object := &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "example", Namespace: "default"}}
 	object.SetGroupVersionKind(schema.GroupVersionKind{Version: "v1", Kind: "Secret"})
 	informer := cache.NewSharedIndexInformer(source, object, 0, cache.Indexers{})
-	added, deleted := make(chan struct{}, 1), make(chan struct{}, 1)
+	added, deleted, updated := make(chan struct{}, 1), make(chan struct{}, 1), make(chan struct{}, 1)
 	_, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(interface{}) { added <- struct{}{} },
 		DeleteFunc: func(interface{}) { deleted <- struct{}{} },
+		UpdateFunc: func(interface{}, interface{}) { updated <- struct{}{} },
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	coordinator := &TestCoordinator{entered: make(chan string, 1), release: make(chan struct{}), finished: make(chan string, 1)}
+	coordinator := &TestCoordinator{entered: make(chan string, 1), release: make(chan struct{}), finished: make(chan string, 1), results: make(chan ReadResult, 4)}
 	server := rpc.NewServer()
 	if err := server.RegisterName("TestCoordinator", coordinator); err != nil {
 		t.Fatal(err)
@@ -231,7 +249,7 @@ func TestReadPauseOnModernInformer(t *testing.T) {
 	wait(deleted)
 	// No successful Get happened before the final object was deleted. The
 	// transaction instrumentation must retain its resource type for NotFound.
-	result := make(chan bool, 1)
+	result := make(chan returnedRead, 1)
 	go readSecret(informer.GetIndexer(), result)
 	select {
 	case key := <-coordinator.entered:
@@ -255,7 +273,57 @@ func TestReadPauseOnModernInformer(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("held read was not released")
 	}
-	if <-result {
+	if (<-result).found {
 		t.Fatal("instrumentation changed NotFound into a successful read")
+	}
+	proof := func() ReadResult {
+		t.Helper()
+		select {
+		case result := <-coordinator.results:
+			return result
+		case <-time.After(2 * time.Second):
+			t.Fatal("cache read result was not recorded")
+		}
+		return ReadResult{}
+	}
+	missing := proof()
+	if missing.ResourceKey != "secret/default/example" || missing.Exists || missing.Object != "null" {
+		t.Fatalf("wrong NotFound evidence: %+v", missing)
+	}
+
+	// A second held Get must return C after the external watch source replaces
+	// B. Compare the evidence with the actual public Get result.
+	coordinator.release = make(chan struct{})
+	intermediate := object.DeepCopy()
+	intermediate.Labels = map[string]string{"state": "B"}
+	source.Add(intermediate)
+	wait(added)
+	go readSecret(informer.GetIndexer(), result)
+	select {
+	case <-coordinator.entered:
+	case <-time.After(2 * time.Second):
+		t.Fatal("intermediate-state read was not held")
+	}
+	later := intermediate.DeepCopy()
+	later.Labels["state"] = "C"
+	source.Modify(later)
+	wait(updated)
+	close(coordinator.release)
+	select {
+	case <-coordinator.finished:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later state did not release read")
+	}
+	returned := <-result
+	if !returned.found || returned.object.(*metav1.PartialObjectMetadata).Labels["state"] != "C" {
+		t.Fatalf("Get did not skip B: %+v", returned)
+	}
+	observed := proof()
+	var recorded metav1.PartialObjectMetadata
+	if err := json.Unmarshal([]byte(observed.Object), &recorded); err != nil {
+		t.Fatal(err)
+	}
+	if !observed.Exists || recorded.Labels["state"] != "C" || recorded.ResourceVersion != returned.object.(*metav1.PartialObjectMetadata).ResourceVersion {
+		t.Fatal("recorded read differs from the returned state")
 	}
 }

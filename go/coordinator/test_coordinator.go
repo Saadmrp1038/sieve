@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -160,6 +162,22 @@ func (tc *TestCoordinator) NotifyTestBeforeControllerReadPause(request *sieve.No
 
 func (tc *TestCoordinator) NotifyTestAfterControllerReadPause(request *sieve.NotifyTestAfterControllerReadPauseRequest, response *sieve.Response) error {
 	return tc.Server.NotifyTestAfterControllerReadPause(request, response)
+}
+
+// Read evidence does not change trigger state or subsequent write comparisons.
+func (tc *TestCoordinator) NotifyTestCacheReadResult(request *sieve.NotifyTestCacheReadResultRequest, response *sieve.Response) error {
+	parts := strings.Split(request.ResourceKey, "/")
+	var object map[string]interface{}
+	if len(parts) != 3 || json.Unmarshal([]byte(request.Object), &object) != nil || (request.Exists && object == nil) {
+		return fmt.Errorf("invalid cache-read evidence")
+	}
+	reason := sieve.NO_ERROR
+	if !request.Exists {
+		reason = "NotFound"
+	}
+	log.Printf("[SIEVE-AFTER-CACHE-READ]\tGet\t%s\t%s\t%s\t%s\t%s\t%s", parts[0], parts[1], parts[2], request.ReconcileFun, reason, request.Object)
+	*response = sieve.Response{Ok: true}
+	return nil
 }
 
 func (tc *TestCoordinator) NotifyTestBeforeAnnotatedAPICall(request *sieve.NotifyTestBeforeAnnotatedAPICallRequest, response *sieve.Response) error {

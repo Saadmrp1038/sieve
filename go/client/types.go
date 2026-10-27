@@ -124,6 +124,13 @@ type NotifyTestAfterControllerGetRequest struct {
 	Object       string
 }
 
+type NotifyTestCacheReadResultRequest struct {
+	ResourceKey  string
+	ReconcileFun string
+	Object       string
+	Exists       bool
+}
+
 type NotifyTestAfterControllerListRequest struct {
 	ResourceType string
 	ReconcileFun string
