@@ -4,6 +4,10 @@ Checked October 26, 2026, on SSH host `pial-sieve`. All eight recovery cases
 passed. No operator bug was observed in these cases. These are uninstrumented
 published-image checks, not Sieve fault-plan runs.
 
+The subsequent [External Secrets instrumented fault campaign](external-secrets-sieve-validation.md)
+records generated-plan coverage, physical injection evidence, raw alarms and
+Sieve integration fixes separately from these recovery controls.
+
 ## Targets
 
 Both projects had recent substantive maintainer activity and published releases

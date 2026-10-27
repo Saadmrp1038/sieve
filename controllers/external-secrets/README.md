@@ -63,3 +63,7 @@ the same registry/oracle settings. Preserve raw alarms and verify actual read
 holds/releases or distinct controller pod UIDs and Ready replacements. A
 generated schedule is not evidence that its trigger was reached. Zero plans in
 a fault family remain a coverage limitation.
+
+The [VM validation report](../../docs/rfe/managed-child-repair/external-secrets-sieve-validation.md)
+records the generated-plan results, source/image provenance and incomplete
+schedule limitations for this pin.
