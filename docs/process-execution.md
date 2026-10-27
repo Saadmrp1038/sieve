@@ -14,6 +14,14 @@ whether the child completed, failed, timed out or was cancelled. Oracle alarms
 and the actual injection/workload completion flags remain in the raw test JSON.
 A nonzero child exit cannot be turned into success by a completion marker.
 
+After a successful test workload, the harness waits for the fault schedule to
+finish before collecting final evidence or stopping the coordinator. This wait
+uses the finite `cluster` budget and ends early if the coordinator exits. Its
+status is recorded separately in `injection-process-outcome.json`; the oracle
+still requires the actual coordinator completion and read-pause evidence.
+Failed workloads proceed directly to diagnostics. Learning and vanilla runs do
+not perform this wait.
+
 ## Default limits
 
 | Policy | Default | Applies to |
@@ -22,7 +30,7 @@ A nonzero child exit cannot be turned into success by a completion marker.
 | `network` | 10 minutes | Clones, dependency downloads, pulls and pushes |
 | `compile` | 15 minutes | Host Go compilation and instrumentation |
 | `build` | 45 minutes | One node/controller build, including nested operations |
-| `cluster` | 10 minutes | Cluster setup or controller deployment/readiness |
+| `cluster` | 10 minutes | Cluster setup, controller readiness or fault completion |
 | `workload` | 30 minutes | One whole workload child process |
 | `request` | 30 seconds | SDK calls and diagnostic commands |
 | `cleanup` | 2 minutes | Shared final diagnostic collection and teardown budget |
