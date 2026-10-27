@@ -112,6 +112,31 @@ class StateMatchCondition(PlanModel):
             raise ValueError("stateMatch must encode a nonempty JSON object")
         return value
 
+    @model_validator(mode="after")
+    def convertible_state(self) -> Self:
+        if not self.convert_state_to_api_form:
+            return self
+        state = json.loads(self.state_match)
+        if not isinstance(state.pop("metadata", {}), dict):
+            raise ValueError(
+                "stateMatch.metadata must be a JSON object for API conversion"
+            )
+
+        def valid_keys(value: object) -> None:
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if not key:
+                        raise ValueError(
+                            "stateMatch keys must be nonempty for API conversion"
+                        )
+                    valid_keys(child)
+            elif isinstance(value, list):
+                for child in value:
+                    valid_keys(child)
+
+        valid_keys(state)
+        return self
+
 
 class APICallCondition(PlanModel):
     condition_type: Literal["onAnnotatedAPICall"]

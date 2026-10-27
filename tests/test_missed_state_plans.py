@@ -192,3 +192,26 @@ def test_learning_generates_only_independent_overwrite_schedules(tmp_path, case)
             for d in resume.trigger.definitions
         )
         assert "&" in resume.trigger.expression
+
+
+def test_converted_state_rejects_non_object_metadata():
+    root = Path(__file__).resolve().parents[1]
+    plan = load_plan(root / "fixtures/plans/independent-state.yaml").to_dict()
+    condition = plan["actions"][0]["trigger"]["definitions"][0]["condition"]
+    condition["stateMatch"] = '{"metadata":"invalid"}'
+    condition["convertStateToAPIForm"] = True
+    with pytest.raises(ValueError, match="stateMatch.metadata"):
+        parse_plan(plan)
+
+
+@pytest.mark.parametrize(
+    "state", [{"": "invalid"}, {"spec": {"": 1}}, {"items": [{"": 1}]}]
+)
+def test_converted_state_rejects_empty_keys(state):
+    root = Path(__file__).resolve().parents[1]
+    plan = load_plan(root / "fixtures/plans/independent-state.yaml").to_dict()
+    condition = plan["actions"][0]["trigger"]["definitions"][0]["condition"]
+    condition["stateMatch"] = json.dumps(state)
+    condition["convertStateToAPIForm"] = True
+    with pytest.raises(ValueError, match="stateMatch"):
+        parse_plan(plan)

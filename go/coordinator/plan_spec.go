@@ -168,6 +168,27 @@ func integer(value *planInt) int {
 }
 func boolean(value *planBool) bool { return value != nil && bool(*value) }
 
+func validateConversionKeys(value interface{}) error {
+	switch value := value.(type) {
+	case map[string]interface{}:
+		for key, child := range value {
+			if key == "" {
+				return fmt.Errorf("stateMatch: keys must be nonempty for API conversion")
+			}
+			if err := validateConversionKeys(child); err != nil {
+				return err
+			}
+		}
+	case []interface{}:
+		for _, child := range value {
+			if err := validateConversionKeys(child); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Reject fields belonging to another variant, even when the decoder knows them.
 func rejectFields(present map[string]bool, allowed ...string) error {
 	for _, key := range allowed {
@@ -329,6 +350,17 @@ func (c *ConditionSpec) validate() error {
 		var state map[string]interface{}
 		if err := json.Unmarshal([]byte(*c.StateMatch), &state); err != nil || len(state) == 0 {
 			return fmt.Errorf("stateMatch: expected a nonempty JSON object")
+		}
+		if boolean(c.ConvertStateToAPIForm) {
+			if metadata, present := state["metadata"]; present {
+				if _, ok := metadata.(map[string]interface{}); !ok {
+					return fmt.Errorf("stateMatch.metadata: expected a JSON object for API conversion")
+				}
+			}
+			delete(state, "metadata")
+			if err := validateConversionKeys(state); err != nil {
+				return err
+			}
 		}
 	case onTimeout:
 		allowed = []string{"timeoutValue"}

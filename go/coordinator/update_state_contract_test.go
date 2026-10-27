@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -91,4 +92,39 @@ func TestUpdateStateWaitsForBothCacheRepresentations(t *testing.T) {
 		t.Fatal("later state did not release the read")
 	}
 	call("NotifyTestAfterControllerReadPause", read)
+}
+
+func TestConvertedStateRejectsInvalidShapes(t *testing.T) {
+	t.Chdir(t.TempDir())
+	plan := `workload: validation
+actions:
+- actionType: resumeController
+  pauseAt: beforeControllerRead
+  pauseScope: secret/default/example
+  trigger:
+    definitions:
+    - triggerName: later
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: secret/default/example
+        occurrence: 1
+        stateMatch: '{"metadata":"invalid"}'
+        convertStateToAPIForm: true
+      observationPoint:
+        when: afterAPIServerRecv
+        by: kind-control-plane
+    expression: later
+`
+	for _, state := range []string{`{"metadata":"invalid"}`, `{"":"invalid"}`, `{"spec":{"":1}}`, `{"items":[{"":1}]}`} {
+		encoded := strings.Replace(plan, `{"metadata":"invalid"}`, state, 1)
+		if err := os.WriteFile("server.yaml", []byte(encoded), 0600); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		_, err := NewTestCoordinator(ctx)
+		cancel()
+		if err == nil || !strings.Contains(err.Error(), "stateMatch") {
+			t.Fatalf("expected a field-specific conversion error, got %v", err)
+		}
+	}
 }
