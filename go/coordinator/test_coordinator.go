@@ -194,7 +194,7 @@ func (tc *testCoordinator) Start() {
 	log.Printf("mergedFieldKeyMask:\n%v\n", tc.mergedFieldKeyMask)
 	log.Printf("mergedFieldPathMaskAPIFrom:\n%v\n", tc.mergedFieldPathMaskAPIFrom)
 	log.Printf("mergedFieldKeyMaskAPIForm:\n%v\n", tc.mergedFieldKeyMaskAPIForm)
-	if tc.testPlan.actions == nil {
+	if len(tc.testPlan.actions) == 0 {
 		log.Println("Sieve test coordinator finishes all actions")
 	}
 	go tc.stateMachine.run()
