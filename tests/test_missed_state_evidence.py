@@ -7,25 +7,16 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
+from sieve_tool.oracle.artifacts import ArtifactError
 from sieve_tool.oracle.oracle import validate_run
+from sieve_tool.trace import TraceError
 
 ROOT = Path(__file__).resolve().parents[1]
 KEY = "secret/default/example"
 FRAME = "fixture.Reconcile"
 
 
-@pytest.mark.parametrize(
-    "case, expected",
-    [
-        ("later", True),
-        ("intermediate", False),
-        ("missing_read", False),
-        ("missing_cache", False),
-    ],
-)
-def test_verdict_requires_an_observed_overwrite_and_returned_later_state(
-    tmp_path, case, expected
-):
+def evidence(tmp_path, case="later"):
     def obj(phase):
         return {
             "kind": "Secret",
@@ -98,6 +89,37 @@ def test_verdict_requires_an_observed_overwrite_and_returned_later_state(
         '{"status":"completed","returncode":0}'
     )
     context = SimpleNamespace(result_dir=str(tmp_path), test_plan_content=plan)
+    return context
+
+
+@pytest.mark.parametrize(
+    "case, expected",
+    [
+        ("later", True),
+        ("intermediate", False),
+        ("missing_read", False),
+        ("missing_cache", False),
+    ],
+)
+def test_verdict_requires_an_observed_overwrite_and_returned_later_state(
+    tmp_path, case, expected
+):
+    context = evidence(tmp_path, case)
     assert validate_run(context, require_missed_state=True) == (expected, True)
     proof = json.loads((tmp_path / "missed-state-proof.json").read_text())
     assert proof["verified"] is expected
+
+
+def test_invalid_independent_input_is_a_harness_error(tmp_path):
+    context = evidence(tmp_path)
+    (tmp_path / "workload-updates.json").write_text('{"schema_version":1}')
+    with pytest.raises(ArtifactError, match="workload-updates.json"):
+        validate_run(context, require_missed_state=True)
+
+
+def test_invalid_selected_read_is_a_harness_error(tmp_path):
+    context = evidence(tmp_path)
+    log = tmp_path / "sieve-server.log"
+    log.write_text(log.read_text() + "[SIEVE-AFTER-CACHE-READ]\tGet\n")
+    with pytest.raises(TraceError, match="sieve-server.log"):
+        validate_run(context, require_missed_state=True)

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from sieve_tool.events import ControllerRead, Object
+from sieve_tool.oracle.artifacts import ArtifactError
 from sieve_tool.plans import (
     FaultPlan,
     PauseControllerAction,
@@ -12,7 +13,7 @@ from sieve_tool.plans import (
     StateMatchCondition,
 )
 from sieve_tool.testing.updates import contains_state, read_updates
-from sieve_tool.trace import Marker, iter_records
+from sieve_tool.trace import Marker, TraceError, iter_records
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,8 @@ class MissedStateProof:
 def verify_missed_state(directory: Path, plan: FaultPlan) -> MissedStateProof:
     try:
         return _verify(directory, plan)
+    except ArtifactError, TraceError:
+        raise
     except (OSError, ValueError, KeyError, TypeError) as error:
         return MissedStateProof(
             False, ("invalid missed-state evidence: " + str(error),)
