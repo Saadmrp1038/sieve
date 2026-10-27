@@ -25,6 +25,37 @@ Ready status and 15 seconds of stable expected data are required. Each
 convergence/repair wait defaults to 180 seconds. Raw mutation responses and
 repair evidence are retained on failure.
 
+Three additional workloads provide independently produced intermediate states:
+
+- `miss-store-updates` changes the fake Store's value four times.
+- `miss-parent-updates` changes the ExternalSecret's selected remote version.
+- `miss-child-updates` changes the owned Secret's marker while keeping the
+  ExternalSecret unchanged.
+
+After initial convergence, each workload submits UID-tested updates A through D
+six seconds apart. It does not wait for reconciliation between updates. Accepted
+API responses are saved in `workload-updates.json`; ownership, Ready status,
+final data and 15 seconds of stability are checked in `update-observations.json`.
+Store and child updates preserve the parent UID, generation and spec. Parent
+updates intentionally change the spec and require convergence to the final
+declared generation; they do not replace the unchanged-parent repair tests.
+
+For these workloads only, missed-state generation requires a baseline Get of
+the intermediate state and receipt of its accepted resourceVersion in every
+observed cache representation. A plan arms a reconciler-scoped read pause before
+the API server delivers B (or C), then resumes after every cache receives the
+independently supplied successor C (or D). This avoids a resume trigger that
+depends on a write by the blocked reconciler. `unobserved-state-evidence.json`
+records the source hash, accepted windows and rejected candidates.
+
+Replay requires more than schedule completion: `missed-state-proof.json` must
+show a held and released Get, an intermediate-to-later overwrite in every
+required cache stream during the hold, a returned later value with the same
+UID, and no intermediate value returned to the selected reconciler. Missing
+evidence makes the injection ineffective. These are new generated schedules;
+the seven circular schedules from the original repair campaign remain unchanged
+in its retained evidence.
+
 ## Instrumentation
 
 Learning hooks bracket the ExternalSecret and SecretStore reconciliations.

@@ -27,6 +27,18 @@
         },
         "drift-child": {
             "num_workers": 0
+        },
+        "miss-store-updates": {
+            "num_workers": 0,
+            "independent_updates": true
+        },
+        "miss-parent-updates": {
+            "num_workers": 0,
+            "independent_updates": true
+        },
+        "miss-child-updates": {
+            "num_workers": 0,
+            "independent_updates": true
         }
     }
 }

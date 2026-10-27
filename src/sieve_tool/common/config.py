@@ -71,6 +71,7 @@ type Nonempty = Annotated[str, Field(min_length=1)]
 
 @with_config(ConfigDict(extra="forbid"))
 class WorkloadSettings(TypedDict, total=False):
+    independent_updates: bool
     num_apiservers: Annotated[int, Field(gt=0)]
     num_workers: Annotated[int, Field(ge=0)]
     use_csi_driver: bool

@@ -88,4 +88,8 @@ class ExternalSecretsTarget:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1].startswith("miss-"):
+        from updates import run as run_updates
+
+        raise SystemExit(run_updates(sys.argv[1:]))
     raise SystemExit(run(sys.argv[1:], ExternalSecretsTarget(), timeout=180))

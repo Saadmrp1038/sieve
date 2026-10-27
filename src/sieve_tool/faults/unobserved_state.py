@@ -160,6 +160,12 @@ def generate_unobserved_state_test_plan(
 def unobserved_state_analysis(
     event_graph: EventGraph, path: str, test_context: TestContext
 ) -> tuple[int, int, int, int]:
+    if test_context.controller_config.test_setting.get(
+        test_context.test_workload, {}
+    ).get("independent_updates", False):
+        from sieve_tool.faults.independent_updates import independent_update_analysis
+
+        return independent_update_analysis(test_context, path)
     candidate_vertices = event_graph.controller_hear_vertices
     candidate_vertices = overwrite_filtering_pass(candidate_vertices)
     baseline_spec_number = len(candidate_vertices)
