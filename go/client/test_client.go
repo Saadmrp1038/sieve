@@ -31,6 +31,7 @@ func NotifyTestBeforeControllerRecv(operationType string, object interface{}) in
 		OperationType: operationType,
 		ResourceKey:   resourceKey,
 		Object:        string(jsonObject),
+		ObservedBy:    informerObserver(object),
 	}
 	var response Response
 	err = rpcClient.Call("TestCoordinator.NotifyTestBeforeControllerRecv", request, &response)
@@ -65,6 +66,7 @@ func NotifyTestAfterControllerRecv(recvID int, operationType string, object inte
 		OperationType: operationType,
 		ResourceKey:   resourceKey,
 		Object:        string(jsonObject),
+		ObservedBy:    informerObserver(object),
 	}
 	var response Response
 	err = rpcClient.Call("TestCoordinator.NotifyTestAfterControllerRecv", request, &response)
@@ -155,11 +157,25 @@ func NotifyTestAfterCacheGet(key string, item interface{}, exists bool, beforeRe
 	if err := initRPCClient(); err != nil {
 		return
 	}
-	if !exists {
-		return
-	}
 	reconcileFun := getMatchedReconcileStackFrame()
 	if reconcileFun == UNKNOWN_RECONCILE_FUN {
+		return
+	}
+	if beforeResourceKey != "" {
+		body, err := json.Marshal(item)
+		if err != nil {
+			printSerializationError(err)
+		} else {
+			request := &NotifyTestCacheReadResultRequest{ResourceKey: beforeResourceKey, ReconcileFun: reconcileFun, Object: string(body), Exists: exists}
+			var response Response
+			if err := rpcClient.Call("TestCoordinator.NotifyTestCacheReadResult", request, &response); err != nil {
+				printRPCError(err)
+			} else {
+				checkResponse(response)
+			}
+		}
+	}
+	if !exists {
 		return
 	}
 	resourceKey := path.Join(getResourceTypeFromObj(item), key)

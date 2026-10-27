@@ -163,6 +163,10 @@ def run(allow_missed_intermediate_state=False, allow_missed_initial_state=False)
 
 
 if __name__ == "__main__":
+    if sys.argv[1] in ("delete-child", "drift-child"):
+        from child_repair import main
+
+        raise SystemExit(main(sys.argv[1:]))
     if sys.argv[1] != "create-update-recreate":
         raise SystemExit("unknown workload")
     output = Path(sys.argv[2])

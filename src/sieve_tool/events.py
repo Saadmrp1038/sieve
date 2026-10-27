@@ -210,6 +210,7 @@ class ControllerHear:
     prev_etype: str = EVENT_NONE_TYPE
     cancelled_by: set[int] = field(default_factory=set)
     signature_counter: int = 1
+    observed_by: str = "informer"
     namespace: str = field(init=False)
     name: str = field(init=False)
 

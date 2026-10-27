@@ -141,7 +141,11 @@ func (s *learnServer) NotifyLearnBeforeControllerRecv(request *sieve.NotifyLearn
 	eID := atomic.AddInt32(&s.eventID, 1)
 	waitingCh := make(chan int32)
 	s.eventChMap.Store(fmt.Sprint(eID), waitingCh)
-	s.notificationCh <- notificationWrapper{ntype: beforeControllerRecvForLearn, payload: fmt.Sprintf("%d\t%s\t%s\t%s", eID, request.OperationType, request.ResourceType, request.Object)}
+	payload := fmt.Sprintf("%d\t%s\t%s\t%s", eID, request.OperationType, request.ResourceType, request.Object)
+	if request.ObservedBy != "" && request.ObservedBy != "informer" {
+		payload += "\t" + request.ObservedBy
+	}
+	s.notificationCh <- notificationWrapper{ntype: beforeControllerRecvForLearn, payload: payload}
 	<-waitingCh
 	*response = sieve.Response{Message: request.OperationType, Ok: true, Number: int(eID)}
 	return nil

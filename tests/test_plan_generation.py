@@ -43,6 +43,7 @@ def event(kind):
         namespace="default",
         name="generated",
         signature_counter=2,
+        observed_by="informer",
         reconcile_fun="example.(*Reconciler).Reconcile",
         slim_prev_obj_map={"data": {"value": "before"}},
         slim_cur_obj_map={"data": {"value": "after"}},

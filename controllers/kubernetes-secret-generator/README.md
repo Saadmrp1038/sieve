@@ -19,6 +19,30 @@ During a missed-state injection it defers intermediate convergence checks so
 that the workload can deliver the update or deletion needed to release the
 pause. Final convergence and ownership checks are always required.
 
+## Managed-child repair workloads
+
+`delete-child` deletes the generated Secret while retaining its StringSecret.
+`drift-child` changes the Secret's `data.marker` and waits for its intended value
+to return. Both require the original parent UID, generation and spec, correct
+child ownership, and a matching status reference. Deletion also requires a new
+child UID. They run through the same workload command as the lifecycle case.
+
+These workloads write `repair-observations.json`, including the mutation response
+and observed resources, even on failed repair. The normal `FINISH-SIEVE-TEST`
+marker is written only on success. Each wait defaults to 120 seconds; direct
+workload invocations accept `--repair-timeout SECONDS`.
+Successful repair is checked for another 15 seconds before finishing;
+`--settle-seconds SECONDS` controls that interval for direct invocations.
+
+The pinned controller watches StringSecret changes rather than owned Secrets.
+Its documented contract describes parent-triggered creation and updates.
+Missing unchanged-parent repair is a credible reconciliation-bug candidate;
+README ambiguity alone does not establish that this behavior is intentional.
+Run these workloads without faults first; do not learn an oracle from a failed
+baseline or change the parent to force repair. See the
+[upstream investigation](../../docs/rfe/managed-child-repair/secret-generator-upstream.md)
+for existing reports, version identities and an independent released-image test.
+
 ## Build and run
 
 Use an amd64 Linux host with Docker, Go, kind, kubectl, and the prerequisites

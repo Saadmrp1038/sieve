@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -162,6 +164,22 @@ func (tc *TestCoordinator) NotifyTestAfterControllerReadPause(request *sieve.Not
 	return tc.Server.NotifyTestAfterControllerReadPause(request, response)
 }
 
+// Read evidence does not change trigger state or subsequent write comparisons.
+func (tc *TestCoordinator) NotifyTestCacheReadResult(request *sieve.NotifyTestCacheReadResultRequest, response *sieve.Response) error {
+	parts := strings.Split(request.ResourceKey, "/")
+	var object map[string]interface{}
+	if len(parts) != 3 || json.Unmarshal([]byte(request.Object), &object) != nil || (request.Exists && object == nil) {
+		return fmt.Errorf("invalid cache-read evidence")
+	}
+	reason := sieve.NO_ERROR
+	if !request.Exists {
+		reason = "NotFound"
+	}
+	log.Printf("[SIEVE-AFTER-CACHE-READ]\tGet\t%s\t%s\t%s\t%s\t%s\t%s", parts[0], parts[1], parts[2], request.ReconcileFun, reason, request.Object)
+	*response = sieve.Response{Ok: true}
+	return nil
+}
+
 func (tc *TestCoordinator) NotifyTestBeforeAnnotatedAPICall(request *sieve.NotifyTestBeforeAnnotatedAPICallRequest, response *sieve.Response) error {
 	return tc.Server.NotifyTestBeforeAnnotatedAPICall(request, response)
 }
@@ -176,7 +194,7 @@ func (tc *testCoordinator) Start() {
 	log.Printf("mergedFieldKeyMask:\n%v\n", tc.mergedFieldKeyMask)
 	log.Printf("mergedFieldPathMaskAPIFrom:\n%v\n", tc.mergedFieldPathMaskAPIFrom)
 	log.Printf("mergedFieldKeyMaskAPIForm:\n%v\n", tc.mergedFieldKeyMaskAPIForm)
-	if tc.testPlan.actions == nil {
+	if len(tc.testPlan.actions) == 0 {
 		log.Println("Sieve test coordinator finishes all actions")
 	}
 	go tc.stateMachine.run()
@@ -426,40 +444,48 @@ func (tc *testCoordinator) NotifyTestAfterAPIServerRecv(request *sieve.NotifyTes
 
 func (tc *testCoordinator) NotifyTestBeforeControllerRecv(request *sieve.NotifyTestBeforeControllerRecvRequest, response *sieve.Response) error {
 	handlerName := "NotifyTestBeforeControllerRecv"
-	log.Printf("%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object)
-	tc.InitializeObjectStatesEntry("informer", beforeControllerRecv, request.ResourceKey)
+	observer := request.ObservedBy
+	if observer == "" {
+		observer = "informer"
+	}
+	log.Printf("%s\t%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object, observer)
+	tc.InitializeObjectStatesEntry(observer, beforeControllerRecv, request.ResourceKey)
 	switch request.OperationType {
 	case HEAR_ADDED:
-		tc.SendObjectCreateNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, "informer")
+		tc.SendObjectCreateNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, observer)
 	case HEAR_UPDATED, HEAR_REPLACED, HEAR_SYNC:
-		prevObjectStateStr := tc.ReadFromObjectStates("informer", beforeControllerRecv, request.ResourceKey)
-		tc.SendObjectUpdateNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, "informer", strToMap(prevObjectStateStr), strToMap(request.Object))
+		prevObjectStateStr := tc.ReadFromObjectStates(observer, beforeControllerRecv, request.ResourceKey)
+		tc.SendObjectUpdateNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, observer, strToMap(prevObjectStateStr), strToMap(request.Object))
 	case HEAR_DELETED:
-		tc.SendObjectDeleteNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, "informer")
+		tc.SendObjectDeleteNotificationAndBlock(handlerName, request.ResourceKey, beforeControllerRecv, observer)
 	default:
 		log.Printf("do not support %s\n", request.OperationType)
 	}
-	tc.WriteToObjectStates("informer", beforeControllerRecv, request.ResourceKey, request.Object)
+	tc.WriteToObjectStates(observer, beforeControllerRecv, request.ResourceKey, request.Object)
 	*response = sieve.Response{Message: "", Ok: true}
 	return nil
 }
 
 func (tc *testCoordinator) NotifyTestAfterControllerRecv(request *sieve.NotifyTestAfterControllerRecvRequest, response *sieve.Response) error {
 	handlerName := "NotifyTestAfterControllerRecv"
-	log.Printf("%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object)
-	tc.InitializeObjectStatesEntry("informer", afterControllerRecv, request.ResourceKey)
+	observer := request.ObservedBy
+	if observer == "" {
+		observer = "informer"
+	}
+	log.Printf("%s\t%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object, observer)
+	tc.InitializeObjectStatesEntry(observer, afterControllerRecv, request.ResourceKey)
 	switch request.OperationType {
 	case HEAR_ADDED:
-		tc.SendObjectCreateNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, "informer")
+		tc.SendObjectCreateNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, observer)
 	case HEAR_UPDATED, HEAR_REPLACED, HEAR_SYNC:
-		prevObjectStateStr := tc.ReadFromObjectStates("informer", afterControllerRecv, request.ResourceKey)
-		tc.SendObjectUpdateNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, "informer", strToMap(prevObjectStateStr), strToMap(request.Object))
+		prevObjectStateStr := tc.ReadFromObjectStates(observer, afterControllerRecv, request.ResourceKey)
+		tc.SendObjectUpdateNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, observer, strToMap(prevObjectStateStr), strToMap(request.Object))
 	case HEAR_DELETED:
-		tc.SendObjectDeleteNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, "informer")
+		tc.SendObjectDeleteNotificationAndBlock(handlerName, request.ResourceKey, afterControllerRecv, observer)
 	default:
 		log.Printf("do not support %s\n", request.OperationType)
 	}
-	tc.WriteToObjectStates("informer", afterControllerRecv, request.ResourceKey, request.Object)
+	tc.WriteToObjectStates(observer, afterControllerRecv, request.ResourceKey, request.Object)
 	*response = sieve.Response{Message: "", Ok: true}
 	return nil
 }

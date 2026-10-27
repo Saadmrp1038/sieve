@@ -3,6 +3,7 @@ from sieve_tool.kubernetes import load_config
 
 """Run workloads and own their log followers through success and failure."""
 import json
+import math
 import os
 import sys
 from contextlib import ExitStack
@@ -25,6 +26,53 @@ from sieve_tool.process import (
 )
 
 from .cluster import start_controller, stop_coordinator
+
+
+def wait_for_schedule(directory: Path) -> None:
+    # The workload can finish while the last triggered restart is still deleting
+    # its pod. Keep the coordinator and log followers alive until it completes.
+    script = """
+cd /sieve/coordinator || exit 1
+read -r pid < coordinator.pid || exit 1
+end=$((SECONDS + $1))
+while ! grep -q 'Sieve test coordinator finishes all actions' sieve-server.log; do
+    state=$(ps -p "$pid" -o stat=) || exit 1
+    case "$state" in *Z*|'') exit 1;; esac
+    if (( SECONDS >= end )); then exit 124; fi
+    sleep 0.1
+done
+"""
+    try:
+        result = run(
+            [
+                "docker",
+                "exec",
+                "kind-control-plane",
+                "bash",
+                "-c",
+                script,
+                "--",
+                str(math.ceil(remaining(limit("cluster")))),
+            ],
+            operation="wait for fault schedule",
+            category="cluster",
+            check=False,
+        )
+        outcome = {
+            "status": "completed"
+            if result.returncode == 0
+            else "timed_out"
+            if result.returncode == 124
+            else "failed",
+            "returncode": result.returncode,
+            "duration_seconds": result.duration,
+            "log": os.path.relpath(result.log, directory),
+        }
+    except ProcessTimeout as error:
+        outcome = {"status": "timed_out", "returncode": None, "error": str(error)}
+    (directory / "injection-process-outcome.json").write_text(
+        json.dumps(outcome, indent=2) + "\n"
+    )
 
 
 def collect_diagnostics(context):
@@ -188,6 +236,14 @@ def run_workload(context):
                     "duration_seconds": result.duration,
                     "log": os.path.relpath(result.log, directory),
                 }
+                marker = directory / "workload.log"
+                if (
+                    context.mode == sieve_modes.TEST
+                    and result.returncode == 0
+                    and marker.exists()
+                    and "FINISH-SIEVE-TEST" in marker.read_text()
+                ):
+                    wait_for_schedule(directory)
             except ProcessTimeout as error:
                 outcome = {
                     "status": "timed_out",

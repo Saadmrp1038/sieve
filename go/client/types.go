@@ -14,6 +14,7 @@ type NotifyLearnBeforeControllerRecvRequest struct {
 	OperationType string
 	Object        string
 	ResourceType  string
+	ObservedBy    string
 }
 
 type NotifyLearnAfterControllerRecvRequest struct {
@@ -107,18 +108,27 @@ type NotifyTestBeforeControllerRecvRequest struct {
 	OperationType string
 	ResourceKey   string
 	Object        string
+	ObservedBy    string
 }
 
 type NotifyTestAfterControllerRecvRequest struct {
 	OperationType string
 	ResourceKey   string
 	Object        string
+	ObservedBy    string
 }
 
 type NotifyTestAfterControllerGetRequest struct {
 	ResourceKey  string
 	ReconcileFun string
 	Object       string
+}
+
+type NotifyTestCacheReadResultRequest struct {
+	ResourceKey  string
+	ReconcileFun string
+	Object       string
+	Exists       bool
 }
 
 type NotifyTestAfterControllerListRequest struct {

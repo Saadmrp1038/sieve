@@ -29,6 +29,11 @@ func (s *ClientContractServer) NotifyTestAfterControllerReadPause(r *sieve.Notif
 	return nil
 }
 
+func (s *ClientContractServer) NotifyTestCacheReadResult(r *sieve.NotifyTestCacheReadResultRequest, response *sieve.Response) error {
+	response.Ok = true
+	return nil
+}
+
 // The injected module has no Kubernetes imports; exercise its public hooks
 // against real typed and unstructured objects supplied by the current SDK.
 func TestInjectedClientAcceptsKubernetesObjects(t *testing.T) {

@@ -1,0 +1,44 @@
+{
+    "name": "external-secrets",
+    "github_link": "https://github.com/external-secrets/external-secrets.git",
+    "commit": "fc0dd82da6422c6ec840d24425bbda68e5259aab",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.37.1",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-external-secrets:latest",
+    "test_command": [
+        "python3",
+        "controllers/external-secrets/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "externalsecret",
+        "secretstore"
+    ],
+    "annotated_reconcile_functions": {
+        "pkg/controllers/externalsecret/externalsecret_controller.go": "github.com/external-secrets/external-secrets/pkg/controllers/externalsecret.(*Reconciler).Reconcile",
+        "pkg/controllers/secretstore/secretstore_controller.go": "github.com/external-secrets/external-secrets/pkg/controllers/secretstore.(*StoreReconciler).Reconcile"
+    },
+    "controller_pod_label": "external-secrets",
+    "container_name": "external-secrets",
+    "controller_deployment_file_path": "controllers/external-secrets/deploy/operator.yaml",
+    "test_setting": {
+        "delete-child": {
+            "num_workers": 0
+        },
+        "drift-child": {
+            "num_workers": 0
+        },
+        "miss-store-updates": {
+            "num_workers": 0,
+            "independent_updates": true
+        },
+        "miss-parent-updates": {
+            "num_workers": 0,
+            "independent_updates": true
+        },
+        "miss-child-updates": {
+            "num_workers": 0,
+            "independent_updates": true
+        }
+    }
+}

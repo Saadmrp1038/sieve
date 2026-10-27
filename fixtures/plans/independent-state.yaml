@@ -1,0 +1,42 @@
+workload: independent-updates
+actions:
+- actionType: pauseController
+  pauseAt: beforeControllerRead
+  pauseScope: secret/default/example
+  trigger:
+    definitions:
+    - triggerName: intermediate
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: secret/default/example
+        occurrence: 1
+        stateMatch: '{"metadata":{"labels":{"sieve.testing/state":"B"}}}'
+        convertStateToAPIForm: true
+      observationPoint:
+        when: beforeAPIServerRecv
+        by: kind-control-plane
+    expression: intermediate
+- actionType: resumeController
+  pauseAt: beforeControllerRead
+  pauseScope: secret/default/example
+  trigger:
+    definitions:
+    - triggerName: metadata
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: secret/default/example
+        occurrence: 1
+        stateMatch: '{"metadata":{"labels":{"sieve.testing/state":"C"}}}'
+      observationPoint:
+        when: afterControllerRecv
+        by: metadata-informer
+    - triggerName: full
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: secret/default/example
+        occurrence: 1
+        stateMatch: '{"metadata":{"labels":{"sieve.testing/state":"C"}}}'
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    expression: metadata&full
