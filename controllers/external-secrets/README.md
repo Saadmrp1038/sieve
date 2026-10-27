@@ -98,3 +98,7 @@ a fault family remain a coverage limitation.
 The [VM validation report](../../docs/rfe/managed-child-repair/external-secrets-sieve-validation.md)
 records the generated-plan results, source/image provenance and incomplete
 schedule limitations for this pin.
+
+The [independent-update validation report](../../docs/rfe/managed-child-repair/external-secrets-independent-updates-validation.md)
+records eight generated and verified missed-state plans, returned-read evidence
+and the limits of the replacement workloads.
