@@ -118,8 +118,17 @@ def _verify(directory: Path, plan: FaultPlan) -> MissedStateProof:
             and len(fields) == 5
             and fields[2] == source.resource_key
         ):
-            body = json.loads(fields[3])
-            if isinstance(body, dict) and body.get("metadata", {}).get("uid") == uid:
+            try:
+                body = json.loads(fields[3])
+            except ValueError as error:
+                raise ArtifactError(
+                    f"{log_file}:{position + 1}: invalid controller receipt JSON"
+                ) from error
+            if not isinstance(body, dict) or not isinstance(body.get("metadata"), dict):
+                raise ArtifactError(
+                    f"{log_file}:{position + 1}: receipt must have object metadata"
+                )
+            if body["metadata"].get("uid") == uid:
                 receipts.append((position, fields[4], body))
         if (
             fields[0].endswith("NotifyTestAfterControllerReadPause")

@@ -134,3 +134,15 @@ def test_invalid_selected_read_is_a_harness_error(tmp_path):
     log.write_text(log.read_text() + "[SIEVE-AFTER-CACHE-READ]\tGet\n")
     with pytest.raises(TraceError, match="sieve-server.log"):
         validate_run(context, require_missed_state=True)
+
+
+def test_invalid_selected_receipt_is_a_harness_error(tmp_path):
+    context = evidence(tmp_path)
+    log = tmp_path / "sieve-server.log"
+    lines = log.read_text().splitlines()
+    fields = lines[0].split("\t")
+    fields[3] = "{invalid"
+    lines[0] = "\t".join(fields)
+    log.write_text("\n".join(lines) + "\n")
+    with pytest.raises(ArtifactError, match=r"sieve-server.log:1:"):
+        validate_run(context, require_missed_state=True)
