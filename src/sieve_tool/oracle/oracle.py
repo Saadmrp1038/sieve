@@ -1,6 +1,7 @@
 """Load selected evidence, invoke pure oracles and save learned references."""
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 from sieve_tool.common.common import TestContext, bcolors, cprint, sieve_modes
@@ -104,23 +105,44 @@ def create_differential_oracles(test_context: TestContext) -> None:
 
 
 def validate_run(
-    test_context: TestContext, plan: FaultPlan | None = None
+    test_context: TestContext,
+    plan: FaultPlan | None = None,
+    *,
+    require_missed_state: bool = False,
 ) -> tuple[bool, bool]:
     directory = Path(test_context.result_dir)
     if plan is None and test_context.test_plan_content is not None:
         plan = parse_plan(test_context.test_plan_content)
     outcome = directory / "process-outcome.json"
-    return validate_execution(
+    injected, completed = validate_execution(
         (directory / "sieve-server.log").read_text(),
         (directory / "workload.log").read_text(),
         plan,
         read_outcome(outcome) if outcome.is_file() else None,
     )
+    if require_missed_state:
+        from sieve_tool.acceptance.missed_state import verify_missed_state
+
+        if plan is None:
+            raise ValueError("missed-state validation requires a plan")
+        proof = verify_missed_state(directory, plan)
+        _save(directory, "missed-state-proof.json", asdict(proof))
+        injected = injected and proof.verified
+    return injected, completed
 
 
 def check(test_context: TestContext) -> TestResult:
     plan = parse_plan(test_context.test_plan_content)
-    injection_completed, workload_completed = validate_run(test_context, plan)
+    independent = test_context.controller_config.test_setting.get(
+        test_context.test_workload, {}
+    ).get("independent_updates", False)
+    read_pause = any(
+        isinstance(a, PauseControllerAction) and a.pause_at == "beforeControllerRead"
+        for a in (plan.actions or [])
+    )
+    injection_completed, workload_completed = validate_run(
+        test_context, plan, require_missed_state=independent and read_pause
+    )
     common = test_context.common_config
     policy = ComparisonPolicy(
         test_context.test_workload, common, test_context.controller_config

@@ -448,7 +448,7 @@ func (tc *testCoordinator) NotifyTestBeforeControllerRecv(request *sieve.NotifyT
 	if observer == "" {
 		observer = "informer"
 	}
-	log.Printf("%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object)
+	log.Printf("%s\t%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object, observer)
 	tc.InitializeObjectStatesEntry(observer, beforeControllerRecv, request.ResourceKey)
 	switch request.OperationType {
 	case HEAR_ADDED:
@@ -472,7 +472,7 @@ func (tc *testCoordinator) NotifyTestAfterControllerRecv(request *sieve.NotifyTe
 	if observer == "" {
 		observer = "informer"
 	}
-	log.Printf("%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object)
+	log.Printf("%s\t%s\t%s\t%s\t%s", handlerName, request.OperationType, request.ResourceKey, request.Object, observer)
 	tc.InitializeObjectStatesEntry(observer, afterControllerRecv, request.ResourceKey)
 	switch request.OperationType {
 	case HEAR_ADDED:
