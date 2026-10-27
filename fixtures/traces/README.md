@@ -24,3 +24,12 @@ also retained; the old decoder passes booleans to a string comparison.
 Trace and expectation files are gzip-compressed to keep repeated Kubernetes
 payloads small. Read one with `gzip -dc PATH`. CI only compares expectations;
 it does not regenerate them.
+
+`dual-informer/trace.log.gz` comes from the External Secrets v2.14.0 deletion
+learning pass in `runs/external-secrets-sieve-retry2-vm`. It retains the Sieve
+records and their payloads/order, omitting ordinary log lines. Its three
+metadata-only Secret receipts are explicitly annotated `metadata-informer` to
+specify the provenance that was missing from that run. The original evidence is
+unchanged. This regression checks separate cache histories and generated
+observer selection; native client-go and coordinator RPC tests verify emission
+and replay independently. It is not part of the older frozen corpus.

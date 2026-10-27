@@ -32,6 +32,10 @@ Client-go hooks observe individual deltas, atomic batches and initial-list
 replacement before and after cache changes. Batch transactions remain atomic.
 Metadata-only Secret watches retain their Kubernetes kind, and test hooks keep
 cache identity after deletion so a NotFound read can still be paused.
+The operator has both full-object and metadata-only Secret caches. Their
+receipts use distinct `informer` and `metadata-informer` observers in learning
+and replay, so duplicate observations are not mistaken for repeated creates or
+deletes within one cache. Neither watch is disabled or deduplicated.
 
 Only observation calls and dependency wiring are added to the operator source.
 Reconciliation rules, provider registration and runtime defaults are unchanged.

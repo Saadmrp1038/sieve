@@ -134,10 +134,21 @@ def _payload(marker: Marker, fields: list[str]) -> Payload:
             _count(fields, 2)
             return OperationID(int(fields[1]))
         case Marker.BEFORE_HEAR:
-            _count(fields, 5)
+            if len(fields) not in {5, 6}:
+                raise ValueError("expected 4 fields and an optional informer observer")
+            observer = fields[5] if len(fields) == 6 else "informer"
+            if observer not in {"informer", "metadata-informer"}:
+                raise ValueError("unsupported informer observer")
             obj = _required_object(fields[4])
             extract_namespace_name(obj)
-            return ControllerHear(int(fields[1]), fields[2], fields[3], fields[4], obj)
+            return ControllerHear(
+                int(fields[1]),
+                fields[2],
+                fields[3],
+                fields[4],
+                obj,
+                observed_by=observer,
+            )
         case Marker.AFTER_WRITE:
             _count(fields, 9)
             if fields[2] == "DeleteAllOf":

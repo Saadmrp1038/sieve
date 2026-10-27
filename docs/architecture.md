@@ -148,6 +148,17 @@ existing `start_timestamp` and `end_timestamp` names do not represent wall-clock
 time. Receipt/write IDs identify pairs; their numeric order is irrelevant.
 Reconciliation IDs remain opaque strings, including leading zeros.
 
+Full-object and `PartialObjectMetadata` informer caches can watch the same
+resource independently. Metadata receipts append `metadata-informer` to the
+before-hear record; omitted provenance retains the existing `informer` observer.
+Differences, overwrite detection and occurrence counts are computed separately
+for each resource/observer stream. Generated controller-receipt triggers use
+that observer through the existing `observationPoint.by` field. Replay keeps
+object states and trigger counts separate as well. Resource keys, API-server
+observations, read-pause scope and fault actions are unchanged. Multiple caches
+of the same representation still share an observer; this does not provide
+arbitrary per-informer identity.
+
 `analysis.trace.assemble_trace` creates an independent projection, leaving decoded
 records unchanged. It preserves these existing rules:
 

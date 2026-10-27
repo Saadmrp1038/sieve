@@ -53,6 +53,7 @@ func NotifyLearnBeforeControllerRecv(operationType string, object interface{}) i
 		OperationType: operationType,
 		Object:        string(jsonObject),
 		ResourceType:  getResourceTypeFromObj(object),
+		ObservedBy:    informerObserver(object),
 	}
 	var response Response
 	err = rpcClient.Call("LearnListener.NotifyLearnBeforeControllerRecv", request, &response)

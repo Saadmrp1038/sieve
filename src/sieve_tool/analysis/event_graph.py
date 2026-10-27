@@ -327,8 +327,7 @@ class EventGraph:
         self.controller_write_controller_hear_edges.append(edge)
 
     def compute_event_diff(self) -> None:
-        for key in self.controller_hear_key_to_vertices:
-            vertices = self.controller_hear_key_to_vertices[key]
+        for vertices in self._hear_streams():
             event_signature_to_counter = {}
             prev_hear_obj_map = {}
             prev_hear_etype = EVENT_NONE_TYPE
@@ -431,17 +430,20 @@ class EventGraph:
                 non_k8s_signature_counter_map[signature]
             )
 
+    def _hear_streams(self) -> list[list[EventVertex[ControllerHear]]]:
+        streams: dict[tuple[str, str], list[EventVertex[ControllerHear]]] = {}
+        for vertex in self.controller_hear_vertices:
+            event = vertex.content
+            streams.setdefault((event.key, event.observed_by), []).append(vertex)
+        return list(streams.values())
+
     def compute_event_cancel(self) -> None:
-        for key in self.controller_hear_key_to_vertices:
-            for i in range(len(self.controller_hear_key_to_vertices[key]) - 1):
+        for vertices in self._hear_streams():
+            for i in range(len(vertices) - 1):
                 cancelled_by = set()
-                cur_controller_hear = self.controller_hear_key_to_vertices[key][
-                    i
-                ].content
-                for j in range(i + 1, len(self.controller_hear_key_to_vertices[key])):
-                    future_controller_hear = self.controller_hear_key_to_vertices[key][
-                        j
-                    ].content
+                cur_controller_hear = vertices[i].content
+                for j in range(i + 1, len(vertices)):
+                    future_controller_hear = vertices[j].content
                     # TODO: why do we always add the future_controller_hear when i == 0?
                     if i == 0:
                         cancelled_by.add(future_controller_hear.id)

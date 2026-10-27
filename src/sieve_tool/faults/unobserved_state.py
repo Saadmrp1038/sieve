@@ -115,7 +115,9 @@ def generate_unobserved_state_test_plan(
         final_condition = ObjectCondition(
             condition_type="onObjectDelete", resource_key=resource, occurrence=1
         )
-    observation = ObservationPoint(when="afterControllerRecv", by="informer")
+    observation = ObservationPoint(
+        when="afterControllerRecv", by=controller_hear.observed_by
+    )
     return FaultPlan(
         workload=test_context.test_workload,
         actions=[
@@ -128,7 +130,7 @@ def generate_unobserved_state_test_plan(
                     "trigger1",
                     object_condition(controller_hear),
                     "beforeControllerRecv",
-                    "informer",
+                    controller_hear.observed_by,
                 ),
             ),
             ResumeControllerAction(

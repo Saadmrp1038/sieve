@@ -31,6 +31,7 @@ func NotifyTestBeforeControllerRecv(operationType string, object interface{}) in
 		OperationType: operationType,
 		ResourceKey:   resourceKey,
 		Object:        string(jsonObject),
+		ObservedBy:    informerObserver(object),
 	}
 	var response Response
 	err = rpcClient.Call("TestCoordinator.NotifyTestBeforeControllerRecv", request, &response)
@@ -65,6 +66,7 @@ func NotifyTestAfterControllerRecv(recvID int, operationType string, object inte
 		OperationType: operationType,
 		ResourceKey:   resourceKey,
 		Object:        string(jsonObject),
+		ObservedBy:    informerObserver(object),
 	}
 	var response Response
 	err = rpcClient.Call("TestCoordinator.NotifyTestAfterControllerRecv", request, &response)
