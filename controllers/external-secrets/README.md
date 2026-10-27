@@ -102,3 +102,7 @@ schedule limitations for this pin.
 The [independent-update validation report](../../docs/rfe/managed-child-repair/external-secrets-independent-updates-validation.md)
 records eight generated and verified missed-state plans, returned-read evidence
 and the limits of the replacement workloads.
+
+The [restart validation report](../../docs/rfe/managed-child-repair/external-secrets-restart-validation.md)
+records the remaining 26 original restart plans: all had verified pod deletion,
+a Ready replacement and successful workload convergence, with zero raw alarms.
