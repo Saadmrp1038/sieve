@@ -91,6 +91,7 @@ class CertManagerTarget:
             def openssl(*args: str) -> Result:
                 return run_process(
                     ["openssl", *args],
+                    cwd=directory,
                     category="request",
                     capture_output=True,
                     operation="verify managed TLS Secret",
