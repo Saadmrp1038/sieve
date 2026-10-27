@@ -1,7 +1,7 @@
-"""Recovery workloads for current releases; instrumentation ports are separate."""
+"""Require unchanged-parent repair and valid TLS data from cert-manager."""
 
-import argparse
 import base64
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -122,10 +122,7 @@ class CertManagerTarget:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operator", choices=["cert-manager"])
-    arguments, remaining = parser.parse_known_args(argv)
-    return run(remaining, CertManagerTarget(), timeout=180)
+    return run(sys.argv[1:] if argv is None else argv, CertManagerTarget(), timeout=180)
 
 
 if __name__ == "__main__":

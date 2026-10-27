@@ -2,8 +2,8 @@
 
 The original study tested published releases without Sieve instrumentation.
 External Secrets now has a dedicated [Sieve profile](../../controllers/external-secrets/README.md),
-which reuses its repair workload. The cert-manager experiment remains an
-uninstrumented recovery check. The original study's results do not establish
+which reuses its repair workload. cert-manager now has a [Sieve profile](../../controllers/cert-manager/README.md);
+its generated-plan validation is separate from the original recovery check. The original study's results do not establish
 fault-injection coverage.
 
 The October 26, 2026 study targets External Secrets v2.14.0 and cert-manager
@@ -44,8 +44,8 @@ deployed manifests are retained with the study evidence.
 ```sh
 uv run --locked python controllers/external-secrets/workloads/workload.py \
   delete-child runs/external-delete/workload.log
-uv run --locked python experiments/active-operators/workload.py \
-  cert-manager drift-child runs/certificate-drift/workload.log
+uv run --locked python controllers/cert-manager/workloads/workload.py \
+  drift-child runs/certificate-drift/workload.log
 ```
 
 Both targets accept `delete-child` and `drift-child`. Deletion uses a UID

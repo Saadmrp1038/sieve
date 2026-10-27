@@ -397,11 +397,10 @@ def test_repair_must_remain_consistent_through_the_settling_period(
 
 def run_current_workload(tmp_path, environment, operator, workload="delete-child"):
     output = tmp_path / operator / "workload.log"
-    command = (
-        [str(ROOT / "controllers/external-secrets/workloads/workload.py")]
-        if operator == "external-secrets"
-        else [str(ROOT / "experiments/active-operators/workload.py"), operator]
-    )
+    from sieve_tool.common.config import load_controller_config
+
+    profile = load_controller_config(ROOT / "controllers" / operator)
+    command = [str(ROOT / profile.test_command[1])]
     result = subprocess.run(
         [
             sys.executable,

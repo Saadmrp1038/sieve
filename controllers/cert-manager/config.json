@@ -1,0 +1,41 @@
+{
+    "name": "cert-manager",
+    "github_link": "https://github.com/cert-manager/cert-manager.git",
+    "commit": "925c22283de556172d48d96a165dc2fa27f7a6ff",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.36.2",
+    "dockerfile_path": "hack/containers/Containerfile.controller",
+    "controller_image_name": "sieve-cert-manager:latest",
+    "annotated_reconcile_functions": {
+        "pkg/controller/certificates/trigger/trigger_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/trigger.(*controller).ProcessItem",
+        "pkg/controller/certificates/keymanager/keymanager_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/keymanager.(*controller).ProcessItem",
+        "pkg/controller/certificates/requestmanager/requestmanager_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/requestmanager.(*controller).ProcessItem",
+        "pkg/controller/certificates/issuing/issuing_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/issuing.(*controller).ProcessItem",
+        "pkg/controller/certificates/readiness/readiness_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/readiness.(*controller).ProcessItem",
+        "pkg/controller/certificates/revisionmanager/revisionmanager_controller.go": "github.com/cert-manager/cert-manager/pkg/controller/certificates/revisionmanager.(*controller).ProcessItem",
+        "pkg/controller/issuers/controller.go": "github.com/cert-manager/cert-manager/pkg/controller/issuers.(*controller).ProcessItem"
+    },
+    "test_command": [
+        "python3",
+        "controllers/cert-manager/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "certificate",
+        "certificaterequest",
+        "issuer",
+        "clusterissuer",
+        "order",
+        "challenge"
+    ],
+    "controller_pod_label": "cert-manager",
+    "controller_deployment_file_path": "controllers/cert-manager/deploy/operator.yaml",
+    "test_setting": {
+        "delete-child": {
+            "num_workers": 0
+        },
+        "drift-child": {
+            "num_workers": 0
+        }
+    },
+    "container_name": "cert-manager-controller"
+}
