@@ -25,6 +25,18 @@ class WorkloadUpdate(BaseModel):
     state: Object = Field(min_length=1)
     response: Object
 
+    def matches(self, value: Object | None) -> bool:
+        if value is None:
+            return False
+        metadata = value.get("metadata", {})
+        accepted = self.response["metadata"]
+        return (
+            isinstance(metadata, dict)
+            and metadata.get("uid") == accepted["uid"]
+            and metadata.get("resourceVersion") == accepted["resourceVersion"]
+            and contains_state(value, self.state)
+        )
+
     @model_validator(mode="after")
     def accepted_state(self) -> Self:
         metadata = self.response.get("metadata", {})

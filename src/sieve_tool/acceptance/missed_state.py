@@ -94,7 +94,8 @@ def _verify(directory: Path, plan: FaultPlan) -> MissedStateProof:
         or source.updates[index + 1].state != later
     ):
         raise ValueError("independent input sequence does not contain this overwrite")
-    uid = source.updates[index].response["metadata"]["uid"]
+    accepted = source.updates[index : index + 2]
+    uid = accepted[0].response["metadata"]["uid"]
     log_file = directory / "sieve-server.log"
     lines = log_file.read_text().splitlines()
     suffix = pause.pause_at + " " + pause.pause_scope
@@ -123,6 +124,7 @@ def _verify(directory: Path, plan: FaultPlan) -> MissedStateProof:
         if (
             fields[0].endswith("NotifyTestAfterControllerReadPause")
             and len(fields) >= 3
+            and fields[1] == "Get"
             and fields[2] == source.resource_key
         ):
             completions.append(position)
@@ -153,22 +155,21 @@ def _verify(directory: Path, plan: FaultPlan) -> MissedStateProof:
             b = [
                 p
                 for p, o, value in receipts
-                if o == observer
-                and contains_state(value, intermediate)
-                and p < released
+                if o == observer and accepted[0].matches(value) and p < released
             ]
             c = [
                 p
                 for p, o, value in receipts
-                if o == observer
-                and contains_state(value, later)
-                and held < p < released
+                if o == observer and accepted[1].matches(value) and held < p < released
             ]
             if not b or not c or max(b) >= min(c):
                 reasons.append("overwrite during the hold is unproven for " + observer)
         # End-pause is logged by the before-read RPC. The Get then executes;
         # its value is recorded before the deferred after-read RPC unlocks it.
-        end = next((p for p in completions if p > released), len(lines))
+        end = next((p for p in completions if p > released), None)
+        if end is None:
+            reasons.append("held Get has no closing after-read hook")
+            continue
         actual = [(p, r) for p, r in reads if released < p < end]
         if len(actual) != 1:
             reasons.append("held Get has no unambiguous returned value")
@@ -179,9 +180,7 @@ def _verify(directory: Path, plan: FaultPlan) -> MissedStateProof:
             read.error != "NoError"
             or value is None
             or value.get("metadata", {}).get("uid") != uid
-            or not any(
-                contains_state(value, u.state) for u in source.updates[index + 1 :]
-            )
+            or not any(u.matches(value) for u in source.updates[index + 1 :])
         ):
             reasons.append(
                 "held Get did not return an independently produced later state"

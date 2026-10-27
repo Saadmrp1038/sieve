@@ -17,7 +17,7 @@ from sieve_tool.plans import (
     single_trigger,
     write_plan,
 )
-from sieve_tool.testing.updates import WorkloadUpdate, contains_state, read_updates
+from sieve_tool.testing.updates import contains_state, read_updates
 from sieve_tool.trace import Marker, read_trace
 
 
@@ -58,19 +58,12 @@ def independent_update_analysis(
     rejected: list[dict[str, object]] = []
     seen_windows = 0
 
-    def received(event: ControllerHear, update: WorkloadUpdate) -> bool:
-        metadata = event.obj_map.get("metadata", {})
-        accepted = update.response["metadata"]
-        return (
-            metadata.get("uid") == accepted["uid"]
-            and metadata.get("resourceVersion") == accepted["resourceVersion"]
-            and contains_state(event.obj_map, update.state)
-        )
-
     for index in range(1, len(source.updates) - 1):
         intermediate, later = source.updates[index : index + 2]
         if not observers or any(
-            not any(h.observed_by == observer and received(h, update) for h in hears)
+            not any(
+                h.observed_by == observer and update.matches(h.obj_map) for h in hears
+            )
             for observer in observers
             for update in (intermediate, later)
         ):

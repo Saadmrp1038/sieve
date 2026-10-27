@@ -49,11 +49,14 @@ def evidence(tmp_path, case="later"):
     lines = []
 
     def receipt(phase, observer):
+        value = obj(phase)
+        if case == "unaccepted_receipt" and phase == "B":
+            value["metadata"]["resourceVersion"] = "unrecorded"
         lines.append(
             "file.go:1: NotifyTestAfterControllerRecv\tUpdated\t"
             + KEY
             + "\t"
-            + json.dumps(obj(phase))
+            + json.dumps(value)
             + "\t"
             + observer
         )
@@ -67,6 +70,8 @@ def evidence(tmp_path, case="later"):
     lines.append("file.go:1: End pause controller at beforeControllerRead " + KEY)
     if case != "missing_read":
         value = obj("B" if case == "intermediate" else "C")
+        if case == "unaccepted_return":
+            value["metadata"]["resourceVersion"] = "unrecorded"
         lines.append(
             "\t".join(
                 [
@@ -81,7 +86,10 @@ def evidence(tmp_path, case="later"):
                 ]
             )
         )
-    lines.append("file.go:1: NotifyTestAfterControllerReadPause\tGet\t" + KEY + "\t")
+    if case != "missing_after_hook":
+        lines.append(
+            "file.go:1: NotifyTestAfterControllerReadPause\tGet\t" + KEY + "\t"
+        )
     lines.append("Sieve test coordinator finishes all actions")
     (tmp_path / "sieve-server.log").write_text("\n".join(lines) + "\n")
     (tmp_path / "workload.log").write_text("FINISH-SIEVE-TEST\n")
@@ -99,6 +107,9 @@ def evidence(tmp_path, case="later"):
         ("intermediate", False),
         ("missing_read", False),
         ("missing_cache", False),
+        ("missing_after_hook", False),
+        ("unaccepted_receipt", False),
+        ("unaccepted_return", False),
     ],
 )
 def test_verdict_requires_an_observed_overwrite_and_returned_later_state(
