@@ -212,6 +212,28 @@ def test_failed_application_still_records_the_completed_fault_process(cluster_bo
         coordinator.wait(timeout=2)
 
 
+def test_failed_application_does_not_wait_for_an_untriggered_schedule(cluster_boundary):
+    context, node, root = cluster_boundary
+    (root / "workload.py").write_text("raise SystemExit(7)\n")
+    (node / "sieve-server.log").write_text("no action triggered\n")
+    coordinator = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(30)"])
+    (node / "coordinator.pid").write_text(str(coordinator.pid) + "\n")
+    try:
+        with (
+            repository(root),
+            execution({"cluster": 3, "terminate": 0.05}, root / "commands"),
+        ):
+            run_workload(context)
+        outcome = json.loads(
+            (Path(context.result_dir) / "injection-process-outcome.json").read_text()
+        )
+        assert outcome["status"] == "incomplete"
+        assert outcome["duration_seconds"] < 2
+    finally:
+        coordinator.terminate()
+        coordinator.wait(timeout=2)
+
+
 @pytest.mark.parametrize("coordinator_state", ["running", "exited"])
 def test_unfinished_schedule_is_bounded_and_keeps_the_workload_result(
     cluster_boundary, coordinator_state
