@@ -33,6 +33,14 @@ args = sys.argv[1:]
 if args[:2] == ["--namespace", "default"]:
     args = args[2:]
 verb = args[0]
+def tls_data():
+    source = Path(os.environ["REPAIR_TEST_TLS"])
+    phase = (state.get("parent") or {}).get("metadata",{}).get("labels",{}).get("sieve.testing/state")
+    if phase:
+        source = source.with_name("tls-" + phase + ".json")
+    if phase == "D" and state["scenario"] in ("missing-declared-dns", "extra-dns"):
+        source = source.with_name("tls-" + state["scenario"] + ".json")
+    return json.loads(source.read_text())
 if verb == "apply":
     if state["scenario"] == "startup" and not state.get("workers_ready"):
         raise SystemExit("informer workers are not ready")
@@ -75,7 +83,7 @@ if verb == "apply":
         state["child"]["metadata"]["name"] = "sieve-certificate"
         state["child"]["metadata"]["ownerReferences"] = [
             {"uid": "parent-1", "name": "sieve-certificate", "kind": "Certificate", "controller": True}]
-        state["child"]["data"] = json.loads(Path(os.environ["REPAIR_TEST_TLS"]).read_text())
+        state["child"]["data"] = tls_data()
     result = parent
 elif verb == "logs":
     state["workers_ready"] = True
@@ -104,7 +112,7 @@ elif verb == "get":
         raise SystemExit(0)
     if args[1] == "secret" and state.pop("restore_marker", False):
         if state["parent"]["kind"] == "Certificate":
-            state["child"]["data"] = json.loads(Path(os.environ["REPAIR_TEST_TLS"]).read_text())
+            state["child"]["data"] = tls_data()
         else:
             value = b"expected-value" if state["parent"]["kind"] == "ExternalSecret" else b"initial"
             state["child"]["data"]["marker"] = base64.b64encode(value).decode()
@@ -124,8 +132,12 @@ elif verb == "patch" and state.get("independent"):
         if parts[0] == "spec":
             target["metadata"]["generation"] += 1
     phase = target["metadata"].get("labels",{}).get("sieve.testing/state")
+    if state["scenario"] == "undeclared-parent" and args[1] == "certificate" and phase == "B":
+        target["spec"]["privateKey"]["size"] = 384
     target["metadata"]["resourceVersion"] = str(int(target["metadata"].get("resourceVersion","1")) + 1)
     target.setdefault("status",{})["conditions"] = [{"type":"Ready", "status":"False" if phase in ("B","C") else "True", "observedGeneration":target["metadata"].get("generation",1)}]
+    if args[1] == "certificate":
+        state["child"]["data"] = tls_data()
     state.setdefault("accepted",[]).append(copy.deepcopy(target))
     result = copy.deepcopy(target)
     if state["scenario"] == "update-uid-changed" and phase == "B":
@@ -178,6 +190,8 @@ elif verb == "delete":
         state["child"]["metadata"]["ownerReferences"][0]["kind"] = "OtherKind"
     if state["scenario"] == "stale-ready":
         state["parent"]["status"]["conditions"][0]["observedGeneration"] = 0
+    if state["scenario"] == "missing-ready-generation":
+        state["parent"]["status"]["conditions"][0].pop("observedGeneration")
     if state["scenario"] == "key-mismatch":
         other_key = Path(os.environ["REPAIR_TEST_TLS"]).with_name("other-key.pem")
         state["child"]["data"]["tls.key"] = base64.b64encode(other_key.read_bytes()).decode()
@@ -428,7 +442,9 @@ def test_repair_must_remain_consistent_through_the_settling_period(
     assert "FINISH-SIEVE-TEST" not in output.read_text()
 
 
-def run_current_workload(tmp_path, environment, operator, workload="delete-child"):
+def run_current_workload(
+    tmp_path, environment, operator, workload="delete-child", extra_arguments=()
+):
     output = tmp_path / operator / "workload.log"
     from sieve_tool.common.config import load_controller_config
 
@@ -440,6 +456,7 @@ def run_current_workload(tmp_path, environment, operator, workload="delete-child
             *command,
             workload,
             str(output),
+            *extra_arguments,
             "--repair-timeout",
             "2",
             "--settle-seconds",
@@ -499,42 +516,52 @@ def test_current_external_secrets_drift_requires_real_repair(
 
 @pytest.fixture
 def issued_certificate(tmp_path):
-    certificate, key = tmp_path / "certificate.pem", tmp_path / "key.pem"
-    subprocess.run(
-        [
-            "openssl",
-            "req",
-            "-x509",
-            "-newkey",
-            "rsa:2048",
-            "-nodes",
-            "-subj",
-            "/CN=managed-child.example.test",
-            "-addext",
-            "subjectAltName=DNS:managed-child.example.test,DNS:phase-a.example.test,DNS:phase-b.example.test,DNS:phase-c.example.test,DNS:phase-d.example.test",
-            "-addext",
-            "crlDistributionPoints=URI:http://phase-d.example.test/crl",
-            "-days",
-            "1",
-            "-keyout",
-            str(key),
-            "-out",
-            str(certificate),
-        ],
-        check=True,
-        capture_output=True,
-        timeout=30,
-    )
-    data = tmp_path / "tls.json"
-    data.write_text(
-        json.dumps(
-            {
-                "tls.crt": base64.b64encode(certificate.read_bytes()).decode(),
-                "tls.key": base64.b64encode(key.read_bytes()).decode(),
-            }
+    key = tmp_path / "key.pem"
+    host = "managed-child.example.test"
+    variants = {
+        "": [host],
+        **{phase: [host, f"phase-{phase.lower()}.example.test"] for phase in "ABCD"},
+        "missing-declared-dns": ["phase-d.example.test"],
+        "extra-dns": [host, "phase-d.example.test", "unexpected.example.test"],
+    }
+    for variant, names in variants.items():
+        certificate = tmp_path / ("certificate-" + variant + ".pem")
+        key_arguments = (
+            ["-key", str(key)]
+            if key.exists()
+            else ["-newkey", "rsa:2048", "-nodes", "-keyout", str(key)]
         )
-    )
-    return data
+        subprocess.run(
+            [
+                "openssl",
+                "req",
+                "-x509",
+                *key_arguments,
+                "-subj",
+                "/CN=" + host,
+                "-addext",
+                "subjectAltName=" + ",".join("DNS:" + name for name in names),
+                "-addext",
+                "crlDistributionPoints=URI:http://phase-d.example.test/crl",
+                "-days",
+                "1",
+                "-out",
+                str(certificate),
+            ],
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+        data = tmp_path / ("tls" + ("-" + variant if variant else "") + ".json")
+        data.write_text(
+            json.dumps(
+                {
+                    "tls.crt": base64.b64encode(certificate.read_bytes()).decode(),
+                    "tls.key": base64.b64encode(key.read_bytes()).decode(),
+                }
+            )
+        )
+    return tmp_path / "tls.json"
 
 
 def test_current_cert_manager_recreates_a_usable_certificate(
@@ -566,13 +593,12 @@ def test_cert_manager_waits_for_initial_issuance_before_mutating_the_secret(
     assert evidence["parent_before"]["status"]["revision"] == 1
 
 
+@pytest.mark.parametrize("scenario", ["stale-ready", "missing-ready-generation"])
 def test_current_cert_manager_rejects_stale_ready_status(
-    tmp_path, kubectl_boundary, issued_certificate
+    tmp_path, kubectl_boundary, issued_certificate, scenario
 ):
     state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
-    state.write_text(
-        json.dumps({"scenario": "stale-ready", "parent": None, "child": None})
-    )
+    state.write_text(json.dumps({"scenario": scenario, "parent": None, "child": None}))
     result, output, evidence = run_current_workload(
         tmp_path,
         {**kubectl_boundary, "REPAIR_TEST_TLS": str(issued_certificate)},
@@ -695,3 +721,54 @@ def test_cert_manager_supplies_independent_updates_before_secret_repair(
     )
     assert evidence["parent_before"]["spec"] == evidence["parent_after"]["spec"]
     assert output.read_text() == "FINISH-SIEVE-TEST\n"
+
+
+def test_cert_manager_rejects_undeclared_spec_changes_in_parent_patch_responses(
+    tmp_path, kubectl_boundary, issued_certificate
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps(
+            {
+                "scenario": "undeclared-parent",
+                "parent": None,
+                "child": None,
+                "independent": True,
+            }
+        )
+    )
+    result, output, evidence = run_current_workload(
+        tmp_path,
+        {**kubectl_boundary, "REPAIR_TEST_TLS": str(issued_certificate)},
+        "cert-manager",
+        "delete-child-miss-parent-updates",
+        ["--update-interval", "0.001"],
+    )
+    assert result.returncode == 1
+    assert "outside declared independent updates" in output.read_text()
+    assert "FINISH-SIEVE-TEST" not in output.read_text()
+    updates = json.loads(output.with_name("workload-updates.json").read_text())
+    assert updates["status"] == "failed"
+    assert updates["updates"][-1]["response"]["spec"]["privateKey"]["size"] == 384
+
+
+@pytest.mark.parametrize("scenario", ["missing-declared-dns", "extra-dns"])
+def test_cert_manager_requires_the_exact_declared_dns_names_after_parent_updates(
+    tmp_path, kubectl_boundary, issued_certificate, scenario
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps(
+            {"scenario": scenario, "parent": None, "child": None, "independent": True}
+        )
+    )
+    result, output, evidence = run_current_workload(
+        tmp_path,
+        {**kubectl_boundary, "REPAIR_TEST_TLS": str(issued_certificate)},
+        "cert-manager",
+        "delete-child-miss-parent-updates",
+        ["--update-interval", "0.001"],
+    )
+    assert result.returncode == 1
+    assert "convergence after independent overwrites" in output.read_text()
+    assert "FINISH-SIEVE-TEST" not in output.read_text()

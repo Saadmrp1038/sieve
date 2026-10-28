@@ -4,6 +4,7 @@ import argparse
 import base64
 import json
 import math
+import re
 import sys
 import time
 from collections.abc import Mapping, Sequence
@@ -79,13 +80,17 @@ class CertManagerTarget:
     def healthy(self, observation: Mapping[str, Resource | None]) -> bool:
         child = observation["child_after"]
         parent = observation["parent_after"]
-        if (
-            not ready(parent)
-            or child is None
-            or any(
-                condition.get("type") == "Issuing" and condition.get("status") == "True"
-                for condition in (parent or {}).get("status", {}).get("conditions", [])
-            )
+        if parent is None or child is None:
+            return False
+        conditions = parent.get("status", {}).get("conditions", [])
+        if not any(
+            condition.get("type") == "Ready"
+            and condition.get("status") == "True"
+            and condition.get("observedGeneration") == parent["metadata"]["generation"]
+            for condition in conditions
+        ) or any(
+            condition.get("type") == "Issuing" and condition.get("status") == "True"
+            for condition in conditions
         ):
             return False
         try:
@@ -124,6 +129,13 @@ class CertManagerTarget:
                 str(cert_path),
             )
             if valid.returncode != 0:
+                return False
+            names = openssl(
+                "x509", "-in", str(cert_path), "-noout", "-ext", "subjectAltName"
+            )
+            if names.returncode != 0 or set(
+                re.findall(r"(?:^|[,\s])DNS:([^,\s]+)", names.stdout)
+            ) != set(parent["spec"].get("dnsNames", [])):
                 return False
             if self.expected_crl_url is not None:
                 detail = openssl("x509", "-in", str(cert_path), "-text", "-noout")
@@ -266,6 +278,17 @@ class IndependentTarget(CertManagerTarget):
                         {**self.source, "status": "completed"}
                     )
                 if self.mode == "parent":
+                    expected_spec = {**self.initial_parent["spec"], "dnsNames": value}
+                    expected_generation = (
+                        self.initial_parent["metadata"]["generation"] + index + 1
+                    )
+                    if (
+                        response.get("spec") != expected_spec
+                        or response["metadata"].get("generation") != expected_generation
+                    ):
+                        raise RuntimeError(
+                            "Parent changed outside declared independent updates"
+                        )
                     self.expected_parent = response
                 self.save_updates(status="updating")
                 if index != 3:
