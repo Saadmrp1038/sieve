@@ -61,3 +61,8 @@ must additionally verify trace observations, every physical injection, accepted
 mutations, unchanged parents, stable TLS repair, CA capture and all raw alarms.
 A generated plan or completed coordinator alone is insufficient. Unreached
 triggers, circular pauses and zero plans remain coverage limitations.
+
+The [VM validation report](../../docs/rfe/managed-child-repair/cert-manager-sieve-validation.md)
+records 49 attempted schedules, 20 verified restarts and zero completed
+missed-state injections, including every raw alarm and the remaining coverage
+limitations.
