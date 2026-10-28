@@ -214,7 +214,6 @@ def intermediate_state_analysis(
     )
     after_p1_spec_number = -1
     after_p2_spec_number = -1
-    final_spec_number = -1
     after_p1_spec_number = len(candidate_write_vertices) + len(
         candidate_annotated_api_invocation_vertices
     )
@@ -232,9 +231,6 @@ def intermediate_state_analysis(
         candidate_write_vertices = intermediate_state_detectable_pass(
             test_context, candidate_write_vertices
         )
-    final_spec_number = len(candidate_write_vertices) + len(
-        candidate_annotated_api_invocation_vertices
-    )
     i = 0
     for vertex in candidate_write_vertices:
         controller_write = vertex.content
@@ -278,5 +274,5 @@ def intermediate_state_analysis(
         baseline_spec_number,
         after_p1_spec_number,
         after_p2_spec_number,
-        final_spec_number,
+        i,
     )

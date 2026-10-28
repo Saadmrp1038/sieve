@@ -70,8 +70,12 @@ def test_name_prefix_pattern_requires_explicit_scoped_opt_in():
             parse_plan(pattern_plan(invalid))
 
 
+@pytest.mark.parametrize(
+    ("last_error", "expected_occurrences"),
+    [("NoError", [1, 1, 2, 1, 2]), ("Conflict", [1, 1, 2, 1])],
+)
 def test_operation_planning_counts_all_successful_writes_per_consumer_and_selector(
-    tmp_path,
+    tmp_path, last_error, expected_occurrences
 ):
     profile = load_controller_config(ROOT / "controllers/cert-manager")
     consumer = next(iter(profile.annotated_reconcile_functions.values()))
@@ -87,7 +91,7 @@ def test_operation_planning_counts_all_successful_writes_per_consumer_and_select
         (other, "Patch", "certificate", "sieve-certificate", "NoError"),
         (consumer, "Patch", "certificate", "sieve-certificate", "NoError"),
         (consumer, "Create", "secret", "sieve-certificate-abc", "NoError"),
-        (consumer, "Create", "secret", "sieve-certificate-def", "NoError"),
+        (consumer, "Create", "secret", "sieve-certificate-def", last_error),
     ]
     for i, (frame, operation, kind, name, error) in enumerate(writes):
         obj = {
@@ -141,20 +145,21 @@ def test_operation_planning_counts_all_successful_writes_per_consumer_and_select
         ),
     )
     graph = build_controller_event_graph(context, trace, tmp_path)
-    generate_test_plans(context, "intermediate-state", graph)
+    counts = generate_test_plans(context, "intermediate-state", graph)
+    assert counts[-1] == len(expected_occurrences)
     plans = [
         load_plan(
             tmp_path / "intermediate-state" / f"intermediate-state-test-plan-{i}.yaml"
         )
-        for i in range(1, 6)
+        for i in range(1, len(expected_occurrences) + 1)
     ]
     conditions = [p.actions[0].trigger.definitions[0].condition for p in plans]
-    assert [c.occurrence for c in conditions] == [1, 1, 2, 1, 2]
+    assert [c.occurrence for c in conditions] == expected_occurrences
     assert all(
         "prevStateDiff" not in c.model_dump(by_alias=True, exclude_unset=True)
         for c in conditions
     )
     assert [c.resource_key for c in conditions[3:]] == [
         "secret/default/sieve-certificate-*"
-    ] * 2
+    ] * (len(expected_occurrences) - 3)
     assert all(c.resource_key_pattern for c in conditions[3:])
