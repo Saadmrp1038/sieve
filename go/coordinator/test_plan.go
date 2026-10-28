@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 )
 
 const (
@@ -65,13 +66,22 @@ func (t *AnnotatedAPICallTrigger) satisfy(triggerNotification TriggerNotificatio
 	return false
 }
 
+// Prefix matching is explicit and limited to the name component by plan validation.
+func matchesResourceKey(actual, selector string, pattern bool) bool {
+	if !pattern {
+		return actual == selector
+	}
+	return strings.Count(actual, "/") == 2 && strings.HasSuffix(selector, "*") && strings.HasPrefix(actual, strings.TrimSuffix(selector, "*"))
+}
+
 type ObjectCreateTrigger struct {
-	name              string
-	resourceKey       string
-	desiredOccurrence int
-	actualOccurrence  int
-	observedWhen      string
-	observedBy        string
+	name               string
+	resourceKeyPattern bool
+	resourceKey        string
+	desiredOccurrence  int
+	actualOccurrence   int
+	observedWhen       string
+	observedBy         string
 }
 
 func (t *ObjectCreateTrigger) getTriggerName() string {
@@ -80,7 +90,7 @@ func (t *ObjectCreateTrigger) getTriggerName() string {
 
 func (t *ObjectCreateTrigger) satisfy(triggerNotification TriggerNotification) bool {
 	if notification, ok := triggerNotification.(*ObjectCreateNotification); ok {
-		if notification.resourceKey == t.resourceKey && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
+		if matchesResourceKey(notification.resourceKey, t.resourceKey, t.resourceKeyPattern) && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
 			t.actualOccurrence += 1
 			if t.actualOccurrence == t.desiredOccurrence {
 				return true
@@ -91,12 +101,13 @@ func (t *ObjectCreateTrigger) satisfy(triggerNotification TriggerNotification) b
 }
 
 type ObjectDeleteTrigger struct {
-	name              string
-	resourceKey       string
-	desiredOccurrence int
-	actualOccurrence  int
-	observedWhen      string
-	observedBy        string
+	name               string
+	resourceKeyPattern bool
+	resourceKey        string
+	desiredOccurrence  int
+	actualOccurrence   int
+	observedWhen       string
+	observedBy         string
 }
 
 func (t *ObjectDeleteTrigger) getTriggerName() string {
@@ -105,7 +116,7 @@ func (t *ObjectDeleteTrigger) getTriggerName() string {
 
 func (t *ObjectDeleteTrigger) satisfy(triggerNotification TriggerNotification) bool {
 	if notification, ok := triggerNotification.(*ObjectDeleteNotification); ok {
-		if notification.resourceKey == t.resourceKey && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
+		if matchesResourceKey(notification.resourceKey, t.resourceKey, t.resourceKeyPattern) && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
 			t.actualOccurrence += 1
 			if t.actualOccurrence == t.desiredOccurrence {
 				return true
@@ -117,6 +128,7 @@ func (t *ObjectDeleteTrigger) satisfy(triggerNotification TriggerNotification) b
 
 type ObjectUpdateTrigger struct {
 	name                  string
+	resourceKeyPattern    bool
 	resourceKey           string
 	prevStateDiff         map[string]interface{}
 	curStateDiff          map[string]interface{}
@@ -133,9 +145,10 @@ func (t *ObjectUpdateTrigger) getTriggerName() string {
 
 func (t *ObjectUpdateTrigger) satisfy(triggerNotification TriggerNotification) bool {
 	if notification, ok := triggerNotification.(*ObjectUpdateNotification); ok {
-		if notification.resourceKey == t.resourceKey && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
+		if matchesResourceKey(notification.resourceKey, t.resourceKey, t.resourceKeyPattern) && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
 			if t.prevStateDiff == nil && t.curStateDiff == nil {
-				return true
+				t.actualOccurrence++
+				return t.actualOccurrence == t.desiredOccurrence
 			}
 			// compute state diff
 			exactMatch := true
@@ -189,6 +202,7 @@ func (t *ObjectUpdateToTrigger) satisfy(notification TriggerNotification) bool {
 
 type AnyFieldModificationTrigger struct {
 	name                  string
+	resourceKeyPattern    bool
 	resourceKey           string
 	prevStateDiff         map[string]interface{}
 	convertStateToAPIForm bool
@@ -204,7 +218,7 @@ func (t *AnyFieldModificationTrigger) getTriggerName() string {
 
 func (t *AnyFieldModificationTrigger) satisfy(triggerNotification TriggerNotification) bool {
 	if notification, ok := triggerNotification.(*ObjectUpdateNotification); ok {
-		if notification.resourceKey == t.resourceKey && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
+		if matchesResourceKey(notification.resourceKey, t.resourceKey, t.resourceKeyPattern) && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
 			var fieldKeyMaskToUse map[string]struct{}
 			var fieldPathMaskToUse map[string]struct{}
 			if t.convertStateToAPIForm {
@@ -574,21 +588,23 @@ func (spec TriggerSpecDefinition) build() TriggerDefinition {
 		}
 	case onObjectCreate:
 		return &ObjectCreateTrigger{
-			name:              string(spec.TriggerName),
-			resourceKey:       text(condition.ResourceKey, ""),
-			desiredOccurrence: integer(condition.Occurrence),
-			actualOccurrence:  0,
-			observedWhen:      string(spec.ObservationPoint.When),
-			observedBy:        string(spec.ObservationPoint.By),
+			resourceKeyPattern: boolean(condition.ResourceKeyPattern),
+			name:               string(spec.TriggerName),
+			resourceKey:        text(condition.ResourceKey, ""),
+			desiredOccurrence:  integer(condition.Occurrence),
+			actualOccurrence:   0,
+			observedWhen:       string(spec.ObservationPoint.When),
+			observedBy:         string(spec.ObservationPoint.By),
 		}
 	case onObjectDelete:
 		return &ObjectDeleteTrigger{
-			name:              string(spec.TriggerName),
-			resourceKey:       text(condition.ResourceKey, ""),
-			desiredOccurrence: integer(condition.Occurrence),
-			actualOccurrence:  0,
-			observedWhen:      string(spec.ObservationPoint.When),
-			observedBy:        string(spec.ObservationPoint.By),
+			resourceKeyPattern: boolean(condition.ResourceKeyPattern),
+			name:               string(spec.TriggerName),
+			resourceKey:        text(condition.ResourceKey, ""),
+			desiredOccurrence:  integer(condition.Occurrence),
+			actualOccurrence:   0,
+			observedWhen:       string(spec.ObservationPoint.When),
+			observedBy:         string(spec.ObservationPoint.By),
 		}
 	case onObjectUpdate:
 		convertStateToAPIForm := boolean(condition.ConvertStateToAPIForm)
@@ -604,6 +620,7 @@ func (spec TriggerSpecDefinition) build() TriggerDefinition {
 			}
 		}
 		return &ObjectUpdateTrigger{
+			resourceKeyPattern:    boolean(condition.ResourceKeyPattern),
 			name:                  string(spec.TriggerName),
 			resourceKey:           text(condition.ResourceKey, ""),
 			prevStateDiff:         prevStateDiff,
@@ -623,6 +640,7 @@ func (spec TriggerSpecDefinition) build() TriggerDefinition {
 			prevStateDiff = strToMap(text(condition.PrevStateDiff, ""))
 		}
 		return &AnyFieldModificationTrigger{
+			resourceKeyPattern:    boolean(condition.ResourceKeyPattern),
 			name:                  string(spec.TriggerName),
 			resourceKey:           text(condition.ResourceKey, ""),
 			prevStateDiff:         prevStateDiff,

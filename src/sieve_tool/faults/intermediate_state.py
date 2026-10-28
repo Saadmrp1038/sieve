@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 from collections.abc import Sequence
 
 from sieve_tool.analysis.event_graph import (
@@ -22,7 +23,9 @@ from sieve_tool.faults.common import (
 from sieve_tool.plans import (
     APICallCondition,
     FaultPlan,
+    ObjectCondition,
     RestartControllerAction,
+    UpdateCondition,
     single_trigger,
     write_plan,
 )
@@ -116,6 +119,7 @@ def no_error_write_filtering_pass(
 def generate_intermediate_state_test_plan_for_controller_write(
     test_context: TestContext,
     controller_write: ControllerWrite,
+    condition: ObjectCondition | UpdateCondition | None = None,
 ) -> FaultPlan:
     return FaultPlan(
         workload=test_context.test_workload,
@@ -125,7 +129,9 @@ def generate_intermediate_state_test_plan_for_controller_write(
                 controller_label=test_context.controller_config.controller_pod_label,
                 trigger=single_trigger(
                     "trigger1",
-                    object_condition(controller_write),
+                    condition
+                    if condition is not None
+                    else object_condition(controller_write),
                     "afterControllerWrite",
                     controller_write.reconcile_fun,
                 ),
@@ -166,6 +172,39 @@ def generate_intermediate_state_test_plan_for_annotated_api_invocation(
 def intermediate_state_analysis(
     event_graph: EventGraph, path: str, test_context: TestContext
 ) -> tuple[int, int, int, int]:
+    settings = getattr(test_context.controller_config, "test_setting", {}).get(
+        test_context.test_workload, {}
+    )
+    operation_conditions: dict[int, ObjectCondition | UpdateCondition] = {}
+    if settings.get("write_trigger") == "occurrence":
+        # Runtime forwards successful writes only and merges all update verbs.
+        # Count before pruning, by the exact selector and reconciler used there.
+        counts: Counter[tuple[str, str, str]] = Counter()
+        for vertex in event_graph.controller_write_vertices:
+            event = vertex.content
+            if event.error != "NoError":
+                continue
+            patterns = [
+                p
+                for p in settings.get("generated_name_prefixes", [])
+                if event.key.startswith(p[:-1])
+            ]
+            if len(patterns) > 1:
+                raise ValueError("overlapping generated_name_prefixes")
+            key = patterns[0] if patterns else event.key
+            kind = {"Create": "onObjectCreate", "Delete": "onObjectDelete"}.get(
+                event.etype, "onObjectUpdate"
+            )
+            counter_key = (event.reconcile_fun, key, kind)
+            counts[counter_key] += 1
+            values = dict(resource_key=key, occurrence=counts[counter_key])
+            if patterns:
+                values["resource_key_pattern"] = True
+            operation_conditions[event.id] = (
+                ObjectCondition.model_validate(dict(condition_type=kind, **values))
+                if kind != "onObjectUpdate"
+                else UpdateCondition.model_validate(dict(condition_type=kind, **values))
+            )
     candidate_write_vertices = event_graph.controller_write_vertices
     candidate_annotated_api_invocation_vertices = (
         event_graph.controller_non_k8s_write_vertices
@@ -175,7 +214,6 @@ def intermediate_state_analysis(
     )
     after_p1_spec_number = -1
     after_p2_spec_number = -1
-    final_spec_number = -1
     after_p1_spec_number = len(candidate_write_vertices) + len(
         candidate_annotated_api_invocation_vertices
     )
@@ -193,15 +231,19 @@ def intermediate_state_analysis(
         candidate_write_vertices = intermediate_state_detectable_pass(
             test_context, candidate_write_vertices
         )
-    final_spec_number = len(candidate_write_vertices) + len(
-        candidate_annotated_api_invocation_vertices
-    )
     i = 0
     for vertex in candidate_write_vertices:
         controller_write = vertex.content
+        if (
+            settings.get("write_trigger") == "occurrence"
+            and controller_write.id not in operation_conditions
+        ):
+            continue
         intermediate_state_test_plan = (
             generate_intermediate_state_test_plan_for_controller_write(
-                test_context, controller_write
+                test_context,
+                controller_write,
+                operation_conditions.get(controller_write.id),
             )
         )
         i += 1
@@ -232,5 +274,5 @@ def intermediate_state_analysis(
         baseline_spec_number,
         after_p1_spec_number,
         after_p2_spec_number,
-        final_spec_number,
+        i,
     )

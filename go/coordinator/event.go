@@ -423,6 +423,11 @@ func convertObjectStateToAPIForm(event map[string]interface{}) map[string]interf
 
 	// step 2: capitalized each key if it is not in `metadata`
 	capitalizedEvent := capitalizeEventAsMap(event)
+	// Secret and ConfigMap data keys are user-defined map keys, not Go fields.
+	// Keep their case while converting the enclosing field to its API form.
+	if data, ok := event["data"]; ok {
+		capitalizedEvent["Data"] = data
+	}
 	for key, val := range capitalizedEvent {
 		conformedEvent[key] = val
 	}

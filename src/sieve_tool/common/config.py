@@ -72,6 +72,15 @@ type Nonempty = Annotated[str, Field(min_length=1)]
 @with_config(ConfigDict(extra="forbid"))
 class WorkloadSettings(TypedDict, total=False):
     independent_updates: bool
+    write_trigger: Literal["state-diff", "occurrence"]
+    generated_name_prefixes: list[
+        Annotated[
+            str,
+            Field(
+                pattern=r"^[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*\*$"
+            ),
+        ]
+    ]
     num_apiservers: Annotated[int, Field(gt=0)]
     num_workers: Annotated[int, Field(ge=0)]
     use_csi_driver: bool

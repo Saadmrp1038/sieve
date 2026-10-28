@@ -91,6 +91,7 @@ type ObservationSpec struct {
 type ConditionSpec struct {
 	ConditionType         planText  `yaml:"conditionType"`
 	ResourceKey           *planText `yaml:"resourceKey"`
+	ResourceKeyPattern    *planBool `yaml:"resourceKeyPattern"`
 	Occurrence            *planInt  `yaml:"occurrence"`
 	PrevStateDiff         *planText `yaml:"prevStateDiff"`
 	CurStateDiff          *planText `yaml:"curStateDiff"`
@@ -258,6 +259,8 @@ func (a *ActionSpec) validate() error {
 	return a.Trigger.validate()
 }
 
+var resourceNamePrefixPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*\*$`)
+
 var triggerNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 var expressionTokens = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*|[;&|()]`)
 
@@ -331,7 +334,7 @@ func (t *TriggerSpec) validate() error {
 
 func (c *ConditionSpec) validate() error {
 	fields := map[string]bool{
-		"resourceKey": c.ResourceKey != nil, "occurrence": c.Occurrence != nil,
+		"resourceKey": c.ResourceKey != nil, "resourceKeyPattern": c.ResourceKeyPattern != nil, "occurrence": c.Occurrence != nil,
 		"prevStateDiff": c.PrevStateDiff != nil, "curStateDiff": c.CurStateDiff != nil,
 		"stateMatch":            c.StateMatch != nil,
 		"convertStateToAPIForm": c.ConvertStateToAPIForm != nil, "timeoutValue": c.TimeoutValue != nil,
@@ -368,7 +371,10 @@ func (c *ConditionSpec) validate() error {
 			return fmt.Errorf("timeoutValue: required integer fitting a nonnegative duration")
 		}
 	case onObjectCreate, onObjectDelete, onObjectUpdate, onAnyFieldModification:
-		allowed = []string{"resourceKey", "occurrence"}
+		allowed = []string{"resourceKey", "occurrence", "resourceKeyPattern"}
+		if boolean(c.ResourceKeyPattern) && (c.ResourceKey == nil || !resourceNamePrefixPattern.MatchString(string(*c.ResourceKey))) {
+			return fmt.Errorf("resourceKeyPattern requires exact resource/namespace and a nonempty name prefix ending in *")
+		}
 		if err := requiredText(c.ResourceKey, "resourceKey"); err != nil {
 			return err
 		}

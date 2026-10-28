@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-manager
+  namespace: default
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance: cert-manager
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/version: v1.21.3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/instance: cert-manager
+      app.kubernetes.io/component: controller
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+        app.kubernetes.io/name: cert-manager
+        app.kubernetes.io/instance: cert-manager
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/version: v1.21.3
+        sievetag: cert-manager
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9402'
+    spec:
+      serviceAccountName: cert-manager
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cert-manager-controller
+        image: ${SIEVE-DR}/cert-manager:${SIEVE-DT}
+        imagePullPolicy: IfNotPresent
+        args:
+        - --v=2
+        - --cluster-resource-namespace=cert-manager
+        - --leader-election-namespace=kube-system
+        - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.21.3
+        - --max-concurrent-challenges=60
+        - --enable-certificate-owner-ref=true
+        ports:
+        - containerPort: 9402
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 9403
+          name: http-healthz
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: sieveTestPlan
+          valueFrom:
+            configMapKeyRef:
+              name: sieve-testing-global-config
+              key: sieveTestPlan
+        - name: KUBERNETES_SERVICE_HOST
+          value: kind-control-plane
+        - name: KUBERNETES_SERVICE_PORT
+          value: '6443'
+        livenessProbe:
+          httpGet:
+            port: http-healthz
+            path: /livez
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 15
+          successThreshold: 1
+          failureThreshold: 8
+      nodeSelector:
+        kubernetes.io/os: linux

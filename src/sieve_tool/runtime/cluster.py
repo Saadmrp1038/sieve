@@ -263,6 +263,84 @@ def setup_kind_cluster(test_context):
             time.sleep(min(5 * (attempt + 1), remaining(limit("cluster"))))
 
 
+def _load_controller_image(image):
+    root = repository_root()
+    loaded = run(
+        ["kind", "load", "docker-image", image],
+        operation="load controller image",
+        cwd=root,
+        category="network",
+        check=False,
+    )
+    if loaded.returncode:
+        present = run(
+            ["docker", "image", "inspect", "--format", "{{.Id}}", image],
+            operation="check local controller image",
+            cwd=root,
+            check=False,
+        )
+        if present.returncode:
+            run(
+                ["docker", "pull", image],
+                operation="pull controller image",
+                cwd=root,
+                category="network",
+            )
+            loaded = run(
+                ["kind", "load", "docker-image", image],
+                operation="load pulled controller image",
+                cwd=root,
+                category="network",
+                check=False,
+            )
+            if not loaded.returncode:
+                return
+        # Docker's containerd store may retain an index with absent platform blobs.
+        # Export only the node's platform so kind does not import those references.
+        node_image = run(
+            ["docker", "inspect", "--format", "{{.Image}}", "kind-control-plane"],
+            operation="inspect kind node image",
+            cwd=root,
+            capture_output=True,
+        ).stdout.strip()
+        platform = run(
+            [
+                "docker",
+                "image",
+                "inspect",
+                "--format",
+                "{{.Os}}/{{.Architecture}}",
+                node_image,
+            ],
+            operation="inspect kind node platform",
+            cwd=root,
+            capture_output=True,
+        ).stdout.strip()
+        with tempfile.TemporaryDirectory(prefix="sieve-image-") as directory:
+            archive = Path(directory) / "controller.tar"
+            run(
+                [
+                    "docker",
+                    "image",
+                    "save",
+                    "--platform",
+                    platform,
+                    "--output",
+                    archive,
+                    image,
+                ],
+                operation="export controller image for node platform",
+                cwd=root,
+                category="network",
+            )
+            run(
+                ["kind", "load", "image-archive", archive],
+                operation="load controller image archive",
+                cwd=root,
+                category="network",
+            )
+
+
 @bounded("cluster")
 def setup_cluster(test_context):
     setup_kind_cluster(test_context)
@@ -295,23 +373,7 @@ def setup_cluster(test_context):
         operation="publish Sieve configuration",
     )
     image = f"{test_context.container_registry}/{test_context.controller}:{test_context.image_tag}"
-    loaded = run(
-        ["kind", "load", "docker-image", image],
-        operation="load controller image",
-        category="network",
-        check=False,
-    )
-    if loaded.returncode:
-        run(
-            ["docker", "pull", image],
-            operation="pull controller image",
-            category="network",
-        )
-        run(
-            ["kind", "load", "docker-image", image],
-            operation="load pulled controller image",
-            category="network",
-        )
+    _load_controller_image(image)
 
 
 def deploy_controller(test_context):

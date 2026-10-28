@@ -7,6 +7,8 @@ published-image checks, not Sieve fault-plan runs.
 The subsequent [External Secrets instrumented fault campaign](external-secrets-sieve-validation.md)
 records generated-plan coverage, physical injection evidence, raw alarms and
 Sieve integration fixes separately from these recovery controls.
+The later [cert-manager fault campaign](cert-manager-sieve-validation.md)
+records its 49 attempts, 20 verified restarts and incomplete pause schedules.
 
 ## Targets
 
