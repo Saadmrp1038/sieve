@@ -13,7 +13,7 @@ import (
 )
 
 // Exercise the instrumenter command and client-go's public informer API with
-// the dependency version used by the External Secrets integration.
+// the native dependency versions used by cert-manager and External Secrets.
 func TestModernClientGoInstrumentation(t *testing.T) {
 	for _, version := range []string{"v0.36.2", "v0.37.1"} {
 		t.Run(version, func(t *testing.T) { testModernClientGoInstrumentation(t, version) })

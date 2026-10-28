@@ -264,9 +264,11 @@ def setup_kind_cluster(test_context):
 
 
 def _load_controller_image(image):
+    root = repository_root()
     loaded = run(
         ["kind", "load", "docker-image", image],
         operation="load controller image",
+        cwd=root,
         category="network",
         check=False,
     )
@@ -274,17 +276,20 @@ def _load_controller_image(image):
         present = run(
             ["docker", "image", "inspect", "--format", "{{.Id}}", image],
             operation="check local controller image",
+            cwd=root,
             check=False,
         )
         if present.returncode:
             run(
                 ["docker", "pull", image],
                 operation="pull controller image",
+                cwd=root,
                 category="network",
             )
             loaded = run(
                 ["kind", "load", "docker-image", image],
                 operation="load pulled controller image",
+                cwd=root,
                 category="network",
                 check=False,
             )
@@ -295,6 +300,7 @@ def _load_controller_image(image):
         node_image = run(
             ["docker", "inspect", "--format", "{{.Image}}", "kind-control-plane"],
             operation="inspect kind node image",
+            cwd=root,
             capture_output=True,
         ).stdout.strip()
         platform = run(
@@ -307,6 +313,7 @@ def _load_controller_image(image):
                 node_image,
             ],
             operation="inspect kind node platform",
+            cwd=root,
             capture_output=True,
         ).stdout.strip()
         with tempfile.TemporaryDirectory(prefix="sieve-image-") as directory:
@@ -323,11 +330,13 @@ def _load_controller_image(image):
                     image,
                 ],
                 operation="export controller image for node platform",
+                cwd=root,
                 category="network",
             )
             run(
                 ["kind", "load", "image-archive", archive],
                 operation="load controller image archive",
+                cwd=root,
                 category="network",
             )
 
