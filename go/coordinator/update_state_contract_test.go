@@ -12,6 +12,14 @@ import (
 )
 
 func TestUpdateStateWaitsForBothCacheRepresentations(t *testing.T) {
+	testUpdateStateWaitsForBothCacheRepresentations(t, false)
+}
+
+func TestConvertedSecretDataKeysArmTheReadHold(t *testing.T) {
+	testUpdateStateWaitsForBothCacheRepresentations(t, true)
+}
+
+func testUpdateStateWaitsForBothCacheRepresentations(t *testing.T, secretData bool) {
 	plan, err := os.ReadFile("../../fixtures/plans/independent-state.yaml")
 	if err != nil {
 		t.Fatal(err)
@@ -21,6 +29,9 @@ func TestUpdateStateWaitsForBothCacheRepresentations(t *testing.T) {
 		if err := os.WriteFile(name, []byte("{}"), 0600); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if secretData {
+		plan = []byte(strings.Replace(string(plan), `{"metadata":{"labels":{"sieve.testing/state":"B"}}}`, `{"metadata":{"labels":{"sieve.testing/state":"B"}},"data":{"tls.crt":"aW50ZXJtZWRpYXRlLUI="}}`, 1))
 	}
 	if err := os.WriteFile("server.yaml", plan, 0600); err != nil {
 		t.Fatal(err)
@@ -54,8 +65,14 @@ func TestUpdateStateWaitsForBothCacheRepresentations(t *testing.T) {
 		}
 	}
 	api := func(operation, phase string) {
+		value := "unrelated"
+		key := "marker"
+		if secretData {
+			key = "tls.crt"
+			value = "aW50ZXJtZWRpYXRlLUI="
+		}
 		call("NotifyTestBeforeAPIServerRecv", struct{ APIServerHostname, OperationType, ResourceKey, Object string }{
-			"kind-control-plane", operation, "secret/default/example", fmt.Sprintf(`{"labels":{"sieve.testing/state":%q},"Data":{"marker":"unrelated"}}`, phase),
+			"kind-control-plane", operation, "secret/default/example", fmt.Sprintf(`{"labels":{"sieve.testing/state":%q},"Data":{%q:%q}}`, phase, key, value),
 		})
 	}
 	receive := func(observer, phase string) {
@@ -64,6 +81,15 @@ func TestUpdateStateWaitsForBothCacheRepresentations(t *testing.T) {
 		})
 	}
 	api("ADDED", "A")
+	if secretData {
+		// A differently cased user key is a different input, even at the same phase.
+		call("NotifyTestBeforeAPIServerRecv", struct{ APIServerHostname, OperationType, ResourceKey, Object string }{
+			"kind-control-plane", "MODIFIED", "secret/default/example", `{"labels":{"sieve.testing/state":"B"},"Data":{"Tls.crt":"aW50ZXJtZWRpYXRlLUI="}}`,
+		})
+		unheld := struct{ OperationType, ResourceKey, ResourceType string }{"Get", "secret/default/example", "secret"}
+		call("NotifyTestBeforeControllerReadPause", unheld)
+		call("NotifyTestAfterControllerReadPause", unheld)
+	}
 	api("MODIFIED", "B")
 	var response struct{ Ok bool }
 	read := struct{ OperationType, ResourceKey, ResourceType string }{"Get", "secret/default/example", "secret"}
