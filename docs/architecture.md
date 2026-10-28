@@ -106,6 +106,15 @@ Use external job scheduling for those VMs and copy complete result directories
 back for review. The obsolete hardcoded SSH/GNU parallel scripts have been
 removed; the CLI does not prune unrelated images or erase earlier results.
 
+Before replay, `sieve check-plans --plans DIRECTORY --trace LEARN_LOG` reports
+the generated plan count, stale-state schedule count and hashes without editing
+the YAMLs. It checks successful-write occurrence predicates against the baseline
+and warns when all observed producers of a resume resource use the paused
+consumer. Validated independent workload updates are recognized as another
+producer. Other predicate types remain explicitly marked for review. These are
+baseline diagnostics, not a proof that a schedule is reachable, impossible or
+physically effective; dynamic reachability still requires execution evidence.
+
 ## Host dependencies and experiment dependencies
 
 The host package uses Python 3.14 and current Docker/Kubernetes SDKs. Go 1.27.3
