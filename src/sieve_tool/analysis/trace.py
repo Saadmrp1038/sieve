@@ -1,7 +1,7 @@
 """Pair observations and retain the analyzer's established interval semantics."""
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sieve_tool.events import (
     ControllerHear,
@@ -22,6 +22,14 @@ class AnalyzedTrace:
     reconciles: list[ReconcilerEvent]
 
 
+@dataclass
+class _InstanceIntervals:
+    checkpoint: ReconcileBegin | None = None
+    previous: ReconcileBegin | None = None
+    trivial: bool = True
+    active: set[str] = field(default_factory=set)
+
+
 def assemble_trace(
     trace: Trace, *, compress_trivial: bool, loosen_boundary: bool
 ) -> AnalyzedTrace:
@@ -39,6 +47,7 @@ def assemble_trace(
     invocation_reads: dict[tuple[str, str | None], set[str]] = {}
     invocation_types: dict[tuple[str, str | None], set[str]] = {}
     finished_invocations: set[tuple[str, str | None]] = set()
+    instance_intervals: dict[tuple[str, str | None], _InstanceIntervals] = {}
     by_position: dict[int, ReconcilerEvent] = {}
     for record in trace.records:
         position = record.position
@@ -73,6 +82,11 @@ def assemble_trace(
                 if event.id not in write_starts or event.id in finished_writes:
                     raise record.error(f"unmatched or duplicate write end {event.id}")
                 finished_writes.add(event.id)
+                if event.invocation_id is not None:
+                    begin = current[(event.reconcile_fun, event.invocation_id)]
+                    instance_intervals[
+                        (event.reconcile_fun, begin.instance_id)
+                    ].trivial = False
                 for key in trivial:
                     trivial[key] = False
                 if (
@@ -161,7 +175,21 @@ def assemble_trace(
                     invocation_types[fun] = set()
                 event.end_timestamp = position
                 by_position[position] = event
-                if fun not in current:
+                if event.invocation_id is not None:
+                    intervals = instance_intervals.setdefault(
+                        (event.reconcile_fun, event.instance_id), _InstanceIntervals()
+                    )
+                    if not intervals.active:
+                        if intervals.checkpoint is None:
+                            intervals.checkpoint = event
+                        elif not compress_trivial or not intervals.trivial:
+                            intervals.previous = intervals.checkpoint
+                            intervals.checkpoint = event
+                        intervals.trivial = True
+                    intervals.active.add(event.invocation_id)
+                    previous[fun] = intervals.previous
+                    current[fun] = event
+                elif fun not in current:
                     previous[fun] = None
                     current[fun] = event
                 elif not compress_trivial or not trivial[fun]:
@@ -182,6 +210,9 @@ def assemble_trace(
                             "invocation ended under a different controller instance"
                         )
                     finished_invocations.add(key)
+                    instance_intervals[
+                        (event.reconcile_fun, event.instance_id)
+                    ].active.remove(event.invocation_id)
                     del (
                         current[key],
                         previous[key],

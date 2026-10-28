@@ -65,3 +65,24 @@ def test_learning_rejects_an_observer_identity_failure(tmp_path):
     )
     with pytest.raises(ValueError, match="observer identity"):
         generate_test_plans_from_learn_run(context)
+
+
+def test_sequential_invocations_retain_the_previous_instance_boundary(tmp_path):
+    path = tmp_path / "sequential.log"
+    path.write_text(
+        '[SIEVE-BEFORE-HEAR]\t1\tAdded\tsecret\t{"metadata":{"name":"a","namespace":"default"}}\n'
+        "[SIEVE-AFTER-HEAR]\t1\n"
+        "[SIEVE-BEFORE-RECONCILE]\toperator.Reconcile\t1\tSIEVE-V2:instance-a\n"
+        "[SIEVE-BEFORE-REST-WRITE]\t1\n"
+        "[SIEVE-AFTER-REST-WRITE]\t1\tUpdate\toperator.Reconcile\tNoError\tsecret\tdefault\ta\t{}\tSIEVE-V2:1\n"
+        "[SIEVE-AFTER-RECONCILE]\toperator.Reconcile\t1\tSIEVE-V2:instance-a\n"
+        "[SIEVE-BEFORE-RECONCILE]\toperator.Reconcile\t2\tSIEVE-V2:instance-a\n"
+        "[SIEVE-BEFORE-REST-WRITE]\t2\n"
+        "[SIEVE-AFTER-REST-WRITE]\t2\tUpdate\toperator.Reconcile\tNoError\tsecret\tdefault\ta\t{}\tSIEVE-V2:2\n"
+        "[SIEVE-AFTER-RECONCILE]\toperator.Reconcile\t2\tSIEVE-V2:instance-a\n"
+    )
+    analyzed = assemble_trace(
+        read_trace(path), compress_trivial=True, loosen_boundary=False
+    )
+    writes = [e for e in analyzed.reconciles if isinstance(e, ControllerWrite)]
+    assert [w.range_start_timestamp for w in writes] == [-1, 2]

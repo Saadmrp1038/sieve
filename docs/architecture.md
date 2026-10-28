@@ -211,6 +211,12 @@ explicit invocation rather than compressing distinct workers. Legacy trace and
 plan contracts keep their original interpretation. Unknown invocation tokens and
 mismatched instance endings are located input errors.
 
+An instance retains its previous interval checkpoint across completed
+invocations. Sequential nontrivial calls retain the legacy lower bounds; trivial
+compression can retain a checkpoint without changing real invocation identities.
+Overlapping calls share a conservative checkpoint until that instance is
+quiescent, with read dependencies still isolated per invocation.
+
 Cache-store interfaces have no context argument. The observer therefore obtains
 the current goroutine identity from the runtime stack header and maintains a
 stack for nested annotated calls. Unsupported headers produce an observer error
