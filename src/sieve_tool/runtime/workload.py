@@ -236,13 +236,10 @@ def run_workload(context):
                     "duration_seconds": result.duration,
                     "log": os.path.relpath(result.log, directory),
                 }
-                marker = directory / "workload.log"
-                if (
-                    context.mode == sieve_modes.TEST
-                    and result.returncode == 0
-                    and marker.exists()
-                    and "FINISH-SIEVE-TEST" in marker.read_text()
-                ):
+                # A semantic workload failure can follow a successful fault.
+                # Preserve the fault's independent process outcome in that case
+                # too; the existing cluster deadline bounds untriggered plans.
+                if context.mode == sieve_modes.TEST:
                     wait_for_schedule(directory)
             except ProcessTimeout as error:
                 outcome = {
