@@ -135,7 +135,8 @@ func (t *ObjectUpdateTrigger) satisfy(triggerNotification TriggerNotification) b
 	if notification, ok := triggerNotification.(*ObjectUpdateNotification); ok {
 		if notification.resourceKey == t.resourceKey && notification.observedWhen == t.observedWhen && notification.observedBy == t.observedBy {
 			if t.prevStateDiff == nil && t.curStateDiff == nil {
-				return true
+				t.actualOccurrence++
+				return t.actualOccurrence == t.desiredOccurrence
 			}
 			// compute state diff
 			exactMatch := true
