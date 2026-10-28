@@ -182,7 +182,7 @@ records unchanged. It preserves these existing rules:
 - An unfinished receipt ends at the trace's line count. An unfinished write or
   annotated call produces no completed write. A reconciliation can remain open
   at EOF; interrupted runs are not automatically malformed.
-- Each reconciler function has one active worker. Different reconcilers can
+- Legacy records permit one active worker per reconciler function. Different reconcilers can
   interleave. Read keys/types are shared across those active reconcilers and
   cleared when no reconciliation remains active.
 - Trivial-reconciliation compression and relaxed boundaries follow the profile's
@@ -191,6 +191,25 @@ records unchanged. It preserves these existing rules:
   input errors. Null Get results and null/empty List results remain valid reads.
   Graph differences still require object payloads; a null payload at that stage
   is an unsupported input, not an operator alarm.
+
+New learning hooks append a `SIEVE-V2` identity to reconciliation boundaries and
+their reads/writes. A process-scoped invocation token distinguishes overlapping
+workers; a receiver type/address identifies controller instances within that
+process. Receiver addresses are observational identities, not replay selectors.
+The coordinator acknowledges each boundary and preserves the token on subsequent
+observations. Analysis keeps read dependencies per invocation and retains every
+explicit invocation rather than compressing distinct workers. Legacy trace and
+plan contracts keep their original interpretation. Unknown invocation tokens and
+mismatched instance endings are located input errors.
+
+Cache-store interfaces have no context argument. The observer therefore obtains
+the current goroutine identity from the runtime stack header and maintains a
+stack for nested annotated calls. Unsupported headers produce an observer error
+and prevent learning. Work spawned in another goroutine needs its own annotated
+entry; scope is not propagated across arbitrary asynchronous work. Instrumentation
+does not change worker counts, watches, scheduling, or operator state. Public RPC,
+overlapping-hook, 32-worker cold-start race and compiled-instrumentation tests
+cover identity propagation and unchanged function return behavior.
 
 Two existing limitations are deliberately preserved. The decoded `from_cache`
 flag remains false for both cache and REST records because the previous decoder

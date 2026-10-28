@@ -176,6 +176,12 @@ def generate_test_plans_from_learn_run(
     log_dir = test_context.result_dir
     oracle_dir = test_context.oracle_dir
 
+    observer_log = Path(log_dir) / "streamed-controller.log"
+    if observer_log.exists() and "[SIEVE-TRACE-ERROR]" in observer_log.read_text():
+        raise ValueError(
+            f"{observer_log}: observer identity failure; refusing to learn"
+        )
+
     log_path = os.path.join(log_dir, "sieve-server.log")
 
     assert os.path.exists(os.path.join(oracle_dir, "mask.json")), (

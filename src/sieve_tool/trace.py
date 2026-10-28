@@ -129,6 +129,25 @@ def _read(fields: list[str], cached: bool) -> ControllerRead:
 
 
 def _payload(marker: Marker, fields: list[str]) -> Payload:
+    if fields[-1].startswith("SIEVE-V2:"):
+        identity = fields[-1].removeprefix("SIEVE-V2:")
+        if not identity:
+            raise ValueError("empty invocation/instance identity")
+        event = _legacy_payload(marker, fields[:-1])
+        if isinstance(event, (ReconcileBegin, ReconcileEnd)):
+            event.invocation_id = event.reconcile_id
+            event.instance_id = identity
+        elif isinstance(
+            event, (ControllerWrite, ControllerRead, ControllerNonK8sWrite)
+        ):
+            event.invocation_id = identity
+        else:
+            raise ValueError("invocation identity is invalid for this record")
+        return event
+    return _legacy_payload(marker, fields)
+
+
+def _legacy_payload(marker: Marker, fields: list[str]) -> Payload:
     match marker:
         case Marker.BEFORE_WRITE | Marker.AFTER_HEAR | Marker.BEFORE_API:
             _count(fields, 2)

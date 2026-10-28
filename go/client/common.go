@@ -350,9 +350,6 @@ func loadLearnPlan(learnPlan map[string]interface{}) error {
 }
 
 func loadSieveConfigFromEnv(testMode bool) error {
-	if config != nil {
-		return nil
-	}
 	configLoadingLock.Lock()
 	defer configLoadingLock.Unlock()
 	if config != nil {
@@ -390,6 +387,8 @@ func loadSieveConfigFromEnv(testMode bool) error {
 }
 
 func loadSieveConfigFromConfigMap(eventType, key string, object interface{}, testMode bool) error {
+	configLoadingLock.Lock()
+	defer configLoadingLock.Unlock()
 	if config != nil {
 		return nil
 	}
@@ -482,9 +481,6 @@ func initAPIServerHostName() error {
 }
 
 func initRPCClient() error {
-	if rpcClient != nil {
-		return nil
-	}
 	configLoadingLock.Lock()
 	defer configLoadingLock.Unlock()
 	if rpcClient != nil {
@@ -557,6 +553,9 @@ func extractNameNamespaceFromObj(object interface{}) (string, string) {
 }
 
 func getMatchedReconcileStackFrame() string {
+	if scope := currentLearnInvocation(); scope.id != "" {
+		return scope.frame
+	}
 	// log.Println(string(debug.Stack()))
 	for _, stackframe := range strings.Split(string(debug.Stack()), "\n") {
 		if strings.HasPrefix(stackframe, "\t") {

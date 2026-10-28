@@ -113,6 +113,7 @@ const (
 type notificationWrapper struct {
 	ntype   NotificationType
 	payload string
+	done    chan struct{}
 }
 
 type learnServer struct {
@@ -157,33 +158,48 @@ func (s *learnServer) NotifyLearnAfterControllerRecv(request *sieve.NotifyLearnA
 	return nil
 }
 
-func (s *learnServer) NotifyLearnBeforeReconcile(request *sieve.NotifyLearnBeforeReconcileRequest, response *sieve.Response) error {
-	recID := request.ReconcilerName
-	// We assume there is only one worker for one reconciler
-	if obj, ok := s.reconcileChMap.Load(recID); ok {
-		if obj != nil {
-			log.Fatal("object in reconcileChMap should be nil if exist when NotifyLearnBeforeReconcile")
-		}
+func reconcileKey(frame, invocation string) string {
+	return frame + "\t" + invocation
+}
+
+func reconcilePayload(frame, invocation, instance string) string {
+	if invocation == "" {
+		return frame
 	}
-	waitingCh := make(chan int32)
-	s.reconcileChMap.Store(recID, waitingCh) // set the value to the channel when the reconcile starts
-	s.notificationCh <- notificationWrapper{ntype: beforeControllerReconcileForLearn, payload: recID}
-	<-waitingCh
+	return frame + "\t" + invocation + "\tSIEVE-V2:" + instance
+}
+
+func invocationPayload(payload, invocation string) string {
+	if invocation != "" {
+		return payload + "\tSIEVE-V2:" + invocation
+	}
+	return payload
+}
+
+func (s *learnServer) NotifyLearnBeforeReconcile(request *sieve.NotifyLearnBeforeReconcileRequest, response *sieve.Response) error {
+	if (request.InvocationID == "") != (request.InstanceID == "") || strings.ContainsAny(request.ReconcilerName+request.InvocationID+request.InstanceID, "\t\r\n") {
+		return fmt.Errorf("invalid reconciliation identity")
+	}
+	key := reconcileKey(request.ReconcilerName, request.InvocationID)
+	if _, loaded := s.reconcileChMap.LoadOrStore(key, request.InstanceID); loaded {
+		return fmt.Errorf("duplicate active reconciliation %s", key)
+	}
+	done := make(chan struct{})
+	s.notificationCh <- notificationWrapper{ntype: beforeControllerReconcileForLearn, payload: reconcilePayload(request.ReconcilerName, request.InvocationID, request.InstanceID), done: done}
+	<-done
 	*response = sieve.Response{Ok: true}
 	return nil
 }
 
 func (s *learnServer) NotifyLearnAfterReconcile(request *sieve.NotifyLearnAfterReconcileRequest, response *sieve.Response) error {
-	recID := request.ReconcilerName
-	if obj, ok := s.reconcileChMap.Load(recID); ok {
-		if obj == nil {
-			log.Fatal("object in reconcileChMap should not be nil when NotifyLearnAfterReconcile")
-		}
-	} else {
-		log.Fatal("object in reconcileChMap should exist when NotifyLearnAfterReconcile")
+	key := reconcileKey(request.ReconcilerName, request.InvocationID)
+	instance, ok := s.reconcileChMap.Load(key)
+	if !ok || instance != request.InstanceID || !s.reconcileChMap.CompareAndDelete(key, instance) {
+		return fmt.Errorf("unmatched reconciliation end %s", key)
 	}
-	s.reconcileChMap.Store(recID, nil) // set value to nil when the reconcile ends
-	s.notificationCh <- notificationWrapper{ntype: afterControllerReconcileForLearn, payload: recID}
+	done := make(chan struct{})
+	s.notificationCh <- notificationWrapper{ntype: afterControllerReconcileForLearn, payload: reconcilePayload(request.ReconcilerName, request.InvocationID, request.InstanceID), done: done}
+	<-done
 	*response = sieve.Response{Ok: true}
 	return nil
 }
@@ -199,7 +215,7 @@ func (s *learnServer) NotifyLearnBeforeRestWrite(request *sieve.NotifyLearnBefor
 }
 
 func (s *learnServer) NotifyLearnAfterRestWrite(request *sieve.NotifyLearnAfterRestWriteRequest, response *sieve.Response) error {
-	s.notificationCh <- notificationWrapper{ntype: afterRestWriteForLearn, payload: fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s", request.ControllerOperationID, request.ControllerOperationType, request.ReconcileFun, request.Error, request.ResourceType, request.Namespace, request.Name, request.ObjectBody)}
+	s.notificationCh <- notificationWrapper{ntype: afterRestWriteForLearn, payload: invocationPayload(fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s", request.ControllerOperationID, request.ControllerOperationType, request.ReconcileFun, request.Error, request.ResourceType, request.Namespace, request.Name, request.ObjectBody), request.ReconcileID)}
 	*response = sieve.Response{Message: request.ControllerOperationType, Ok: true}
 	return nil
 }
@@ -215,7 +231,7 @@ func (s *learnServer) NotifyLearnBeforeRestRead(request *sieve.NotifyLearnBefore
 }
 
 func (s *learnServer) NotifyLearnAfterRestRead(request *sieve.NotifyLearnAfterRestReadRequest, response *sieve.Response) error {
-	s.notificationCh <- notificationWrapper{ntype: afterRestReadForLearn, payload: fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s", request.ControllerOperationID, request.ControllerOperationType, request.ReconcileFun, request.Error, request.ResourceType, request.Namespace, request.Name, request.ObjectBody)}
+	s.notificationCh <- notificationWrapper{ntype: afterRestReadForLearn, payload: invocationPayload(fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s", request.ControllerOperationID, request.ControllerOperationType, request.ReconcileFun, request.Error, request.ResourceType, request.Namespace, request.Name, request.ObjectBody), request.ReconcileID)}
 	*response = sieve.Response{Message: request.ControllerOperationType, Ok: true}
 	return nil
 }
@@ -231,19 +247,19 @@ func (s *learnServer) NotifyLearnBeforeAnnotatedAPICall(request *sieve.NotifyLea
 }
 
 func (s *learnServer) NotifyLearnAfterAnnotatedAPICall(request *sieve.NotifyLearnAfterAnnotatedAPICallRequest, response *sieve.Response) error {
-	s.notificationCh <- notificationWrapper{ntype: afterAnnotatedAPICallForLearn, payload: fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s", request.InvocationID, request.ModuleName, request.FilePath, request.ReceiverType, request.FunName, request.ReconcileFun)}
+	s.notificationCh <- notificationWrapper{ntype: afterAnnotatedAPICallForLearn, payload: invocationPayload(fmt.Sprintf("%d\t%s\t%s\t%s\t%s\t%s", request.InvocationID, request.ModuleName, request.FilePath, request.ReceiverType, request.FunName, request.ReconcileFun), request.ReconcileID)}
 	*response = sieve.Response{Message: request.FunName, Ok: true}
 	return nil
 }
 
 func (s *learnServer) NotifyLearnAfterCacheGet(request *sieve.NotifyLearnAfterCacheGetRequest, response *sieve.Response) error {
-	s.notificationCh <- notificationWrapper{ntype: afterControllerReadForLearn, payload: fmt.Sprintf("Get\t%s\t%s\t%s\t%s\t%s\t%s", request.ResourceType, request.Namespace, request.Name, request.ReconcileFun, request.Error, request.Object)}
+	s.notificationCh <- notificationWrapper{ntype: afterControllerReadForLearn, payload: invocationPayload(fmt.Sprintf("Get\t%s\t%s\t%s\t%s\t%s\t%s", request.ResourceType, request.Namespace, request.Name, request.ReconcileFun, request.Error, request.Object), request.ReconcileID)}
 	*response = sieve.Response{Message: "Get", Ok: true}
 	return nil
 }
 
 func (s *learnServer) NotifyLearnAfterCacheList(request *sieve.NotifyLearnAfterCacheListRequest, response *sieve.Response) error {
-	s.notificationCh <- notificationWrapper{ntype: afterControllerReadForLearn, payload: fmt.Sprintf("List\t%s\t%s\t%s\t%s", request.ResourceType, request.ReconcileFun, request.Error, request.ObjectList)}
+	s.notificationCh <- notificationWrapper{ntype: afterControllerReadForLearn, payload: invocationPayload(fmt.Sprintf("List\t%s\t%s\t%s\t%s", request.ResourceType, request.ReconcileFun, request.Error, request.ObjectList), request.ReconcileID)}
 	*response = sieve.Response{Message: "List", Ok: true}
 	return nil
 }
@@ -259,28 +275,28 @@ func (s *learnServer) coordinatingEvents() {
 			switch nw.ntype {
 			case beforeControllerReconcileForLearn:
 				s.ongoingReconcileCnt += 1
-				if _, ok := s.reconcileCntMap[nw.payload]; ok {
-					s.reconcileCntMap[nw.payload] += 1
+				if strings.Contains(nw.payload, "\t") {
+					log.Printf("[SIEVE-BEFORE-RECONCILE]\t%s\n", nw.payload)
 				} else {
-					s.reconcileCntMap[nw.payload] = 0
-				}
-				if obj, ok := s.reconcileChMap.Load(nw.payload); ok {
+					if _, ok := s.reconcileCntMap[nw.payload]; ok {
+						s.reconcileCntMap[nw.payload] += 1
+					} else {
+						s.reconcileCntMap[nw.payload] = 0
+					}
 					log.Printf("[SIEVE-BEFORE-RECONCILE]\t%s\t%d\n", nw.payload, s.reconcileCntMap[nw.payload])
-					ch := obj.(chan int32)
-					ch <- 0
-				} else {
-					log.Fatal("invalid object in reconcileChMap")
 				}
+				close(nw.done)
 			case afterControllerReconcileForLearn:
 				s.ongoingReconcileCnt -= 1
-				if s.ongoingReconcileCnt == 0 {
-					if s.rateLimiterEnabled {
-						s.pollRateLimitedEventCh()
-					}
-				} else if s.ongoingReconcileCnt < 0 {
-					log.Fatalf("reconcileCnt cannot be lower than 0: %d\n", s.ongoingReconcileCnt)
+				if s.ongoingReconcileCnt == 0 && s.rateLimiterEnabled {
+					s.pollRateLimitedEventCh()
 				}
-				log.Printf("[SIEVE-AFTER-RECONCILE]\t%s\t%d\n", nw.payload, s.reconcileCntMap[nw.payload])
+				if strings.Contains(nw.payload, "\t") {
+					log.Printf("[SIEVE-AFTER-RECONCILE]\t%s\n", nw.payload)
+				} else {
+					log.Printf("[SIEVE-AFTER-RECONCILE]\t%s\t%d\n", nw.payload, s.reconcileCntMap[nw.payload])
+				}
+				close(nw.done)
 			case beforeRestWriteForLearn:
 				if obj, ok := s.sideEffectChMap.Load(nw.payload); ok {
 					log.Printf("[SIEVE-BEFORE-REST-WRITE]\t%s\n", nw.payload)

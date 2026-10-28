@@ -23,10 +23,14 @@ type NotifyLearnAfterControllerRecvRequest struct {
 
 type NotifyLearnBeforeReconcileRequest struct {
 	ReconcilerName string
+	InvocationID   string
+	InstanceID     string
 }
 
 type NotifyLearnAfterReconcileRequest struct {
 	ReconcilerName string
+	InvocationID   string
+	InstanceID     string
 }
 
 type NotifyLearnBeforeRestWriteRequest struct {
@@ -41,6 +45,7 @@ type NotifyLearnAfterRestWriteRequest struct {
 	Name                    string
 	ObjectBody              string
 	Error                   string
+	ReconcileID             string
 }
 
 type NotifyLearnBeforeRestReadRequest struct {
@@ -55,6 +60,7 @@ type NotifyLearnAfterRestReadRequest struct {
 	Name                    string
 	ObjectBody              string
 	Error                   string
+	ReconcileID             string
 }
 
 type NotifyLearnBeforeAnnotatedAPICallRequest struct {
@@ -72,6 +78,7 @@ type NotifyLearnAfterAnnotatedAPICallRequest struct {
 	ReceiverType string
 	FunName      string
 	ReconcileFun string
+	ReconcileID  string
 }
 
 type NotifyLearnAfterCacheGetRequest struct {
@@ -81,6 +88,7 @@ type NotifyLearnAfterCacheGetRequest struct {
 	Object       string
 	ReconcileFun string
 	Error        string
+	ReconcileID  string
 }
 
 type NotifyLearnAfterCacheListRequest struct {
@@ -88,6 +96,7 @@ type NotifyLearnAfterCacheListRequest struct {
 	ObjectList   string
 	ReconcileFun string
 	Error        string
+	ReconcileID  string
 }
 
 type NotifyTestBeforeAPIServerRecvRequest struct {

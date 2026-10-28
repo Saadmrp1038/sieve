@@ -142,6 +142,12 @@ func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, 
 				Args: []dst.Expr{&dst.Ident{Name: fmt.Sprintf("\"%s\"", stackFrame)}},
 			},
 		}
+		if funcDecl.Recv != nil && len(funcDecl.Recv.List) == 1 && len(funcDecl.Recv.List[0].Names) == 1 {
+			beforeReconcileInstrumentation.X.(*dst.CallExpr).Args = append(
+				beforeReconcileInstrumentation.X.(*dst.CallExpr).Args,
+				dst.NewIdent(funcDecl.Recv.List[0].Names[0].Name),
+			)
+		}
 		beforeReconcileInstrumentation.Decs.End.Append("//sieve")
 		insertStmt(&funcDecl.Body.List, index, beforeReconcileInstrumentation)
 

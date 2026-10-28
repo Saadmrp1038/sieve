@@ -9,7 +9,7 @@ import (
 type Reconciler struct{ Calls int }
 
 func (r *Reconciler) Reconcile(value int) (int, error) {
-	sieve.NotifyLearnBeforeReconcile("example.(*Reconciler).Reconcile")      //sieve
+	sieve.NotifyLearnBeforeReconcile("example.(*Reconciler).Reconcile", r)   //sieve
 	defer sieve.NotifyLearnAfterReconcile("example.(*Reconciler).Reconcile") //sieve
 	r.Calls++
 	if value < 0 {

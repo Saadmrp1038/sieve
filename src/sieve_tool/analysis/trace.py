@@ -32,14 +32,23 @@ def assemble_trace(
     api_starts: dict[int, int] = {}
     reads: set[str] = set()
     read_types: set[str] = set()
-    previous: dict[str, ReconcileBegin | None] = {}
-    current: dict[str, ReconcileBegin] = {}
-    trivial: dict[str, bool] = {}
-    ongoing: set[str] = set()
+    previous: dict[tuple[str, str | None], ReconcileBegin | None] = {}
+    current: dict[tuple[str, str | None], ReconcileBegin] = {}
+    trivial: dict[tuple[str, str | None], bool] = {}
+    ongoing: set[tuple[str, str | None]] = set()
+    invocation_reads: dict[tuple[str, str | None], set[str]] = {}
+    invocation_types: dict[tuple[str, str | None], set[str]] = {}
+    finished_invocations: set[tuple[str, str | None]] = set()
     by_position: dict[int, ReconcilerEvent] = {}
     for record in trace.records:
         position = record.position
         event = deepcopy(record.event)
+        if (
+            isinstance(event, (ControllerRead, ControllerWrite, ControllerNonK8sWrite))
+            and event.invocation_id is not None
+            and (event.reconcile_fun, event.invocation_id) not in current
+        ):
+            raise record.error("observation has no active invocation")
         match record.marker:
             case Marker.BEFORE_HEAR:
                 assert isinstance(event, ControllerHear)
@@ -66,18 +75,31 @@ def assemble_trace(
                 finished_writes.add(event.id)
                 for key in trivial:
                     trivial[key] = False
-                if event.reconcile_fun not in current and not loosen_boundary:
+                if (
+                    event.reconcile_fun,
+                    event.invocation_id,
+                ) not in current and not loosen_boundary:
                     continue
-                event.read_keys = reads.copy()
-                event.read_types = read_types.copy()
+                event.read_keys = (
+                    invocation_reads[(event.reconcile_fun, event.invocation_id)]
+                    if event.invocation_id is not None
+                    else reads
+                ).copy()
+                event.read_types = (
+                    invocation_types[(event.reconcile_fun, event.invocation_id)]
+                    if event.invocation_id is not None
+                    else read_types
+                ).copy()
                 event.start_timestamp = write_starts[event.id]
                 event.end_timestamp = position
-                if event.reconcile_fun in current:
-                    prev = previous[event.reconcile_fun]
+                if (event.reconcile_fun, event.invocation_id) in current:
+                    prev = previous[(event.reconcile_fun, event.invocation_id)]
                     event.set_range(
                         prev.end_timestamp if prev is not None else -1, position
                     )
-                    event.reconcile_id = current[event.reconcile_fun].reconcile_id
+                    event.reconcile_id = current[
+                        (event.reconcile_fun, event.invocation_id)
+                    ].reconcile_id
                 by_position[event.start_timestamp] = event
             case Marker.BEFORE_API:
                 assert isinstance(event, OperationID)
@@ -86,13 +108,16 @@ def assemble_trace(
                 assert isinstance(event, ControllerNonK8sWrite)
                 for key in trivial:
                     trivial[key] = False
-                if event.reconcile_fun not in current and not loosen_boundary:
+                if (
+                    event.reconcile_fun,
+                    event.invocation_id,
+                ) not in current and not loosen_boundary:
                     continue
                 if event.id not in api_starts:
                     raise record.error(f"annotated call {event.id} has no start")
                 event.start_timestamp = api_starts[event.id]
                 event.end_timestamp = position
-                if event.reconcile_fun in current:
+                if (event.reconcile_fun, event.invocation_id) in current:
                     # The previous engine called a missing set_range method here.
                     # Supporting this path would change behavior, not just types.
                     raise record.error(
@@ -101,24 +126,39 @@ def assemble_trace(
                 by_position[event.start_timestamp] = event
             case Marker.CACHE_READ | Marker.REST_READ:
                 assert isinstance(event, ControllerRead)
-                if event.reconcile_fun not in current:
+                if (event.reconcile_fun, event.invocation_id) not in current:
                     continue
                 event.end_timestamp = position
-                event.reconcile_id = current[event.reconcile_fun].reconcile_id
+                event.reconcile_id = current[
+                    (event.reconcile_fun, event.invocation_id)
+                ].reconcile_id
                 by_position[position] = event
                 if record.marker == Marker.CACHE_READ:
                     if event.etype == "Get":
-                        reads.update(event.key_set)
+                        (
+                            invocation_reads[(event.reconcile_fun, event.invocation_id)]
+                            if event.invocation_id is not None
+                            else reads
+                        ).update(event.key_set)
                     else:
-                        read_types.add(event.rtype)
+                        (
+                            invocation_types[(event.reconcile_fun, event.invocation_id)]
+                            if event.invocation_id is not None
+                            else read_types
+                        ).add(event.rtype)
             case Marker.BEFORE_RECONCILE:
                 assert isinstance(event, ReconcileBegin)
-                fun = event.reconcile_fun
+                fun = (event.reconcile_fun, event.invocation_id)
+                if event.invocation_id is not None and fun in finished_invocations:
+                    raise record.error("duplicate invocation identity")
                 if fun in ongoing:
                     raise record.error(
                         f"overlapping workers for {fun} are not supported"
                     )
                 ongoing.add(fun)
+                if event.invocation_id is not None:
+                    invocation_reads[fun] = set()
+                    invocation_types[fun] = set()
                 event.end_timestamp = position
                 by_position[position] = event
                 if fun not in current:
@@ -130,11 +170,25 @@ def assemble_trace(
                 trivial[fun] = True
             case Marker.AFTER_RECONCILE:
                 assert isinstance(event, ReconcileEnd)
-                if event.reconcile_fun not in ongoing:
+                key = (event.reconcile_fun, event.invocation_id)
+                if key not in ongoing:
                     raise record.error(
                         f"reconcile end without an active {event.reconcile_fun}"
                     )
-                ongoing.remove(event.reconcile_fun)
+                ongoing.remove(key)
+                if event.invocation_id is not None:
+                    if current[key].instance_id != event.instance_id:
+                        raise record.error(
+                            "invocation ended under a different controller instance"
+                        )
+                    finished_invocations.add(key)
+                    del (
+                        current[key],
+                        previous[key],
+                        trivial[key],
+                        invocation_reads[key],
+                        invocation_types[key],
+                    )
                 event.end_timestamp = position
                 by_position[position] = event
                 if not ongoing:
