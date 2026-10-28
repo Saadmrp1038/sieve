@@ -65,6 +65,8 @@ files = [
     "src/sieve_tool/faults",
     "src/sieve_tool/oracle",
     "src/sieve_tool/results.py",
+    "src/sieve_tool/fault_proofs.py",
+    "src/sieve_tool/report.py",
     "src/sieve_tool/revisions.py",
     "src/sieve_tool/acceptance",
     "src/sieve_tool/testing/child_repair.py",

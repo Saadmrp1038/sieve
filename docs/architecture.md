@@ -80,6 +80,23 @@ not establish an operator bug: inspect the recorded injection and workload
 logs and classify alarms. `sieve report --results PATH` locates suspicious
 saved test results without changing them.
 
+Each newly saved test also writes `fault-proof.json`. It retains all raw alarms
+and separates physical injection proof, workload process completion and explicit
+application checks. `sieve report --proofs --results PATH` reports these counts
+independently and succeeds only when every selected proof verifies the fault and
+passes its application checks. Missing application checks are `unknown`; the
+finish marker alone does not establish application correctness. The original
+report and raw oracle exit behavior remain available.
+
+The initial physical verifier supports one controller restart, requiring an API
+Pod deletion, a distinct nonterminating Ready replacement, matching coordinator
+action and successful injection process outcome. Independent-update read pauses
+use the strict receipt/overwrite/returned-value verifier. Other action sequences,
+including stale-state faults, remain explicitly unverified. Application workloads
+can write `semantic-outcome.json` with `schema_version: 1` and a nonempty `checks`
+list of `{name, passed}` objects. These explicit checks do not mask raw alarms.
+Proofs hash their source artifacts; reporting rejects changed source evidence.
+
 ## Batch execution
 
 `sieve test -c NAME -p DIRECTORY --batch` runs that directory's YAML plans

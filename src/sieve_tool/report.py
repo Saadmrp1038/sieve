@@ -3,8 +3,31 @@
 import json
 from pathlib import Path
 
+from sieve_tool.fault_proofs import read_fault_proof
 
-def report(directory):
+
+def proof_report(directory: Path) -> int:
+    proofs = [read_fault_proof(p) for p in sorted(directory.rglob("fault-proof.json"))]
+    document = {
+        "schema_version": 1,
+        "attempted": len(proofs),
+        "physically_verified": sum(p.physically_verified for p in proofs),
+        "semantic_passed": sum(p.semantic_status == "passed" for p in proofs),
+        "semantic_failed": sum(p.semantic_status == "failed" for p in proofs),
+        "semantic_unknown": sum(p.semantic_status == "unknown" for p in proofs),
+        "raw_alarm_count": sum(len(p.raw_alarms) for p in proofs),
+        "cases": [p.model_dump() for p in proofs],
+    }
+    print(json.dumps(document, indent=2))
+    return (
+        0
+        if proofs
+        and all(p.physically_verified and p.semantic_status == "passed" for p in proofs)
+        else 1
+    )
+
+
+def report(directory: str | Path) -> int:
     found = False
     for path in sorted(Path(directory).rglob("*.json")):
         document = json.loads(path.read_text())

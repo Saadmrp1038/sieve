@@ -24,6 +24,7 @@ from sieve_tool.common.common import (
     sieve_modes,
 )
 from sieve_tool.common.config import get_common_config, load_controller_config
+from sieve_tool.fault_proofs import audit_fault
 from sieve_tool.oracle.oracle import (
     check,
     create_differential_oracles,
@@ -107,6 +108,14 @@ def save_run_result(
             test_result_json,
             indent=4,
         )
+    proof = audit_fault(
+        Path(test_context.result_dir),
+        load_plan(Path(test_context.original_test_plan)),
+        test_result,
+    )
+    (Path(test_context.result_dir) / "fault-proof.json").write_text(
+        json.dumps(proof, indent=2) + "\n"
+    )
 
 
 def save_history_and_end_state(test_context: TestContext):

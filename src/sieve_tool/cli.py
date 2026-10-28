@@ -80,6 +80,11 @@ def parser():
         "report", help="Report potential bugs from saved results"
     )
     report.add_argument("--results", type=Path)
+    report.add_argument(
+        "--proofs",
+        action="store_true",
+        help="Report physical and semantic evidence separately from raw alarms",
+    )
     commands.add_parser("doctor", help="Check external tools and Python dependencies")
     commands.add_parser(
         "check-plans", help="Compare learned plans with historical reproductions"
@@ -302,9 +307,10 @@ def _dispatch(arguments, root, common):
             common,
         )
     if arguments.command == "report":
-        from sieve_tool.report import report
+        from sieve_tool.report import proof_report, report
 
-        return report(arguments.results or root / "runs/test")
+        directory = arguments.results or root / "runs/test"
+        return proof_report(directory) if arguments.proofs else report(directory)
     if arguments.command == "controller":
         from sieve_tool.scaffold import create
 

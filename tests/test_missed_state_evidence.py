@@ -146,3 +146,24 @@ def test_invalid_selected_receipt_is_a_harness_error(tmp_path):
     log.write_text("\n".join(lines) + "\n")
     with pytest.raises(ArtifactError, match=r"sieve-server.log:1:"):
         validate_run(context, require_missed_state=True)
+
+
+def test_normal_saved_result_includes_strict_missed_state_proof(tmp_path):
+    from sieve_tool.results import TestResult as RunResult
+    from sieve_tool.runtime.runner import save_run_result
+
+    context = evidence(tmp_path)
+    plan = tmp_path / "selected.yaml"
+    plan.write_text(yaml.safe_dump(context.test_plan_content))
+    (tmp_path / "injection-process-outcome.json").write_text(
+        '{"status":"completed","returncode":0}'
+    )
+    context.mode = "test"
+    context.controller = "operator"
+    context.test_workload = "independent-updates"
+    context.original_test_plan = str(plan)
+    context.result_root_dir = str(tmp_path)
+    save_run_result(context, RunResult(True, True, [], [], [], True, ""), 0)
+    proof = json.loads((tmp_path / "fault-proof.json").read_text())
+    assert proof["physically_verified"] is True
+    assert proof["missed_state"]["returned_versions"] == ["3"]
