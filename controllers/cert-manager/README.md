@@ -65,7 +65,9 @@ triggers, circular pauses and zero plans remain coverage limitations.
 The [VM validation report](../../docs/rfe/managed-child-repair/cert-manager-sieve-validation.md)
 records 49 attempted schedules, 20 verified restarts and zero completed
 missed-state injections, including every raw alarm and the remaining coverage
-limitations.
+limitations. The [injection-fix validation](../../docs/rfe/managed-child-repair/cert-manager-injection-fixes-validation.md)
+records all 15 mapped restart replacements and 14 missed states physically verified,
+with the original failures, diagnostic replays and raw alarms preserved.
 
 ## Replacement schedules for incomplete injections
 
