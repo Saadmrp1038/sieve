@@ -32,6 +32,11 @@ Cluster/Pooler identity/specification, matching SQL data on all three instances,
 and exactly one writable primary. It retains all accepted mutations and returned
 objects in `workload-updates.json` and `benchmark-observations.json`, and writes
 explicit checks to `semantic-outcome.json`. Application failure returns nonzero.
+Independent Deployment and Service watches start before the A/B/C/D sequence and
+must acknowledge the original children before deletion begins. Their complete
+event streams remain active through the observation window and SQL checks, so a
+short-lived recreated child is counted even when ordinary Gets miss it. Broken
+or incomplete watch streams are harness failures, not healthy cleanup evidence.
 
 The benchmark pins PostgreSQL and PgBouncer by digest using
 `SIEVE_CNPG_POSTGRES_IMAGE` and `SIEVE_CNPG_PGBOUNCER_IMAGE`. Public workload CLI

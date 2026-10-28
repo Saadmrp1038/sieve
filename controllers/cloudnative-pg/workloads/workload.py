@@ -6,10 +6,12 @@ import math
 import os
 import time
 from collections.abc import Callable
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
 
-from sieve_tool.process import execution
+from sieve_tool.paths import repository_root
+from sieve_tool.process import ManagedProcess, execution
 from sieve_tool.testing.child_repair import Resource, get, kubectl
 
 CLUSTER = "sieve-db"
@@ -151,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
             else None
         )
 
-    with execution(log_dir=directory / "workload-commands"):
+    with execution(log_dir=directory / "workload-commands"), ExitStack() as followers:
         try:
             apply(
                 {
@@ -233,6 +235,87 @@ def main(argv: list[str] | None = None) -> int:
                 "old_uid": original["metadata"]["uid"],
                 "replacement": repaired,
             }
+            watches: list[tuple[str, Path, ManagedProcess]] = []
+            watch_initial: dict[str, str] = {}
+            template = '{.type}{"\\t"}{.object.kind}{"\\t"}{.object.metadata.uid}{"\\t"}{.object.metadata.ownerReferences[0].uid}{"\\n"}'
+            for kind in ("deployment", "service"):
+                child = get(kind, POOLER)
+                if child is None:
+                    raise RuntimeError("child missing before continuous observation")
+                watch_initial[kind] = child["metadata"]["uid"]
+                path = directory / f"owned-child-watch-{kind}.tsv"
+                process = followers.enter_context(
+                    ManagedProcess(
+                        [
+                            "kubectl",
+                            "--namespace",
+                            "default",
+                            "get",
+                            kind,
+                            POOLER,
+                            "--watch",
+                            "--output-watch-events",
+                            "--request-timeout=900s",
+                            "-o",
+                            "jsonpath=" + template,
+                        ],
+                        operation="watch Pooler owned " + kind,
+                        category="workload",
+                        timeout=900,
+                        cwd=repository_root(),
+                        output=path,
+                    )
+                )
+                watches.append((kind, path, process))
+
+            def watch_events(*, complete: bool = False) -> list[dict[str, str]]:
+                records = []
+                for kind, path, _ in watches:
+                    content = path.read_text()
+                    if content and not content.endswith("\n"):
+                        if complete:
+                            raise RuntimeError("incomplete owned-resource watch event")
+                        content = content.rpartition("\n")[0]
+                    for line in content.splitlines():
+                        fields = line.split("\t")
+                        if (
+                            len(fields) != 4
+                            or fields[0] not in ("ADDED", "MODIFIED", "DELETED")
+                            or fields[1].lower() != kind
+                            or not fields[2]
+                        ):
+                            raise RuntimeError(
+                                "invalid or incomplete owned-resource watch event"
+                            )
+                        records.append(
+                            dict(
+                                event=fields[0],
+                                kind=kind,
+                                uid=fields[2],
+                                owner_uid=fields[3],
+                            )
+                        )
+                return records
+
+            def watch_ready() -> bool:
+                if any(
+                    p.proc is None or p.proc.poll() is not None for _, _, p in watches
+                ):
+                    raise RuntimeError(
+                        "owned-resource watch exited before observing deletion"
+                    )
+                records = watch_events()
+                return all(
+                    any(
+                        r["kind"] == kind
+                        and r["uid"] == uid
+                        and r["owner_uid"] == owner["metadata"]["uid"]
+                        for r in records
+                    )
+                    for kind, uid in watch_initial.items()
+                )
+
+            wait(watch_ready, "initial owned-resource watch receipts")
 
             def update(phase: str, *, add_finalizer: bool = False) -> None:
                 current = get("poolers.postgresql.cnpg.io", POOLER)
@@ -329,6 +412,7 @@ def main(argv: list[str] | None = None) -> int:
             save()
             end = time.monotonic() + args.observe_seconds
             while time.monotonic() < end:
+                watch_ready()
                 for kind in old_children:
                     child = get(kind, POOLER)
                     if (
@@ -369,6 +453,16 @@ def main(argv: list[str] | None = None) -> int:
                 for p in pods
             }
             evidence.update(database_rows=rows, database_roles=roles)
+            watch_ready()
+            followers.close()
+            events = watch_events(complete=True)
+            evidence["owned_child_events"] = events
+            evidence["recreated_child_events"] = [
+                r
+                for r in events
+                if r["owner_uid"] == owner["metadata"]["uid"]
+                and r["uid"] != watch_initial[r["kind"]]
+            ]
             checks.extend(
                 [
                     {
@@ -378,7 +472,8 @@ def main(argv: list[str] | None = None) -> int:
                     },
                     {
                         "name": "no_children_recreated_after_owner_deletion",
-                        "passed": not evidence["recreated_children"],
+                        "passed": not evidence["recreated_children"]
+                        and not evidence["recreated_child_events"],
                     },
                     {
                         "name": "acknowledged_sql_rows_preserved",

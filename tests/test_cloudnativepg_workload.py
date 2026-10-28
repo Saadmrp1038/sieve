@@ -33,7 +33,7 @@ def kubernetes_boundary(tmp_path):
     command.write_text(
         f"#!{sys.executable}\n"
         + r"""
-import json, os, sys
+import json, os, sys, time
 from pathlib import Path
 path=Path(os.environ['CNPG_TEST_CLUSTER']); s=json.loads(path.read_text())
 a=sys.argv[1:]
@@ -59,6 +59,21 @@ if verb=='apply':
  s[k]=r; emit(r)
 elif verb=='get':
  k=a[1].split('.')[0].rstrip('s')
+ if '--watch' in a:
+  previous=None; transient=False
+  while True:
+   try:current=json.loads(path.read_text())
+   except json.JSONDecodeError:time.sleep(.001);continue
+   obj=current.get(k);uid=obj['metadata']['uid'] if obj else None
+   if uid!=previous:
+    if previous:print('DELETED\t'+('Deployment' if k=='deployment' else 'Service')+'\t'+previous+'\tpooler-uid',flush=True)
+    if uid:print('ADDED\t'+obj['kind']+'\t'+uid+'\tpooler-uid',flush=True)
+    previous=uid
+   if current['scenario']=='transient' and not transient and current.get('pooler',{}).get('metadata',{}).get('annotations',{}).get('sieve.testing/phase') in ('C','D'):
+    transient=True
+    print('ADDED\t'+('Deployment' if k=='deployment' else 'Service')+'\ttransient-'+k+'\tpooler-uid',flush=True)
+    print('DELETED\t'+('Deployment' if k=='deployment' else 'Service')+'\ttransient-'+k+'\tpooler-uid',flush=True)
+   time.sleep(.001)
  if k=='pod':
   items=[]
   for i in range(1,4):
@@ -102,7 +117,8 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
 
 
 @pytest.mark.parametrize(
-    "scenario, expected", [("fixed", 0), ("buggy", 1), ("lost-data", 1)]
+    "scenario, expected",
+    [("fixed", 0), ("buggy", 1), ("lost-data", 1), ("transient", 1)],
 )
 def test_workload_detects_recreated_children_and_lost_sql_rows(
     tmp_path, kubernetes_boundary, scenario, expected
@@ -137,7 +153,9 @@ def test_workload_detects_recreated_children_and_lost_sql_rows(
     assert result.returncode == expected, result.stdout + result.stderr
     semantic = json.loads((tmp_path / "semantic-outcome.json").read_text())
     checks = {c["name"]: c["passed"] for c in semantic["checks"]}
-    assert checks["no_children_recreated_after_owner_deletion"] is (scenario != "buggy")
+    assert checks["no_children_recreated_after_owner_deletion"] is (
+        scenario not in ("buggy", "transient")
+    )
     assert checks["acknowledged_sql_rows_preserved"] is (scenario != "lost-data")
     assert (
         len(json.loads((tmp_path / "workload-updates.json").read_text())["updates"])

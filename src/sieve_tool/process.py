@@ -178,16 +178,16 @@ class Result:
 class ManagedProcess:
     def __init__(
         self,
-        argv,
+        argv: Sequence[str | os.PathLike[str]],
         *,
-        operation,
-        category="command",
-        timeout=None,
-        cwd=None,
-        env=None,
-        output=None,
-        input=None,
-    ):
+        operation: str,
+        category: str = "command",
+        timeout: float | None = None,
+        cwd: str | os.PathLike[str] | None = None,
+        env: Mapping[str, str] | None = None,
+        output: str | os.PathLike[str] | None = None,
+        input: str | bytes | None = None,
+    ) -> None:
         if isinstance(argv, (str, bytes)) or not argv:
             raise TypeError("Commands require a nonempty argument list")
         self.operation = operation
