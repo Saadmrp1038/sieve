@@ -55,15 +55,29 @@ class ObservationPoint(PlanModel):
     by: Nonempty
 
 
-class ObjectCondition(PlanModel):
-    condition_type: Literal["onObjectCreate", "onObjectDelete"]
+class ResourceCondition(PlanModel):
     resource_key: Nonempty
+    resource_key_pattern: bool = False
+
+    @model_validator(mode="after")
+    def scoped_name_prefix(self) -> Self:
+        if self.resource_key_pattern and not re.fullmatch(
+            r"[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*\*",
+            self.resource_key,
+        ):
+            raise ValueError(
+                "resourceKeyPattern requires exact resource/namespace and a nonempty name prefix ending in *"
+            )
+        return self
+
+
+class ObjectCondition(ResourceCondition):
+    condition_type: Literal["onObjectCreate", "onObjectDelete"]
     occurrence: PositiveInt
 
 
-class UpdateCondition(PlanModel):
+class UpdateCondition(ResourceCondition):
     condition_type: Literal["onObjectUpdate", "onAnyFieldModification"]
-    resource_key: Nonempty
     occurrence: PositiveInt
     prev_state_diff: str | None = None
     cur_state_diff: str | None = None

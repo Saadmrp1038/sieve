@@ -5,11 +5,22 @@ import (
 	"net"
 	"net/rpc"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestWriteOccurrenceWithoutStateDiffCountsMatchingOperations(t *testing.T) {
+	testWriteOccurrence(t, "onObjectUpdate", "StatusUpdate", false)
+}
+
+func TestGeneratedNameWritePredicates(t *testing.T) {
+	for condition, operation := range map[string]string{"onObjectCreate": "Create", "onObjectUpdate": "Patch", "onObjectDelete": "Delete"} {
+		t.Run(condition, func(t *testing.T) { testWriteOccurrence(t, condition, operation, true) })
+	}
+}
+
+func testWriteOccurrence(t *testing.T, condition, operation string, pattern bool) {
 	t.Chdir(t.TempDir())
 	for _, name := range []string{"learned_field_path_mask.json", "configured_field_path_mask.json", "configured_field_key_mask.json"} {
 		if err := os.WriteFile(name, []byte("{}"), 0600); err != nil {
@@ -47,6 +58,10 @@ actions:
         by: informer
     expression: release
 `
+	plan = strings.Replace(plan, "conditionType: onObjectUpdate", "conditionType: "+condition, 1)
+	if pattern {
+		plan = strings.Replace(plan, "resourceKey: certificate/default/example", "resourceKey: secret/default/example-*\n        resourceKeyPattern: true", 1)
+	}
 	if err := os.WriteFile("server.yaml", []byte(plan), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -83,6 +98,14 @@ actions:
 	release := func() {
 		call("NotifyTestAfterControllerRecv", struct{ OperationType, ResourceKey, Object, ObservedBy string }{"Added", "issuer/default/release", `{"metadata":{"name":"release","namespace":"default"}}`, "informer"})
 	}
+	write.WriteType = operation
+	if pattern {
+		write.ResourceKey = "secret/other/example-random"
+		call("NotifyTestAfterControllerWrite", write)
+		write.ResourceKey = "secret/default/unrelated-random"
+		call("NotifyTestAfterControllerWrite", write)
+		write.ResourceKey = "secret/default/example-first"
+	}
 	call("NotifyTestAfterControllerWrite", write)
 	var firstResponse struct{ Ok bool }
 	first := client.Go("TestCoordinator.NotifyTestBeforeControllerReadPause", read, &firstResponse, nil)
@@ -96,6 +119,9 @@ actions:
 		t.Fatal("occurrence two paused the read after only one matching write")
 	}
 	call("NotifyTestAfterControllerReadPause", read)
+	if pattern {
+		write.ResourceKey = "secret/default/example-second"
+	}
 	call("NotifyTestAfterControllerWrite", write)
 	var response struct{ Ok bool }
 	held := client.Go("TestCoordinator.NotifyTestBeforeControllerReadPause", read, &response, nil)

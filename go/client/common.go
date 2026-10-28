@@ -134,17 +134,27 @@ func checkKVPairInTriggerContent(content map[string]interface{}, key, val string
 	return false
 }
 
+// Patterns opt in per definition; a literal '*' never changes existing schedules.
+func triggerMatchesResource(definition map[string]interface{}, selector, resourceKey string, onlyMatchType bool) bool {
+	if selector == resourceKey || (onlyMatchType && strings.HasPrefix(selector, resourceKey+"/")) {
+		return true
+	}
+	condition, ok := definition["condition"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	enabled, _ := condition["resourceKeyPattern"].(bool)
+	return enabled && strings.Count(resourceKey, "/") == 2 && strings.HasSuffix(selector, "*") && strings.HasPrefix(resourceKey, strings.TrimSuffix(selector, "*"))
+}
+
 func checkKVPairInTriggerCondition(resourceKey, key, val string, onlyMatchType bool) bool {
-	for triggerResourceKey, triggers := range triggerDefinitionsByResourceKey {
-		if triggerResourceKey == resourceKey || (onlyMatchType && strings.HasPrefix(triggerResourceKey, resourceKey+"/")) {
-			for _, trigger := range triggers {
-				if triggerCondition, ok := trigger["condition"]; ok {
-					if triggerConditionMap, ok := triggerCondition.(map[string]interface{}); ok {
-						if checkKVPairInTriggerContent(triggerConditionMap, key, val) {
-							return true
-						}
-					}
-				}
+	for selector, triggers := range triggerDefinitionsByResourceKey {
+		for _, trigger := range triggers {
+			if !triggerMatchesResource(trigger, selector, resourceKey, onlyMatchType) {
+				continue
+			}
+			if content, ok := trigger["condition"].(map[string]interface{}); ok && checkKVPairInTriggerContent(content, key, val) {
+				return true
 			}
 		}
 	}
@@ -152,16 +162,13 @@ func checkKVPairInTriggerCondition(resourceKey, key, val string, onlyMatchType b
 }
 
 func checkKVPairInTriggerObservationPoint(resourceKey, key, val string, onlyMatchType bool) bool {
-	for triggerResourceKey, triggers := range triggerDefinitionsByResourceKey {
-		if triggerResourceKey == resourceKey || (onlyMatchType && strings.HasPrefix(triggerResourceKey, resourceKey+"/")) {
-			for _, trigger := range triggers {
-				if triggerObservationPoint, ok := trigger["observationPoint"]; ok {
-					if triggerObservationPointMap, ok := triggerObservationPoint.(map[string]interface{}); ok {
-						if checkKVPairInTriggerContent(triggerObservationPointMap, key, val) {
-							return true
-						}
-					}
-				}
+	for selector, triggers := range triggerDefinitionsByResourceKey {
+		for _, trigger := range triggers {
+			if !triggerMatchesResource(trigger, selector, resourceKey, onlyMatchType) {
+				continue
+			}
+			if content, ok := trigger["observationPoint"].(map[string]interface{}); ok && checkKVPairInTriggerContent(content, key, val) {
+				return true
 			}
 		}
 	}
