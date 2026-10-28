@@ -66,3 +66,40 @@ The [VM validation report](../../docs/rfe/managed-child-repair/cert-manager-siev
 records 49 attempted schedules, 20 verified restarts and zero completed
 missed-state injections, including every raw alarm and the remaining coverage
 limitations.
+
+## Replacement schedules for incomplete injections
+
+This profile now opts into `write_trigger: occurrence`. Restart predicates count
+successful create/update/delete notifications per reconciler and selected resource,
+including all update verbs before candidate pruning. They do not compare a learned
+state difference to a later reconciliation's lister snapshot. Other profiles retain
+state-difference predicates. `generated_name_prefixes` explicitly selects
+`secret/default/sieve-certificate-*`; `resourceKeyPattern: true` in a generated
+condition enables that name-prefix selector. Resource type and namespace stay exact,
+and the default remains literal matching. This also removes random temporary
+Secret names embedded in Certificate status differences from these predicates.
+Changing the predicate changes the schedule; retain original YAMLs and record each
+replacement's source, hash, selected write and physical outcome separately.
+
+For completed missed states, use `delete-child-miss-{issuer,parent,child}-updates`
+or `drift-child-miss-{issuer,parent,child}-updates`. These create the same single
+SelfSigned Certificate, wait for Ready with no active Issuing condition, and supply
+four UID-tested A/B/C/D patches eight seconds apart without reconciliation waits
+between patches. Issuer patches change SelfSigned CRL distribution URLs; parent
+patches change declared DNS names; child patches corrupt then restore `tls.crt`.
+Each accepted response, input projection, UID and resourceVersion is retained.
+Only parent mode intentionally advances Certificate generation/spec; other modes
+require them unchanged. After convergence, the existing deletion/drift workload
+runs under the final parent, with the same ownership, current-generation Ready,
+valid TLS/key and 15-second stability requirements. Parent mode also checks the
+final declared hostname; Issuer mode checks the repaired certificate's final CRL
+URL. Independent updates are extra input coverage, not the original circular
+controller-produced transitions.
+
+The independent-update generator requires baseline intermediate reads and later
+accepted receipts in every observed cache stream. It pauses one annotated reader
+and resumes when those streams reach the independent overwrite. Verification must
+show a real hold/release, no intermediate Get by that reader, and a returned later
+accepted value for the same UID. A pause or a coordinator completion alone does
+not establish a missed state. Generated candidates lacking this proof remain
+incomplete; never add a timeout release to make them pass.

@@ -31,10 +31,66 @@
     "controller_deployment_file_path": "controllers/cert-manager/deploy/operator.yaml",
     "test_setting": {
         "delete-child": {
-            "num_workers": 0
+            "num_workers": 0,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
         },
         "drift-child": {
-            "num_workers": 0
+            "num_workers": 0,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "delete-child-miss-issuer-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "delete-child-miss-parent-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "delete-child-miss-child-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "drift-child-miss-issuer-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "drift-child-miss-parent-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
+        },
+        "drift-child-miss-child-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence",
+            "generated_name_prefixes": [
+                "secret/default/sieve-certificate-*"
+            ]
         }
     },
     "container_name": "cert-manager-controller"

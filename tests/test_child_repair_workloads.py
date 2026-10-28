@@ -39,6 +39,7 @@ if verb == "apply":
     parent = json.load(sys.stdin)
     if parent["kind"] in ("SecretStore", "Issuer"):
         parent["status"] = {"conditions": [{"type": "Ready", "status": "True"}]}
+        parent["metadata"].update(uid="issuer-1", generation=1, resourceVersion="1")
         state["store"] = parent
         path.write_text(json.dumps(state))
         print(json.dumps(parent))
@@ -110,6 +111,27 @@ elif verb == "get":
     if args[1] == "service" and state.pop("restore_selector", False):
         state["child"]["spec"]["selector"] = {"app.kubernetes.io/name": "rabbitmq-cluster"}
     result = state["parent" if args[1] in ("stringsecret", "rabbitmqcluster", "externalsecret", "certificate") else "child"]
+elif verb == "patch" and state.get("independent"):
+    target = state[{"issuer":"store", "certificate":"parent", "secret":"child"}[args[1]]]
+    patch = json.loads(args[args.index("-p") + 1])
+    assert patch[0] == {"op":"test", "path":"/metadata/uid", "value":target["metadata"]["uid"]}
+    for change in patch[1:]:
+        parts = [part.replace("~1","/").replace("~0","~") for part in change["path"].strip("/").split("/")]
+        cursor = target
+        for part in parts[:-1]:
+            cursor = cursor[part]
+        cursor[parts[-1]] = change["value"]
+        if parts[0] == "spec":
+            target["metadata"]["generation"] += 1
+    phase = target["metadata"].get("labels",{}).get("sieve.testing/state")
+    target["metadata"]["resourceVersion"] = str(int(target["metadata"].get("resourceVersion","1")) + 1)
+    target.setdefault("status",{})["conditions"] = [{"type":"Ready", "status":"False" if phase in ("B","C") else "True", "observedGeneration":target["metadata"].get("generation",1)}]
+    state.setdefault("accepted",[]).append(copy.deepcopy(target))
+    result = copy.deepcopy(target)
+    if state["scenario"] == "update-uid-changed" and phase == "B":
+        result["metadata"]["uid"] = "unexpected-uid"
+    if args[1] == "secret":
+        state["restore_marker"] = True
 elif verb == "patch" and args[1] == "secret":
     patch = json.loads(args[args.index("-p") + 1])
     if isinstance(patch, list):
@@ -130,6 +152,8 @@ elif verb == "patch" and args[1] == "service":
     result = copy.deepcopy(state["child"])
     state["restore_selector"] = state["scenario"] == "repair"
 elif verb == "delete":
+    if state.get("independent") and len(state.get("accepted",[])) != 4:
+        raise SystemExit("repair mutation happened before all independent updates")
     if any(c.get("type")=="Issuing" and c.get("status")=="True" for c in state["parent"].get("status",{}).get("conditions",[])):
         raise SystemExit("mutation arrived before initial issuance completed")
     if "-o" in args and args[args.index("-o") + 1] != "name":
@@ -487,7 +511,9 @@ def issued_certificate(tmp_path):
             "-subj",
             "/CN=managed-child.example.test",
             "-addext",
-            "subjectAltName=DNS:managed-child.example.test",
+            "subjectAltName=DNS:managed-child.example.test,DNS:phase-a.example.test,DNS:phase-b.example.test,DNS:phase-c.example.test,DNS:phase-d.example.test",
+            "-addext",
+            "crlDistributionPoints=URI:http://phase-d.example.test/crl",
             "-days",
             "1",
             "-keyout",
@@ -608,3 +634,64 @@ def test_current_cert_manager_requires_certificate_and_key_to_match(
     assert result.returncode == 1
     assert evidence["status"] == "repair_timeout"
     assert "FINISH-SIEVE-TEST" not in output.read_text()
+
+
+@pytest.mark.parametrize("base", ["delete-child", "drift-child"])
+@pytest.mark.parametrize("resource", ["issuer", "parent", "child"])
+@pytest.mark.parametrize("scenario", ["repair", "update-uid-changed"])
+def test_cert_manager_supplies_independent_updates_before_secret_repair(
+    tmp_path, kubectl_boundary, issued_certificate, base, resource, scenario
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(
+        json.dumps(
+            {"scenario": scenario, "parent": None, "child": None, "independent": True}
+        )
+    )
+    output = tmp_path / "result" / "workload.log"
+    workload = f"{base}-miss-{resource}-updates"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cert-manager/workloads/workload.py"),
+            workload,
+            str(output),
+            "--repair-timeout",
+            "2",
+            "--settle-seconds",
+            "0",
+            "--update-interval",
+            "0.001",
+        ],
+        cwd=ROOT,
+        env={**kubectl_boundary, "REPAIR_TEST_TLS": str(issued_certificate)},
+        text=True,
+        capture_output=True,
+        timeout=12,
+    )
+    updates = json.loads(output.with_name("workload-updates.json").read_text())
+    if scenario == "update-uid-changed":
+        assert result.returncode == 1
+        assert updates["status"] == "failed"
+        assert "FINISH-SIEVE-TEST" not in output.read_text()
+        assert "identity" in output.read_text()
+        return
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert updates["status"] == "completed"
+    assert [
+        u["state"]["metadata"]["labels"]["sieve.testing/state"]
+        for u in updates["updates"]
+    ] == list("ABCD")
+    assert len({u["response"]["metadata"]["uid"] for u in updates["updates"]}) == 1
+    assert (
+        len({u["response"]["metadata"]["resourceVersion"] for u in updates["updates"]})
+        == 4
+    )
+    evidence = json.loads(output.with_name("repair-observations.json").read_text())
+    assert evidence["status"] == "repaired"
+    assert (
+        evidence["parent_before"]["metadata"]["generation"]
+        == evidence["parent_after"]["metadata"]["generation"]
+    )
+    assert evidence["parent_before"]["spec"] == evidence["parent_after"]["spec"]
+    assert output.read_text() == "FINISH-SIEVE-TEST\n"
