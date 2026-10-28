@@ -112,6 +112,9 @@ def save_run_result(
         Path(test_context.result_dir),
         load_plan(Path(test_context.original_test_plan)),
         test_result,
+        namespace=getattr(
+            getattr(test_context, "common_config", None), "namespace", "default"
+        ),
     )
     (Path(test_context.result_dir) / "fault-proof.json").write_text(
         json.dumps(proof, indent=2) + "\n"

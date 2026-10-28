@@ -1,7 +1,6 @@
 """Independent physical fault evidence, alongside unmodified oracle alarms."""
 
 import hashlib
-import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
@@ -55,7 +54,7 @@ def read_fault_proof(path: Path) -> FaultProof:
 
 
 def audit_fault(
-    directory: Path, plan: FaultPlan, result: TestResult
+    directory: Path, plan: FaultPlan, result: TestResult, *, namespace: str = "default"
 ) -> dict[str, object]:
     reasons: list[str] = []
     actions = plan.actions or []
@@ -70,11 +69,12 @@ def audit_fault(
         labels = {a.controller_label for a in restarts}
         deleted: list[str] = []
         ready: set[str] = set()
-        seen: set[str] = set()
+        first_seen: dict[str, int] = {}
+        deletion_started: dict[str, int] = {}
         path = directory / "apiserver1.log"
         if path.exists():
-            for event in iter_api_events(path):
-                if event.rtype != "pod":
+            for position, event in enumerate(iter_api_events(path)):
+                if event.rtype != "pod" or event.namespace != namespace:
                     continue
                 metadata = event.get_metadata_value("labels") or {}
                 if metadata.get("sievetag") not in labels:
@@ -82,7 +82,12 @@ def audit_fault(
                 uid = event.get_metadata_value("uid")
                 if not isinstance(uid, str):
                     continue
-                seen.add(uid)
+                first_seen.setdefault(uid, position)
+                if (
+                    event.get_metadata_value("deletionTimestamp")
+                    or event.etype == "DELETED"
+                ):
+                    deletion_started.setdefault(uid, position)
                 if event.etype == "DELETED":
                     deleted.append(uid)
                 obj = event.obj_map or {}
@@ -90,6 +95,7 @@ def audit_fault(
                 if (
                     deleted
                     and uid not in deleted
+                    and any(first_seen[uid] > deletion_started[old] for old in deleted)
                     and not event.get_metadata_value("deletionTimestamp")
                     and isinstance(status, dict)
                     and any(
@@ -110,8 +116,8 @@ def audit_fault(
         if server.count("controller pod gets deleted") != len(restarts):
             reasons.append("matching coordinator restart actions are unproven")
     outcome_path = directory / "injection-process-outcome.json"
-    outcome = json.loads(outcome_path.read_text()) if outcome_path.exists() else {}
-    if outcome.get("status") != "completed" or outcome.get("returncode") != 0:
+    outcome = read_outcome(outcome_path) if outcome_path.exists() else None
+    if outcome is None or outcome.status != "completed" or outcome.returncode != 0:
         reasons.append("injection process did not complete successfully")
     if not result.injection_completed or not result.no_exception:
         reasons.append("raw injection outcome is incomplete or has a harness exception")

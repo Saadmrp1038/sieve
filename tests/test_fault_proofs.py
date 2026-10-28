@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from sieve_tool import cli
+from sieve_tool.oracle.artifacts import ArtifactError
 from sieve_tool.plans import load_plan
 from sieve_tool.results import TestResult as RunResult
 from sieve_tool.runtime.runner import save_run_result
@@ -14,7 +15,15 @@ from sieve_tool.runtime.runner import save_run_result
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def save_case(tmp_path, *, deleted=False, semantic=None):
+def save_case(
+    tmp_path,
+    *,
+    deleted=False,
+    semantic=None,
+    injection_json=None,
+    existing_replica=False,
+    replacement_namespace="default",
+):
     plan = ROOT / "fixtures/plans/restart.yaml"
     label = load_plan(plan).actions[0].controller_label
     directory = tmp_path / "case"
@@ -25,13 +34,16 @@ def save_case(tmp_path, *, deleted=False, semantic=None):
     )
     for name in ("process-outcome.json", "injection-process-outcome.json"):
         (directory / name).write_text('{"status":"completed","returncode":0}')
+    if injection_json is not None:
+        (directory / "injection-process-outcome.json").write_text(injection_json)
     (directory / "workload.log").write_text("FINISH-SIEVE-TEST\n")
     events = []
     for uid in ("original", "replacement"):
+        namespace = "default" if uid == "original" else replacement_namespace
         obj = {
             "metadata": {
                 "name": "controller-" + uid,
-                "namespace": "default",
+                "namespace": namespace,
                 "uid": uid,
                 "labels": {"sievetag": label},
             },
@@ -44,7 +56,7 @@ def save_case(tmp_path, *, deleted=False, semantic=None):
                     "ADDED",
                     "unused",
                     "pod",
-                    "default",
+                    namespace,
                     "controller-" + uid,
                     json.dumps(obj),
                 ]
@@ -52,6 +64,16 @@ def save_case(tmp_path, *, deleted=False, semantic=None):
         )
         if deleted and uid == "original":
             events.append(events[-1].replace("\tADDED\t", "\tDELETED\t"))
+    if existing_replica:
+        # Replica B existed before A was deleted; a later Ready update is not
+        # evidence of a replacement being created by this restart.
+        original_add, original_delete, replica_add = events
+        events = [
+            original_add,
+            replica_add,
+            original_delete,
+            replica_add.replace("\tADDED\t", "\tMODIFIED\t"),
+        ]
     (directory / "apiserver1.log").write_text("\n".join(events) + "\n")
     context = SimpleNamespace(
         mode="test",
@@ -133,3 +155,30 @@ def test_report_rejects_a_proof_after_source_evidence_changes(tmp_path, capsys):
         == 1
     )
     assert "evidence hash" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        '{"status":"completed","returncode":false}',
+        '{"status":"failed","status":"completed","returncode":0}',
+    ],
+)
+def test_malformed_process_evidence_cannot_verify_a_fault(tmp_path, invalid):
+    with pytest.raises(ArtifactError):
+        save_case(tmp_path, deleted=True, injection_json=invalid)
+
+
+def test_existing_ready_replica_is_not_a_new_replacement(tmp_path):
+    proof = save_case(tmp_path, deleted=True, existing_replica=True)
+    assert proof["physically_verified"] is False
+    assert "replacement" in " ".join(proof["reasons"])
+
+
+def test_another_namespace_cannot_supply_the_replacement(tmp_path):
+    assert (
+        save_case(tmp_path, deleted=True, replacement_namespace="other")[
+            "physically_verified"
+        ]
+        is False
+    )
