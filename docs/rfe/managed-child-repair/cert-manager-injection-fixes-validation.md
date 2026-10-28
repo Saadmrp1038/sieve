@@ -189,3 +189,32 @@ CertificateRequest issuer/approver frames stay enabled but unannotated, and the
 single-active-worker-per-annotated-frame trace limitation remains. These results
 prove the selected replacement schedules, not all candidates, arbitrary concurrent
 Certificates, stale-state faults (none generated), or absence of operator bugs.
+
+## Final branch review
+
+The complete branch was reviewed against fork `main` at
+`87d1fda877fddc6ed0e08877224e61d08ba67d33` along two independent axes.
+
+**Standards:** corrected generated-plan counts when failed writes are excluded
+with pruning disabled, supplied explicit selected-repository working directories
+for image loading, and corrected the native informer matrix documentation.
+The two documented/correctness findings are resolved. The optional repeated-mode
+selection heuristic was retained rather than adding a strategy framework.
+
+**Spec:** closed three reusable detector gaps: reject undeclared spec mutations
+in parent patch responses, require explicit current-generation Certificate Ready,
+and compare the leaf's complete DNS SAN set with the declared names. Public CLI
+negative controls failed before their fixes, covering admission-time changes,
+missing observed generation, and missing/extra DNS names. Both reviewers found
+no remaining actionable findings after the fixes; operator logic stayed unchanged.
+
+The strengthened checks were also evaluated against all 57 retained baseline/test
+outcomes and 36 independent-update sequences, with no failures. This revalidates
+existing evidence; it does not count as new VM injections. All original raw
+results and alarms remain unchanged.
+
+Final local checks passed 345 Python tests plus 10 subtests, Ruff lint, formatting
+of committed files, strict Mypy and workload typing, wheel build, Go race/vet for
+all three modules, workflow validation, and Python/reachable-Go vulnerability
+audits. The user's pre-existing uncommitted blank line in
+`tests/test_trace_errors.py` was preserved and excluded from the PR.
