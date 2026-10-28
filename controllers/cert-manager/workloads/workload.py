@@ -71,7 +71,16 @@ class CertManagerTarget:
 
     def healthy(self, observation: Mapping[str, Resource | None]) -> bool:
         child = observation["child_after"]
-        if not ready(observation["parent_after"]) or child is None:
+        parent = observation["parent_after"]
+        if (
+            not ready(parent)
+            or child is None
+            or any(
+                condition.get("type") == "Issuing"
+                and condition.get("status") == "True"
+                for condition in (parent or {}).get("status", {}).get("conditions", [])
+            )
+        ):
             return False
         try:
             data = child["data"]

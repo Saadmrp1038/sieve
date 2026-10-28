@@ -69,6 +69,8 @@ if verb == "apply":
         state["child"]["data"] = {"marker": base64.b64encode(b"expected-value").decode()}
     if parent["kind"] == "Certificate":
         parent["status"]["conditions"] = [{"type": "Ready", "status": "True", "observedGeneration": 1}]
+        if state["scenario"] == "issuing":
+            parent["status"]["conditions"].append({"type":"Issuing","status":"True"})
         state["child"]["metadata"]["name"] = "sieve-certificate"
         state["child"]["metadata"]["ownerReferences"] = [
             {"uid": "parent-1", "name": "sieve-certificate", "kind": "Certificate", "controller": True}]
@@ -81,6 +83,11 @@ elif verb == "logs":
         print(json.dumps({"msg": "Starting workers", "controller": name}))
     raise SystemExit(0)
 elif verb == "get":
+    if args[1] == "certificate" and state["scenario"] == "issuing":
+        state["certificate_reads"] = state.get("certificate_reads", 0) + 1
+        if state["certificate_reads"] == 2:
+            state["parent"]["status"]["conditions"] = [c for c in state["parent"]["status"]["conditions"] if c["type"] != "Issuing"]
+            state["parent"]["status"]["revision"] = 1
     if args[1] in ("secretstore", "issuer"):
         print(json.dumps(state["store"]))
         raise SystemExit(0)
@@ -123,6 +130,8 @@ elif verb == "patch" and args[1] == "service":
     result = copy.deepcopy(state["child"])
     state["restore_selector"] = state["scenario"] == "repair"
 elif verb == "delete":
+    if any(c.get("type")=="Issuing" and c.get("status")=="True" for c in state["parent"].get("status",{}).get("conditions",[])):
+        raise SystemExit("mutation arrived before initial issuance completed")
     if "-o" in args and args[args.index("-o") + 1] != "name":
         raise SystemExit("unexpected -o output mode; kubectl delete supports only name")
     assert args[1] == "--raw"
@@ -514,6 +523,21 @@ def test_current_cert_manager_recreates_a_usable_certificate(
     assert output.read_text() == "FINISH-SIEVE-TEST\n"
     assert evidence["child_after"]["metadata"]["uid"] == "child-2"
     assert evidence["parent_before"]["spec"] == evidence["parent_after"]["spec"]
+
+
+def test_cert_manager_waits_for_initial_issuance_before_mutating_the_secret(
+    tmp_path, kubectl_boundary, issued_certificate
+):
+    state = Path(kubectl_boundary["REPAIR_TEST_CLUSTER"])
+    state.write_text(json.dumps({"scenario": "issuing", "parent": None, "child": None}))
+    result, output, evidence = run_current_workload(
+        tmp_path,
+        {**kubectl_boundary, "REPAIR_TEST_TLS": str(issued_certificate)},
+        "cert-manager",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert output.read_text() == "FINISH-SIEVE-TEST\n"
+    assert evidence["parent_before"]["status"]["revision"] == 1
 
 
 def test_current_cert_manager_rejects_stale_ready_status(
