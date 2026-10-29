@@ -43,6 +43,13 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+    if (
+        "@" in args.postgres_image
+        and ":" not in args.postgres_image.partition("@")[0].rsplit("/", 1)[-1]
+    ):
+        parser.error(
+            "PostgreSQL digest pins must retain the version tag before @sha256"
+        )
     if any(
         not math.isfinite(v) or v <= 0
         for v in (

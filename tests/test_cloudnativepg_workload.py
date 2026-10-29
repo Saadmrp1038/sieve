@@ -32,6 +32,33 @@ def test_profile_pins_native_graph_and_unchanged_default_concurrency():
     assert operand_image == "${SIEVE-DR}/cloudnative-pg:vanilla"
 
 
+def test_postgresql_digest_requires_the_version_tag_before_kubernetes_setup(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "fixed"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--postgres-image",
+            "ghcr.io/cloudnative-pg/postgresql@sha256:" + "1" * 64,
+            "--ready-timeout",
+            "0.01",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 2
+    assert "version tag" in result.stderr
+    assert json.loads(state.read_text()) == {"scenario": "fixed"}
+
+
 @pytest.fixture
 def kubernetes_boundary(tmp_path):
     state = tmp_path / "cluster.json"
@@ -148,9 +175,9 @@ def test_workload_detects_recreated_children_and_lost_sql_rows(
             "--ready-timeout",
             "2",
             "--postgres-image",
-            "ghcr.io/cloudnative-pg/postgresql@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:1111111111111111111111111111111111111111111111111111111111111111",
             "--pgbouncer-image",
-            "ghcr.io/cloudnative-pg/pgbouncer@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:2222222222222222222222222222222222222222222222222222222222222222",
         ],
         cwd=ROOT,
         env=environment,

@@ -44,7 +44,11 @@ short-lived recreated child is counted even when ordinary Gets miss it. Broken
 or incomplete watch streams are harness failures, not healthy cleanup evidence.
 
 The benchmark pins PostgreSQL and PgBouncer by digest using
-`SIEVE_CNPG_POSTGRES_IMAGE` and `SIEVE_CNPG_PGBOUNCER_IMAGE`. Public workload CLI
+`SIEVE_CNPG_POSTGRES_IMAGE` and `SIEVE_CNPG_PGBOUNCER_IMAGE`.
+PostgreSQL references retain their version tag before the digest, for example
+`postgresql:18.6-system-trixie@sha256:…`; native admission needs that tag for
+upgrade detection. Bare digest references are rejected before Kubernetes setup.
+Public workload CLI
 options can select these images and finite diagnostic timing; the VM benchmark
 uses the documented full timing, not the accelerated boundary-test values.
 
