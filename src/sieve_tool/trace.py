@@ -130,8 +130,7 @@ def _read(fields: list[str], cached: bool) -> ControllerRead:
 
 def _payload(marker: Marker, fields: list[str]) -> Payload:
     legacy_boundary = (
-        marker in (Marker.BEFORE_RECONCILE, Marker.AFTER_RECONCILE)
-        and len(fields) == 3
+        marker in (Marker.BEFORE_RECONCILE, Marker.AFTER_RECONCILE) and len(fields) == 3
     )
     if not legacy_boundary and fields[-1].startswith("SIEVE-V2:"):
         identity = fields[-1].removeprefix("SIEVE-V2:")

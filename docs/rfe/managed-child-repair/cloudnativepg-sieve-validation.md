@@ -253,3 +253,20 @@ Informer observations identify the representation, not each individual informer
 instance. Complex restart/stale-state sequences remain explicitly unverified by
 the initial physical-proof implementation. The optional invocation-map cleanup
 and raw-oracle volatility described above remain visible follow-up opportunities.
+
+## Whole-branch PR review, October 29
+
+The final review compares the whole branch with fork main
+`2c9206ae0b6408e30575c5c306fbeb7b3c9c7b59`. Standards review found no documented
+breach; its schema-version strictness advisory is fixed in `c6e22c6`. The optional
+invocation-map Data Clumps heuristic remains nonblocking. Spec review found two
+P2 defects, both resolved: `dcef5fd` preserves opaque legacy reconciliation IDs
+that happen to begin with `SIEVE-V2:`, and `2bc983d` prevents saved attempts
+without proofs from disappearing from report totals or raw alarm counts.
+
+Each fix has a failing public-boundary regression recorded before its production
+change. Re-reporting the preserved calibration still yields four attempts, four
+verified misses, two semantic passes, two known lifecycle failures and all 28
+raw alarms. Operator/runtime inputs and original evidence remain unchanged;
+these reporting and decoder fixes do not require new subject images or fault
+replays. Standards and Spec re-reviews found no outstanding actionable findings.
