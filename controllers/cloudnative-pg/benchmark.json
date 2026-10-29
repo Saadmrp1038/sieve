@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "upstream_fix": "https://github.com/cloudnative-pg/cloudnative-pg/pull/11359",
+  "buggy_revision": "e819964e03fb638c0acaf13b45a9e862c9e3eadb",
+  "fixed_revision": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+  "native_go": "go1.27.1",
+  "native_client_go": "v0.37.0",
+  "native_controller_runtime": "v0.25.0",
+  "operator_logic_modified": false,
+  "workload": "pooler-finalizer-updates",
+  "release_manifest_sha256": "37237f145d8138256ea25ae830f87759255665ff08f8d552fdd8224a5ec032fb"
+}

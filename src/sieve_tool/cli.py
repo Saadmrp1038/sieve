@@ -80,10 +80,22 @@ def parser():
         "report", help="Report potential bugs from saved results"
     )
     report.add_argument("--results", type=Path)
+    report.add_argument(
+        "--plans",
+        type=Path,
+        help="Count a generated plan corpus without implying it was all executed",
+    )
+    report.add_argument(
+        "--proofs",
+        action="store_true",
+        help="Report physical and semantic evidence separately from raw alarms",
+    )
     commands.add_parser("doctor", help="Check external tools and Python dependencies")
-    commands.add_parser(
+    plan_check = commands.add_parser(
         "check-plans", help="Compare learned plans with historical reproductions"
     )
+    plan_check.add_argument("--plans", type=Path)
+    plan_check.add_argument("--trace", type=Path)
     controller = commands.add_parser(
         "controller", help="Manage controller integrations"
     )
@@ -302,9 +314,16 @@ def _dispatch(arguments, root, common):
             common,
         )
     if arguments.command == "report":
-        from sieve_tool.report import report
+        from sieve_tool.report import proof_report, report
 
-        return report(arguments.results or root / "runs/test")
+        if arguments.plans is not None and not arguments.proofs:
+            raise ValueError("--plans requires --proofs")
+        directory = arguments.results or root / "runs/test"
+        return (
+            proof_report(directory, arguments.plans)
+            if arguments.proofs
+            else report(directory)
+        )
     if arguments.command == "controller":
         from sieve_tool.scaffold import create
 
@@ -366,6 +385,12 @@ def _dispatch(arguments, root, common):
             print(source["revision"])
         return 0
     if arguments.command == "check-plans":
+        if arguments.plans is not None or arguments.trace is not None:
+            from sieve_tool.plan_check import diagnose
+
+            if arguments.plans is None or arguments.trace is None:
+                raise ValueError("--plans and --trace must be supplied together")
+            return diagnose(arguments.plans, arguments.trace)
         from sieve_tool.plan_check import check
 
         return check(root)

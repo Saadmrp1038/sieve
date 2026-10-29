@@ -80,6 +80,30 @@ not establish an operator bug: inspect the recorded injection and workload
 logs and classify alarms. `sieve report --results PATH` locates suspicious
 saved test results without changing them.
 
+Each newly saved test also writes `fault-proof.json`. It retains all raw alarms
+and separates physical injection proof, workload process completion and explicit
+application checks. `sieve report --proofs --results PATH` reports these counts
+independently and succeeds only when every selected proof verifies the fault and
+passes its application checks. Missing application checks are `unknown`; the
+finish marker alone does not establish application correctness. The original
+report and raw oracle exit behavior remain available.
+
+The initial physical verifier supports one controller restart, requiring an API
+Pod deletion, a distinct nonterminating Ready replacement, matching coordinator
+action and successful injection process outcome. Independent-update read pauses
+use the strict receipt/overwrite/returned-value verifier. Other action sequences,
+including stale-state faults, remain explicitly unverified. Application workloads
+can write `semantic-outcome.json` with `schema_version: 1` and a nonempty `checks`
+list of `{name, passed}` objects. These explicit checks do not mask raw alarms.
+Proofs hash their source artifacts; reporting rejects changed source evidence.
+`--plans DIRECTORY` additionally counts a supplied generated YAML corpus;
+otherwise the generated count is unknown (`null`). Attempts, observed triggered
+actions, physical verification and completed workloads are reported separately.
+Counting a generated corpus does not imply that every candidate was executed.
+Saved attempts and injection outcomes are inventoried independently of proofs.
+Missing proofs fail reporting, count as unknown application outcomes, and retain
+their raw alarms instead of disappearing from the attempted coverage totals.
+
 ## Batch execution
 
 `sieve test -c NAME -p DIRECTORY --batch` runs that directory's YAML plans
@@ -88,6 +112,15 @@ batch at a time per host. Independent VMs can process different directories.
 Use external job scheduling for those VMs and copy complete result directories
 back for review. The obsolete hardcoded SSH/GNU parallel scripts have been
 removed; the CLI does not prune unrelated images or erase earlier results.
+
+Before replay, `sieve check-plans --plans DIRECTORY --trace LEARN_LOG` reports
+the generated plan count, stale-state schedule count and hashes without editing
+the YAMLs. It checks successful-write occurrence predicates against the baseline
+and warns when all observed producers of a resume resource use the paused
+consumer. Validated independent workload updates are recognized as another
+producer. Other predicate types remain explicitly marked for review. These are
+baseline diagnostics, not a proof that a schedule is reachable, impossible or
+physically effective; dynamic reachability still requires execution evidence.
 
 ## Host dependencies and experiment dependencies
 
@@ -165,7 +198,7 @@ records unchanged. It preserves these existing rules:
 - An unfinished receipt ends at the trace's line count. An unfinished write or
   annotated call produces no completed write. A reconciliation can remain open
   at EOF; interrupted runs are not automatically malformed.
-- Each reconciler function has one active worker. Different reconcilers can
+- Legacy records permit one active worker per reconciler function. Different reconcilers can
   interleave. Read keys/types are shared across those active reconcilers and
   cleared when no reconciliation remains active.
 - Trivial-reconciliation compression and relaxed boundaries follow the profile's
@@ -174,6 +207,33 @@ records unchanged. It preserves these existing rules:
   input errors. Null Get results and null/empty List results remain valid reads.
   Graph differences still require object payloads; a null payload at that stage
   is an unsupported input, not an operator alarm.
+
+New learning hooks append a `SIEVE-V2` identity to reconciliation boundaries and
+their reads/writes. A process-scoped invocation token distinguishes overlapping
+workers; a receiver type/address identifies controller instances within that
+process. Receiver addresses are observational identities, not replay selectors.
+The coordinator acknowledges each boundary and preserves the token on subsequent
+observations. Analysis keeps read dependencies per invocation and retains every
+explicit invocation rather than compressing distinct workers. Legacy trace and
+plan contracts keep their original interpretation. Unknown invocation tokens and
+mismatched instance endings are located input errors.
+
+An instance retains its previous interval checkpoint across completed
+invocations. Sequential nontrivial calls retain the legacy lower bounds; trivial
+compression can retain a checkpoint without changing real invocation identities.
+Overlapping calls share a conservative checkpoint until that instance is
+quiescent, with read dependencies still isolated per invocation.
+
+Cache-store interfaces have no context argument. The observer therefore obtains
+the current goroutine identity from the runtime stack header and maintains a
+stack for nested annotated calls. Unsupported headers produce an observer error
+and prevent learning. Identity errors and client RPC errors in either observer
+log reject the baseline before oracle construction or plan generation. Work
+spawned in another goroutine needs its own annotated
+entry; scope is not propagated across arbitrary asynchronous work. Instrumentation
+does not change worker counts, watches, scheduling, or operator state. Public RPC,
+overlapping-hook, 32-worker cold-start race and compiled-instrumentation tests
+cover identity propagation and unchanged function return behavior.
 
 Two existing limitations are deliberately preserved. The decoded `from_cache`
 flag remains false for both cache and REST records because the previous decoder

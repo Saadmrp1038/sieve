@@ -28,7 +28,7 @@ from sieve_tool.process import (
 from .cluster import start_controller, stop_coordinator
 
 
-def wait_for_schedule(directory: Path) -> None:
+def wait_for_schedule(directory: Path, *, wait: bool = True) -> None:
     # The workload can finish while the last triggered restart is still deleting
     # its pod. Keep the coordinator and log followers alive until it completes.
     script = """
@@ -52,7 +52,7 @@ done
                 "-c",
                 script,
                 "--",
-                str(math.ceil(remaining(limit("cluster")))),
+                str(math.ceil(remaining(limit("cluster")))) if wait else "0",
             ],
             operation="wait for fault schedule",
             category="cluster",
@@ -61,7 +61,7 @@ done
         outcome = {
             "status": "completed"
             if result.returncode == 0
-            else "timed_out"
+            else ("timed_out" if wait else "incomplete")
             if result.returncode == 124
             else "failed",
             "returncode": result.returncode,
@@ -236,14 +236,16 @@ def run_workload(context):
                     "duration_seconds": result.duration,
                     "log": os.path.relpath(result.log, directory),
                 }
-                marker = directory / "workload.log"
-                if (
-                    context.mode == sieve_modes.TEST
-                    and result.returncode == 0
-                    and marker.exists()
-                    and "FINISH-SIEVE-TEST" in marker.read_text()
-                ):
-                    wait_for_schedule(directory)
+                # Failed applications still retain an already completed fault,
+                # but proceed directly to diagnostics if it remains incomplete.
+                if context.mode == sieve_modes.TEST:
+                    marker = directory / "workload.log"
+                    wait_for_schedule(
+                        directory,
+                        wait=result.returncode == 0
+                        and marker.exists()
+                        and "FINISH-SIEVE-TEST" in marker.read_text(),
+                    )
             except ProcessTimeout as error:
                 outcome = {
                     "status": "timed_out",

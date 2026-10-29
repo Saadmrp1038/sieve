@@ -90,16 +90,27 @@ func NotifyLearnAfterControllerRecv(recvID int, operationType string, object int
 	checkResponse(response)
 }
 
-func NotifyLearnBeforeReconcile(stackFrame string) {
+func NotifyLearnBeforeReconcile(stackFrame string, receivers ...interface{}) {
 	if err := loadSieveConfigFromEnv(false); err != nil {
 		return
 	}
 	if err := initRPCClient(); err != nil {
 		return
 	}
+	var receiver interface{}
+	if len(receivers) > 0 {
+		receiver = receivers[0]
+	}
+	scope, scopeErr := beginLearnInvocation(stackFrame, receiver)
+	if scopeErr != nil {
+		log.Printf("[SIEVE-TRACE-ERROR] %v", scopeErr)
+		return
+	}
 	log.Printf("NotifyLearnBeforeReconcile %s", stackFrame)
 	request := &NotifyLearnBeforeReconcileRequest{
 		ReconcilerName: stackFrame,
+		InvocationID:   scope.id,
+		InstanceID:     scope.instance,
 	}
 	var response Response
 	err := rpcClient.Call("LearnListener.NotifyLearnBeforeReconcile", request, &response)
@@ -117,9 +128,17 @@ func NotifyLearnAfterReconcile(stackFrame string) {
 	if err := initRPCClient(); err != nil {
 		return
 	}
+	scope := currentLearnInvocation()
+	if scope.id == "" || scope.frame != stackFrame {
+		log.Printf("[SIEVE-TRACE-ERROR] unmatched reconciliation end %s", stackFrame)
+		return
+	}
+	defer endLearnInvocation(scope)
 	log.Printf("NotifyLearnAfterReconcile %s", stackFrame)
 	request := &NotifyLearnAfterReconcileRequest{
 		ReconcilerName: stackFrame,
+		InvocationID:   scope.id,
+		InstanceID:     scope.instance,
 	}
 	var response Response
 	err := rpcClient.Call("LearnListener.NotifyLearnAfterReconcile", request, &response)
@@ -161,6 +180,7 @@ func NotifyLearnAfterCacheGet(key string, item interface{}, exists bool) {
 	name := tokens[1]
 	log.Printf("NotifyLearnAfterCacheGet %s %s %s %s", resourceType, namespace, name, string(serializedObj))
 	request := &NotifyLearnAfterCacheGetRequest{
+		ReconcileID:  learnReconcileID(),
 		ResourceType: resourceType,
 		Namespace:    namespace,
 		Name:         name,
@@ -205,6 +225,7 @@ func NotifyLearnAfterCacheList(items []interface{}, listErr error) {
 	resourceType := getResourceTypeFromObj(items[0])
 	log.Printf("NotifyLearnAfterCacheList %s %s", resourceType, string(serializedObjList))
 	request := &NotifyLearnAfterCacheListRequest{
+		ReconcileID:  learnReconcileID(),
 		ResourceType: resourceType,
 		ObjectList:   string(serializedObjList),
 		ReconcileFun: reconcileFun,
@@ -302,6 +323,7 @@ func NotifyLearnAfterRestCall(controllerOperationID int, verb string, pathPrefix
 	} else if controllerOperationType == GET || controllerOperationType == LIST {
 		log.Println("Read operation")
 		request := &NotifyLearnAfterRestReadRequest{
+			ReconcileID:             learnReconcileID(),
 			ControllerOperationID:   controllerOperationID,
 			ControllerOperationType: controllerOperationType,
 			ReconcileFun:            reconcileFun,
@@ -321,6 +343,7 @@ func NotifyLearnAfterRestCall(controllerOperationID int, verb string, pathPrefix
 	} else {
 		log.Println("Write operation")
 		request := &NotifyLearnAfterRestWriteRequest{
+			ReconcileID:             learnReconcileID(),
 			ControllerOperationID:   controllerOperationID,
 			ControllerOperationType: controllerOperationType,
 			ReconcileFun:            reconcileFun,
@@ -377,6 +400,7 @@ func NotifyLearnAfterAnnotatedAPICall(invocationID int, moduleName string, fileP
 	}
 	reconcileFun := getMatchedReconcileStackFrame()
 	request := &NotifyLearnAfterAnnotatedAPICallRequest{
+		ReconcileID:  learnReconcileID(),
 		InvocationID: invocationID,
 		ModuleName:   moduleName,
 		FilePath:     filePath,

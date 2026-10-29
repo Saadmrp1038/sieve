@@ -236,6 +236,7 @@ class ControllerNonK8sWrite:
     range_start_timestamp: int = -1
     range_end_timestamp: int = -1
     signature_counter: int = 1
+    invocation_id: str | None = None
 
 
 @dataclass
@@ -261,6 +262,7 @@ class ControllerWrite:
     slim_cur_obj_map: Object | None = None
     prev_etype: str = EVENT_NONE_TYPE
     signature_counter: int = 1
+    invocation_id: str | None = None
 
     @property
     def key(self) -> str:
@@ -284,6 +286,7 @@ class ControllerRead:
     key_set: set[str]
     reconcile_id: ReconcileID = -1
     end_timestamp: int = -1
+    invocation_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -296,6 +299,8 @@ class ReconcileBegin:
     reconcile_fun: str
     reconcile_id: str
     end_timestamp: int = -1
+    invocation_id: str | None = None
+    instance_id: str | None = None
 
 
 @dataclass
@@ -303,6 +308,8 @@ class ReconcileEnd:
     reconcile_fun: str
     reconcile_id: str
     end_timestamp: int = -1
+    invocation_id: str | None = None
+    instance_id: str | None = None
 
 
 type ReconcilerEvent = (

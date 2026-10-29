@@ -1,8 +1,32 @@
 package example
 
-import "testing"
+import (
+    "testing"
+    "os"
+    "net"
+    "net/rpc"
+    "fmt"
+    "strings"
+    sieve "sieve.client"
+)
+
+type Observer struct { begins chan sieve.NotifyLearnBeforeReconcileRequest }
+func (o *Observer) NotifyLearnBeforeReconcile(r *sieve.NotifyLearnBeforeReconcileRequest, response *sieve.Response) error {
+    o.begins <- *r; response.Ok = true; return nil
+}
+func (o *Observer) NotifyLearnAfterReconcile(r *sieve.NotifyLearnAfterReconcileRequest, response *sieve.Response) error {
+    response.Ok = true; return nil
+}
 
 func TestBehavior(t *testing.T) {
+    observer := &Observer{make(chan sieve.NotifyLearnBeforeReconcileRequest, 2)}
+    server := rpc.NewServer()
+    if err := server.RegisterName("LearnListener", observer); err != nil { t.Fatal(err) }
+    listener, err := net.Listen("tcp", "127.0.0.1:0")
+    if err != nil { t.Fatal(err) }; defer listener.Close()
+    go func(){ connection, e := listener.Accept(); if e == nil { server.ServeConn(connection) } }()
+    os.Setenv("sieveTestPlan", fmt.Sprintf(`{"sieveServerAddr":%q,"annotatedReconcileStackFrame":["example.(*Reconciler).Reconcile"],"crdList":[],"rateLimiterEnabled":false}`, listener.Addr().String()))
+    defer os.Unsetenv("sieveTestPlan")
 	r := &Reconciler{}
 	value, err := r.Reconcile(3)
 	if value != 6 || err != nil || r.Calls != 1 {
@@ -12,4 +36,10 @@ func TestBehavior(t *testing.T) {
 	if value != -1 || err == nil || r.Calls != 2 {
 		t.Fatalf("changed early return: %d %v %+v", value, err, r)
 	}
+    for i:=0; i<2; i++ {
+        begin := <-observer.begins
+        if begin.InvocationID == "" || !strings.Contains(begin.InstanceID, "*example.Reconciler@") {
+            t.Fatalf("instrumented receiver identity missing: %+v", begin)
+        }
+    }
 }

@@ -21,6 +21,10 @@ status is recorded separately in `injection-process-outcome.json`; the oracle
 still requires the actual coordinator completion and read-pause evidence.
 Failed workloads proceed directly to diagnostics. Learning and vanilla runs do
 not perform this wait.
+Before diagnostics, a failed test workload takes an immediate completion sample
+so an already completed injection still has its own process outcome. An
+unfinished schedule is marked `incomplete` without consuming the cluster wait
+budget; this does not change the failed workload's exit code or completion flag.
 
 ## Default limits
 

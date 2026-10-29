@@ -24,6 +24,7 @@ from sieve_tool.common.common import (
     sieve_modes,
 )
 from sieve_tool.common.config import get_common_config, load_controller_config
+from sieve_tool.fault_proofs import audit_fault
 from sieve_tool.oracle.oracle import (
     check,
     create_differential_oracles,
@@ -107,6 +108,17 @@ def save_run_result(
             test_result_json,
             indent=4,
         )
+    proof = audit_fault(
+        Path(test_context.result_dir),
+        load_plan(Path(test_context.original_test_plan)),
+        test_result,
+        namespace=getattr(
+            getattr(test_context, "common_config", None), "namespace", "default"
+        ),
+    )
+    (Path(test_context.result_dir) / "fault-proof.json").write_text(
+        json.dumps(proof, indent=2) + "\n"
+    )
 
 
 def save_history_and_end_state(test_context: TestContext):
@@ -132,7 +144,11 @@ def post_process(
     For test mode, it will apply the differential oracles and report any detected errors.
     """
     if test_context.mode == sieve_modes.LEARN:
+        analyze.validate_learn_observations(test_context.result_dir)
         if test_context.build_oracle:
+            analyze.validate_learn_observations(
+                first_pass_learn_result_dir(test_context.result_dir)
+            )
             create_differential_oracles(test_context)
         analyze.generate_test_plans_from_learn_run(test_context)
         return None
@@ -232,6 +248,8 @@ def run_test(test_context: TestContext) -> TestResult:
                     raise RuntimeError(
                         "Baseline workload did not complete; refusing to learn from an incomplete run"
                     )
+                if test_context.mode == sieve_modes.LEARN:
+                    analyze.validate_learn_observations(directory)
             with cleanup_budget():
                 teardown_cluster()
             cluster_started = False

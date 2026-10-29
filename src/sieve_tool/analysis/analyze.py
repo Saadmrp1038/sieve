@@ -170,11 +170,23 @@ def generate_test_plans(
     raise ValueError(f"unknown analysis mode: {analysis_mode}")
 
 
+def validate_learn_observations(directory: str | Path) -> None:
+    for name in ("streamed-controller.log", "sieve-server.log"):
+        path = Path(directory) / name
+        if path.exists():
+            text = path.read_text()
+            if "[SIEVE-TRACE-ERROR]" in text or "Sieve client RPC error:" in text:
+                raise ValueError(
+                    f"{path}: observer identity/RPC failure; refusing to learn"
+                )
+
+
 def generate_test_plans_from_learn_run(
     test_context: TestContext,
 ) -> None:
     log_dir = test_context.result_dir
     oracle_dir = test_context.oracle_dir
+    validate_learn_observations(log_dir)
 
     log_path = os.path.join(log_dir, "sieve-server.log")
 

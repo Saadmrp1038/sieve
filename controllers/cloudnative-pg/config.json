@@ -1,0 +1,39 @@
+{
+    "name": "cloudnative-pg",
+    "github_link": "https://github.com/cloudnative-pg/cloudnative-pg.git",
+    "commit": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.37.0",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-cloudnative-pg:latest",
+    "annotated_reconcile_functions": {
+        "internal/controller/cluster_controller.go": "github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile",
+        "internal/controller/pooler_controller.go": "github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*PoolerReconciler).Reconcile"
+    },
+    "test_command": [
+        "python3",
+        "controllers/cloudnative-pg/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "cluster",
+        "pooler",
+        "backup",
+        "scheduledbackup",
+        "database",
+        "databaserole",
+        "publication",
+        "subscription",
+        "imagecatalog",
+        "clusterimagecatalog"
+    ],
+    "controller_pod_label": "cloudnative-pg",
+    "controller_deployment_file_path": "controllers/cloudnative-pg/deploy/operator.yaml",
+    "test_setting": {
+        "pooler-finalizer-updates": {
+            "num_workers": 0,
+            "independent_updates": true,
+            "write_trigger": "occurrence"
+        }
+    },
+    "container_name": "manager"
+}
