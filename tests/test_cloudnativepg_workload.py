@@ -123,7 +123,13 @@ elif verb=='get':
   for i in range(1,4):
    r=resource('Pod','sieve-db-'+str(i),'pod-'+str(i));r['metadata']['ownerReferences']=[{'uid':'cluster-uid','kind':'Cluster','controller':True}];r['status']={'conditions':[{'type':'Ready','status':'True'}]};items.append(r)
   emit({'items':items})
- elif k in ('deployment','service'):emit(child(k))
+ elif k in ('deployment','service'):
+  if k=='service' and s['scenario']=='missing-service':emit(None)
+  elif k=='service' and s['scenario']=='foreign-service':
+   r=child(k);r['metadata']['ownerReferences'][0]['uid']='foreign-pooler';emit(r)
+  elif k=='service' and s['scenario']=='delayed-service' and s.get('service_reads',0)<3:
+   s['service_reads']=s.get('service_reads',0)+1;emit(None)
+  else:emit(child(k))
  else:emit(s.get(k))
 elif verb=='patch':
  k=a[1].split('.')[0].rstrip('s'); r=s[k]; operations=json.loads(a[a.index('-p')+1])
@@ -197,6 +203,79 @@ def test_accepted_deletion_is_saved_before_an_interrupted_repair_wait(
         mutation["response"]["details"]["uid"]
         == mutation["resource"]["metadata"]["uid"]
     )
+
+
+def test_workload_waits_for_the_initial_owned_service_after_deployment_readiness(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "delayed-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "passed"
+    assert len(evidence["deletions"]) == 4
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["response"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == list("ABCD")
+    assert json.loads(state.read_text())["service_reads"] == 3
+
+
+@pytest.mark.parametrize("scenario", ["missing-service", "foreign-service"])
+def test_initial_service_wait_rejects_missing_or_foreign_children(
+    tmp_path, kubernetes_boundary, scenario
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": scenario}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert evidence["error"] == (
+        "Timed out: initial Pooler service"
+        if scenario == "missing-service"
+        else "Pooler child ownership is unproven"
+    )
+    assert not evidence["deletions"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
 
 
 def test_workload_retains_rejected_admission_and_retries_after_controller_restart(

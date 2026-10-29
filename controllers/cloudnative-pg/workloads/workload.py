@@ -7,6 +7,7 @@ import os
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -257,12 +258,14 @@ def main(argv: list[str] | None = None) -> int:
             evidence["owner_before"] = owner
             expected_owner = owner
             for kind in ("deployment", "service"):
-                child = get(kind, POOLER)
-                if not child or not any(
+                initial_child = wait(
+                    partial(get, kind, POOLER), "initial Pooler " + kind
+                )
+                if not any(
                     r.get("uid") == owner["metadata"]["uid"]
                     and r.get("kind") == "Pooler"
                     and r.get("controller") is True
-                    for r in child["metadata"].get("ownerReferences", [])
+                    for r in initial_child["metadata"].get("ownerReferences", [])
                 ):
                     raise RuntimeError("Pooler child ownership is unproven")
             # Positive control: an active owner still repairs a missing Deployment.
