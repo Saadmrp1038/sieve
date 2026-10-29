@@ -12,6 +12,23 @@ from sieve_tool.events import ControllerWrite
 from sieve_tool.trace import TraceError, read_trace
 
 
+@pytest.mark.parametrize("identity", ["SIEVE-V2:opaque", "SIEVE-V2:"])
+def test_legacy_reconcile_ids_remain_opaque(tmp_path, identity):
+    path = tmp_path / "legacy.log"
+    path.write_text(
+        f"[SIEVE-BEFORE-RECONCILE]\toperator.Reconcile\t{identity}\n"
+        f"[SIEVE-AFTER-RECONCILE]\toperator.Reconcile\t{identity}\n"
+    )
+    analyzed = assemble_trace(
+        read_trace(path), compress_trivial=True, loosen_boundary=False
+    )
+    assert [event.reconcile_id for event in analyzed.reconciles] == [
+        identity,
+        identity,
+    ]
+    assert all(event.invocation_id is None for event in analyzed.reconciles)
+
+
 def test_overlapping_same_frame_writes_keep_their_own_cache_reads(tmp_path):
     path = tmp_path / "workers.log"
     path.write_text(
