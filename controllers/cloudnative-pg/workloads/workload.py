@@ -128,8 +128,8 @@ def main(argv: list[str] | None = None) -> int:
                 "delete response does not identify the UID-tested mutation"
             )
         evidence["deletions"].append({"resource": resource, "response": response})
-        return response
         save()
+        return response
 
     def sql(pod: str, statement: str) -> str:
         return kubectl(

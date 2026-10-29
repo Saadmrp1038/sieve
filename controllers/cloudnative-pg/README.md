@@ -41,6 +41,8 @@ object is saved as `declared_owner_after_delete`. It retains all accepted mutati
 and returned
 objects in `workload-updates.json` and `benchmark-observations.json`, and writes
 explicit checks to `semantic-outcome.json`. Application failure returns nonzero.
+Accepted deletion receipts are saved before repair waits, including when the
+workload is interrupted before convergence.
 Independent Deployment and Service watches start before the A/B/C/D sequence and
 must acknowledge the original children before deletion begins. Their complete
 event streams must acknowledge both deleted child UIDs and remain active through

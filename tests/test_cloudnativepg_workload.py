@@ -94,6 +94,8 @@ if verb=='apply':
  s[k]=r; emit(r)
 elif verb=='get':
  k=a[1].split('.')[0].rstrip('s')
+ if s['scenario']=='interrupt-after-delete' and s.get('deletions') and k=='deployment':
+  os.kill(os.getppid(),9);raise SystemExit(0)
  if '--watch' in a:
   previous=None; transient=False
   def event(action,uid):
@@ -159,6 +161,36 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "CNPG_TEST_CLUSTER": str(state),
     }
+
+
+def test_accepted_deletion_is_saved_before_an_interrupted_repair_wait(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "interrupt-after-delete"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == -9
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    mutation = evidence["deletions"][0]
+    assert len(evidence["deletions"]) == 1
+    assert (
+        mutation["response"]["details"]["uid"]
+        == mutation["resource"]["metadata"]["uid"]
+    )
 
 
 @pytest.mark.parametrize(
