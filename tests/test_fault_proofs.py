@@ -15,6 +15,23 @@ from sieve_tool.runtime.runner import save_run_result
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.parametrize("proofs", [False, True])
+def test_report_cannot_silently_ignore_a_missing_plan_corpus(tmp_path, capsys, proofs):
+    arguments = [
+        "--repo",
+        str(ROOT),
+        "report",
+        "--results",
+        str(tmp_path),
+        "--plans",
+        str(tmp_path / "missing"),
+    ]
+    if proofs:
+        arguments.append("--proofs")
+    assert cli.main(arguments) == 1
+    assert ("--proofs" if not proofs else "directory") in capsys.readouterr().err
+
+
 def save_case(
     tmp_path,
     *,
@@ -29,6 +46,7 @@ def save_case(
     directory = tmp_path / "case"
     directory.mkdir()
     (directory / "sieve-server.log").write_text(
+        "all triggers are satisfied for action 0\n"
         "controller pod gets deleted\ncontroller pod 0 ready now\n"
         "Sieve test coordinator finishes all actions\n"
     )
@@ -182,3 +200,41 @@ def test_another_namespace_cannot_supply_the_replacement(tmp_path):
         ]
         is False
     )
+
+
+def test_report_distinguishes_generated_attempted_and_triggered(tmp_path, capsys):
+    plans = tmp_path / "generated"
+    plans.mkdir()
+    for name in ("selected.yaml", "not-attempted.yaml"):
+        (plans / name).write_bytes((ROOT / "fixtures/plans/restart.yaml").read_bytes())
+    save_case(
+        tmp_path,
+        deleted=True,
+        semantic={
+            "schema_version": 1,
+            "checks": [{"name": "data preserved", "passed": True}],
+        },
+    )
+    assert (
+        cli.main(
+            [
+                "--repo",
+                str(ROOT),
+                "report",
+                "--proofs",
+                "--results",
+                str(tmp_path),
+                "--plans",
+                str(plans),
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert (
+        report["generated"],
+        report["attempted"],
+        report["triggered"],
+        report["physically_verified"],
+    ) == (2, 1, 1, 1)
+    assert report["workloads_completed"] == 1

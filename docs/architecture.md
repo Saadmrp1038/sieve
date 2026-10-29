@@ -96,6 +96,10 @@ including stale-state faults, remain explicitly unverified. Application workload
 can write `semantic-outcome.json` with `schema_version: 1` and a nonempty `checks`
 list of `{name, passed}` objects. These explicit checks do not mask raw alarms.
 Proofs hash their source artifacts; reporting rejects changed source evidence.
+`--plans DIRECTORY` additionally counts a supplied generated YAML corpus;
+otherwise the generated count is unknown (`null`). Attempts, observed triggered
+actions, physical verification and completed workloads are reported separately.
+Counting a generated corpus does not imply that every candidate was executed.
 
 ## Batch execution
 

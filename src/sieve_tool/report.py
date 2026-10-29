@@ -4,13 +4,25 @@ import json
 from pathlib import Path
 
 from sieve_tool.fault_proofs import read_fault_proof
+from sieve_tool.plans import load_plan
 
 
-def proof_report(directory: Path) -> int:
+def proof_report(directory: Path, plans: Path | None = None) -> int:
     proofs = [read_fault_proof(p) for p in sorted(directory.rglob("fault-proof.json"))]
+    generated = None
+    if plans is not None:
+        if not plans.is_dir():
+            raise ValueError(f"Plan corpus must be an existing directory: {plans}")
+        generated = 0
+        for path in plans.rglob("*.yaml"):
+            load_plan(path)
+            generated += 1
     document = {
         "schema_version": 1,
         "attempted": len(proofs),
+        "generated": generated,
+        "triggered": sum(bool(p.triggered_actions) for p in proofs),
+        "workloads_completed": sum(p.workload_completed for p in proofs),
         "physically_verified": sum(p.physically_verified for p in proofs),
         "semantic_passed": sum(p.semantic_status == "passed" for p in proofs),
         "semantic_failed": sum(p.semantic_status == "failed" for p in proofs),

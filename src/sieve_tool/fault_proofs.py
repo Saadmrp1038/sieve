@@ -1,6 +1,7 @@
 """Independent physical fault evidence, alongside unmodified oracle alarms."""
 
 import hashlib
+import re
 from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
@@ -37,6 +38,7 @@ class FaultProof(BaseModel):
     missed_state: dict[str, object] | None
     evidence_sha256: dict[str, str]
     workload_completed: bool
+    triggered_actions: list[int]
 
 
 def read_fault_proof(path: Path) -> FaultProof:
@@ -57,6 +59,14 @@ def audit_fault(
     directory: Path, plan: FaultPlan, result: TestResult, *, namespace: str = "default"
 ) -> dict[str, object]:
     reasons: list[str] = []
+    server_path = directory / "sieve-server.log"
+    server = server_path.read_text() if server_path.exists() else ""
+    triggered_actions = sorted(
+        {
+            int(i)
+            for i in re.findall(r"all triggers are satisfied for action (\d+)", server)
+        }
+    )
     actions = plan.actions or []
     restarts = [a for a in actions if isinstance(a, RestartControllerAction)]
     missed = None
@@ -111,8 +121,6 @@ def audit_fault(
             reasons.append("matching old controller Pod API deletion is unproven")
         if len(ready) < len(restarts):
             reasons.append("distinct nonterminating Ready replacement is unproven")
-        server_path = directory / "sieve-server.log"
-        server = server_path.read_text() if server_path.exists() else ""
         if server.count("controller pod gets deleted") != len(restarts):
             reasons.append("matching coordinator restart actions are unproven")
     outcome_path = directory / "injection-process-outcome.json"
@@ -161,6 +169,7 @@ def audit_fault(
         + result.history_errors,
         "missed_state": asdict(missed) if missed is not None else None,
         "workload_completed": workload_completed,
+        "triggered_actions": triggered_actions,
         "evidence_sha256": {
             name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
             for name in source_names

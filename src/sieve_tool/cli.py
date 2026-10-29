@@ -81,6 +81,11 @@ def parser():
     )
     report.add_argument("--results", type=Path)
     report.add_argument(
+        "--plans",
+        type=Path,
+        help="Count a generated plan corpus without implying it was all executed",
+    )
+    report.add_argument(
         "--proofs",
         action="store_true",
         help="Report physical and semantic evidence separately from raw alarms",
@@ -311,8 +316,14 @@ def _dispatch(arguments, root, common):
     if arguments.command == "report":
         from sieve_tool.report import proof_report, report
 
+        if arguments.plans is not None and not arguments.proofs:
+            raise ValueError("--plans requires --proofs")
         directory = arguments.results or root / "runs/test"
-        return proof_report(directory) if arguments.proofs else report(directory)
+        return (
+            proof_report(directory, arguments.plans)
+            if arguments.proofs
+            else report(directory)
+        )
     if arguments.command == "controller":
         from sieve_tool.scaffold import create
 
