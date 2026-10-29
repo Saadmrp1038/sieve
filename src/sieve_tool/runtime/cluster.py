@@ -263,6 +263,37 @@ def setup_kind_cluster(test_context):
             time.sleep(min(5 * (attempt + 1), remaining(limit("cluster"))))
 
 
+@bounded("network")
+def pull_node_image(image: str) -> str:
+    """Pull an operand through CRI and require lookup by its config identity."""
+    root = repository_root()
+    prefix = ["docker", "exec", "kind-control-plane", "crictl"]
+    run(
+        prefix + ["pull", image],
+        operation="pull node operand image",
+        cwd=root,
+        category="network",
+    )
+    result = run(
+        prefix + ["inspecti", "--output", "json", image],
+        operation="resolve node operand image",
+        cwd=root,
+        capture_output=True,
+    )
+    identity = json.loads(result.stdout)["status"]["id"]
+    if not isinstance(identity, str) or not identity:
+        raise ValueError("CRI operand image has no config identity")
+    result = run(
+        prefix + ["inspecti", "--output", "json", identity],
+        operation="verify node operand config identity",
+        cwd=root,
+        capture_output=True,
+    )
+    if json.loads(result.stdout)["status"]["id"] != identity:
+        raise ValueError("CRI operand config identity did not resolve consistently")
+    return identity
+
+
 def _load_controller_image(image):
     root = repository_root()
     loaded = run(

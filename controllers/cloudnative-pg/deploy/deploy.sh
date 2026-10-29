@@ -3,19 +3,22 @@ set -eu
 # Reuse the same bounded, node-platform-aware loader as the runtime setup.
 python3 - <<'PY'
 import os
+import json
 from pathlib import Path
 import yaml
 from sieve_tool.process import execution
-from sieve_tool.runtime.cluster import _load_controller_image
+from sieve_tool.runtime.cluster import _load_controller_image, pull_node_image
 
-with execution():
+with execution(log_dir=Path.cwd() / "image-load-commands"):
     deployment = yaml.safe_load(Path("operator.yaml").read_text())
     container = deployment["spec"]["template"]["spec"]["containers"][0]
     operand = next(e["value"] for e in container["env"] if e["name"] == "OPERATOR_IMAGE_NAME")
     _load_controller_image(operand)
+    resolved = {}
     for name in ("SIEVE_CNPG_POSTGRES_IMAGE", "SIEVE_CNPG_PGBOUNCER_IMAGE"):
         if image := os.environ.get(name):
-            _load_controller_image(image)
+            resolved[image] = pull_node_image(image)
+    Path("node-operand-images.json").write_text(json.dumps(resolved, indent=2) + "\n")
 PY
 curl --fail --location --max-time 120 --retry 2 \
   https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.30.1/cnpg-1.30.1.yaml \

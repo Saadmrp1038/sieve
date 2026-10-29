@@ -48,6 +48,10 @@ The benchmark pins PostgreSQL and PgBouncer by digest using
 PostgreSQL references retain their version tag before the digest, for example
 `postgresql:18.6-system-trixie@sha256:…`; native admission needs that tag for
 upgrade detection. Bare digest references are rejected before Kubernetes setup.
+Published operands are pulled through the node's CRI and must resolve by config
+ID as kubelet expects. `deployment/node-operand-images.json` records those IDs;
+the bounded pull/lookup logs are retained with the deployment evidence. This
+avoids a successful archive import leaving a dangling synthetic image reference.
 Public workload CLI
 options can select these images and finite diagnostic timing; the VM benchmark
 uses the documented full timing, not the accelerated boundary-test values.
