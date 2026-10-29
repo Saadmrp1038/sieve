@@ -100,6 +100,9 @@ Proofs hash their source artifacts; reporting rejects changed source evidence.
 otherwise the generated count is unknown (`null`). Attempts, observed triggered
 actions, physical verification and completed workloads are reported separately.
 Counting a generated corpus does not imply that every candidate was executed.
+Saved attempts and injection outcomes are inventoried independently of proofs.
+Missing proofs fail reporting, count as unknown application outcomes, and retain
+their raw alarms instead of disappearing from the attempted coverage totals.
 
 ## Batch execution
 

@@ -40,11 +40,16 @@ def save_case(
     injection_json=None,
     existing_replica=False,
     replacement_namespace="default",
+    standard_layout=False,
 ):
     plan = ROOT / "fixtures/plans/restart.yaml"
     label = load_plan(plan).actions[0].controller_label
-    directory = tmp_path / "case"
-    directory.mkdir()
+    directory = (
+        tmp_path / "operator/workload/test/restart"
+        if standard_layout
+        else tmp_path / "case"
+    )
+    directory.mkdir(parents=True)
     (directory / "sieve-server.log").write_text(
         "all triggers are satisfied for action 0\n"
         "controller pod gets deleted\ncontroller pod 0 ready now\n"
@@ -173,6 +178,53 @@ def test_report_rejects_a_proof_after_source_evidence_changes(tmp_path, capsys):
         == 1
     )
     assert "evidence hash" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("keep_injection_outcome", [True, False])
+@pytest.mark.parametrize("standard_layout", [True, False])
+def test_report_cannot_omit_a_saved_attempt_without_a_proof(
+    tmp_path, capsys, keep_injection_outcome, standard_layout
+):
+    save_case(
+        tmp_path / "healthy",
+        deleted=True,
+        semantic={
+            "schema_version": 1,
+            "checks": [{"name": "data preserved", "passed": True}],
+        },
+    )
+    with pytest.raises(ArtifactError):
+        save_case(
+            tmp_path / "broken",
+            deleted=True,
+            standard_layout=standard_layout,
+            injection_json='{"status":"completed","returncode":false}',
+        )
+    if not keep_injection_outcome:
+        case = "operator/workload/test/restart" if standard_layout else "case"
+        (tmp_path / "broken" / case / "injection-process-outcome.json").unlink()
+    assert cli.main(["report", "--proofs", "--results", str(tmp_path)]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["attempted"] == 2
+    assert report["physically_verified"] == 1
+    assert report["semantic_unknown"] == 1
+    assert len(report["missing_proofs"]) + report["unlocated_attempts"] == 1
+    assert report["raw_alarm_count"] == 2
+    assert report["unproven_raw_results"][0]["raw_alarms"] == ["retained history alarm"]
+
+
+def test_proof_report_ignores_unrelated_json_streams(tmp_path, capsys):
+    save_case(
+        tmp_path,
+        deleted=True,
+        semantic={
+            "schema_version": 1,
+            "checks": [{"name": "data preserved", "passed": True}],
+        },
+    )
+    (tmp_path / "source-fixture.json").write_text('{"one":1}\n{"two":2}\n')
+    assert cli.main(["report", "--proofs", "--results", str(tmp_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["attempted"] == 1
 
 
 @pytest.mark.parametrize(
