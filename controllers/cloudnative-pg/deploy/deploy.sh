@@ -3,10 +3,16 @@ set -eu
 # Reuse the same bounded, node-platform-aware loader as the runtime setup.
 python3 - <<'PY'
 import os
+from pathlib import Path
+import yaml
 from sieve_tool.process import execution
 from sieve_tool.runtime.cluster import _load_controller_image
 
 with execution():
+    deployment = yaml.safe_load(Path("operator.yaml").read_text())
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    operand = next(e["value"] for e in container["env"] if e["name"] == "OPERATOR_IMAGE_NAME")
+    _load_controller_image(operand)
     for name in ("SIEVE_CNPG_POSTGRES_IMAGE", "SIEVE_CNPG_PGBOUNCER_IMAGE"):
         if image := os.environ.get(name):
             _load_controller_image(image)

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 from sieve_tool.common.config import load_controller_config
 
@@ -24,6 +25,11 @@ def test_profile_pins_native_graph_and_unchanged_default_concurrency():
     deployment = (ROOT / "controllers/cloudnative-pg/deploy/operator.yaml").read_text()
     assert "--max-concurrent-reconciles=10" in deployment
     assert "name: sieveTestPlan" in deployment
+    container = yaml.safe_load(deployment)["spec"]["template"]["spec"]["containers"][0]
+    operand_image = next(
+        e["value"] for e in container["env"] if e["name"] == "OPERATOR_IMAGE_NAME"
+    )
+    assert operand_image == "${SIEVE-DR}/cloudnative-pg:vanilla"
 
 
 @pytest.fixture
@@ -39,8 +45,10 @@ path=Path(os.environ['CNPG_TEST_CLUSTER']); s=json.loads(path.read_text())
 a=sys.argv[1:]
 if a[:2]==['--namespace','default']:a=a[2:]
 verb=a[0]
+def save():
+ temporary=path.with_suffix('.tmp');temporary.write_text(json.dumps(s));temporary.replace(path)
 def emit(v):
- path.write_text(json.dumps(s)); print(json.dumps(v) if v is not None else '')
+ save(); print(json.dumps(v) if v is not None else '')
 def resource(kind,name,uid):
  return {'apiVersion':'v1','kind':kind,'metadata':{'name':name,'namespace':'default','uid':uid,'generation':1,'resourceVersion':'1'}}
 def child(kind):
@@ -105,7 +113,7 @@ elif verb=='exec':
   if s['scenario']=='lost-data' and s.get('pooler',{}).get('metadata',{}).get('deletionTimestamp'):rows=rows[:-1]
   print(json.dumps(rows))
  else:print('')
- path.write_text(json.dumps(s))
+ save()
 else:raise SystemExit('unsupported kubectl operation '+repr(a))
 """
     )

@@ -14,7 +14,11 @@ banner. Learning adds observation calls to the Cluster and Pooler reconciliation
 test mode leaves original operator Go files unchanged. All controller registrations
 and the release manifest's default ten reconciliation workers remain enabled.
 Other reconciler frames and instance-manager internals are outside this initial
-trace scope. The instance manager uses the same paired operator binary.
+trace scope. Instance managers use the same upstream revision's uninstrumented
+`vanilla` image in every mode. Build that image before learning or testing. This
+keeps operand binaries constant across the fixed control, learning and test runs
+without masking image fields in the oracle. The main controller alone uses the
+selected instrumented mode; all instance-manager API events remain API-captured.
 
 The main controller, service account, bindings and webhook routing are adapted to
 `default` for Sieve. The upstream v1.30.1 installation YAML is checked against its

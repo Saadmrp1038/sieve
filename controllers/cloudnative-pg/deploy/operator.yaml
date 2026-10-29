@@ -28,7 +28,7 @@ spec:
         - /manager
         env:
         - name: OPERATOR_IMAGE_NAME
-          value: ${SIEVE-DR}/cloudnative-pg:${SIEVE-DT}
+          value: ${SIEVE-DR}/cloudnative-pg:vanilla
         - name: OPERATOR_NAMESPACE
           valueFrom:
             fieldRef:
