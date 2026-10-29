@@ -127,6 +127,12 @@ elif verb=='get':
  else:emit(s.get(k))
 elif verb=='patch':
  k=a[1].split('.')[0].rstrip('s'); r=s[k]; operations=json.loads(a[a.index('-p')+1])
+ phase=next((o['value'].get('sieve.testing/phase') for o in operations if o['path']=='/metadata/annotations'),None)
+ if s['scenario'] in ('webhook-restarts','webhook-unavailable','webhook-denied') and phase=='B' and (s['scenario']!='webhook-restarts' or not s.get('webhook_refusals')):
+  s['webhook_refusals']=s.get('webhook_refusals',0)+1;save()
+  message='Error from server (Forbidden): pooler metadata update denied by policy' if s['scenario']=='webhook-denied' else 'Error from server (InternalError): Internal error occurred: failed calling webhook "vpooler.cnpg.io": failed to call webhook: Post "https://cnpg-webhook-service.default.svc:443/validate-postgresql-cnpg-io-v1-pooler?timeout=10s": dial tcp 10.96.0.1:443: connect: connection refused'
+  print(message,file=sys.stderr)
+  raise SystemExit(1)
  for op in operations:
   parts=[v.replace('~1','/').replace('~0','~') for v in op['path'].strip('/').split('/')]; parent=r
   for v in parts[:-1]:parent=parent.setdefault(v,{})
@@ -191,6 +197,91 @@ def test_accepted_deletion_is_saved_before_an_interrupted_repair_wait(
         mutation["response"]["details"]["uid"]
         == mutation["resource"]["metadata"]["uid"]
     )
+
+
+def test_workload_retains_rejected_admission_and_retries_after_controller_restart(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "webhook-restarts"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["state"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == list("ABCD")
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "passed"
+    assert len(evidence["api_retries"]) == 1
+    rejected = tmp_path / evidence["api_retries"][0]["command_log"]
+    assert (
+        "connect: connection refused" in rejected.with_suffix(".stderr.log").read_text()
+    )
+    assert json.loads(state.read_text())["webhook_refusals"] == 1
+
+
+@pytest.mark.parametrize("scenario", ["webhook-denied", "webhook-unavailable"])
+def test_admission_retry_fails_closed_for_policy_rejection_or_expired_budget(
+    tmp_path, kubernetes_boundary, scenario
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": scenario}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert not (tmp_path / "semantic-outcome.json").exists()
+    if scenario == "webhook-denied":
+        assert json.loads(state.read_text())["webhook_refusals"] == 1
+        assert not evidence.get("api_retries")
+    else:
+        assert len(evidence["api_retries"]) > 1
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["state"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == ["A"]
 
 
 @pytest.mark.parametrize(
