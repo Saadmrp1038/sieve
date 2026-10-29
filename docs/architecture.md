@@ -224,7 +224,9 @@ quiescent, with read dependencies still isolated per invocation.
 Cache-store interfaces have no context argument. The observer therefore obtains
 the current goroutine identity from the runtime stack header and maintains a
 stack for nested annotated calls. Unsupported headers produce an observer error
-and prevent learning. Work spawned in another goroutine needs its own annotated
+and prevent learning. Identity errors and client RPC errors in either observer
+log reject the baseline before oracle construction or plan generation. Work
+spawned in another goroutine needs its own annotated
 entry; scope is not propagated across arbitrary asynchronous work. Instrumentation
 does not change worker counts, watches, scheduling, or operator state. Public RPC,
 overlapping-hook, 32-worker cold-start race and compiled-instrumentation tests

@@ -45,12 +45,21 @@ def test_an_explicit_read_cannot_silently_lose_its_invocation(tmp_path):
         assemble_trace(read_trace(path), compress_trivial=True, loosen_boundary=False)
 
 
-def test_learning_rejects_an_observer_identity_failure(tmp_path):
+@pytest.mark.parametrize(
+    "filename,diagnostic",
+    [
+        (
+            "streamed-controller.log",
+            "[SIEVE-TRACE-ERROR] unsupported runtime stack header",
+        ),
+        ("streamed-controller.log", "Sieve client RPC error: unmatched invocation"),
+        ("sieve-server.log", "[SIEVE-TRACE-ERROR] unmatched invocation"),
+    ],
+)
+def test_learning_rejects_an_observer_identity_failure(tmp_path, filename, diagnostic):
     (tmp_path / "mask.json").write_text("{}")
     (tmp_path / "sieve-server.log").write_text("")
-    (tmp_path / "streamed-controller.log").write_text(
-        "[SIEVE-TRACE-ERROR] unsupported runtime stack header\n"
-    )
+    (tmp_path / filename).write_text(diagnostic + "\n")
     context = SimpleNamespace(
         result_dir=str(tmp_path),
         oracle_dir=str(tmp_path),
@@ -63,7 +72,7 @@ def test_learning_rejects_an_observer_identity_failure(tmp_path):
             / "controllers/kubernetes-secret-generator"
         ),
     )
-    with pytest.raises(ValueError, match="observer identity"):
+    with pytest.raises(ValueError, match="observer"):
         generate_test_plans_from_learn_run(context)
 
 
