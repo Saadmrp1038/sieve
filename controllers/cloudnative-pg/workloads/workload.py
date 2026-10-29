@@ -244,13 +244,12 @@ def main(argv: list[str] | None = None) -> int:
             }
             watches: list[tuple[str, Path, ManagedProcess]] = []
             watch_initial: dict[str, str] = {}
-            template = '{.type}{"\\t"}{.object.kind}{"\\t"}{.object.metadata.uid}{"\\t"}{.object.metadata.ownerReferences[0].uid}{"\\n"}'
             for kind in ("deployment", "service"):
                 child = get(kind, POOLER)
                 if child is None:
                     raise RuntimeError("child missing before continuous observation")
                 watch_initial[kind] = child["metadata"]["uid"]
-                path = directory / f"owned-child-watch-{kind}.tsv"
+                path = directory / f"owned-child-watch-{kind}.json-stream"
                 process = followers.enter_context(
                     ManagedProcess(
                         [
@@ -264,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
                             "--output-watch-events",
                             "--request-timeout=900s",
                             "-o",
-                            "jsonpath=" + template,
+                            "json",
                         ],
                         operation="watch Pooler owned " + kind,
                         category="workload",
@@ -279,27 +278,44 @@ def main(argv: list[str] | None = None) -> int:
                 records = []
                 for kind, path, _ in watches:
                     content = path.read_text()
-                    if content and not content.endswith("\n"):
-                        if complete:
-                            raise RuntimeError("incomplete owned-resource watch event")
-                        content = content.rpartition("\n")[0]
-                    for line in content.splitlines():
-                        fields = line.split("\t")
+                    decoder = json.JSONDecoder()
+                    while content.strip():
+                        content = content.lstrip()
+                        try:
+                            event, end = decoder.raw_decode(content)
+                        except json.JSONDecodeError as error:
+                            if complete:
+                                raise RuntimeError(
+                                    "incomplete owned-resource watch event"
+                                ) from error
+                            break
+                        content = content[end:]
+                        if not isinstance(event, dict) or not isinstance(
+                            event.get("object"), dict
+                        ):
+                            raise RuntimeError("invalid owned-resource watch envelope")
+                        obj = event["object"]
+                        metadata = obj.get("metadata", {})
+                        owners = metadata.get("ownerReferences", [])
+                        owner_uid = owners[0].get("uid") if owners else None
+                        uid = metadata.get("uid")
                         if (
-                            len(fields) != 4
-                            or fields[0] not in ("ADDED", "MODIFIED", "DELETED")
-                            or fields[1].lower() != kind
-                            or not fields[2]
+                            event.get("type") not in ("ADDED", "MODIFIED", "DELETED")
+                            or obj.get("kind", "").lower() != kind
+                            or not isinstance(uid, str)
+                            or not uid
+                            or not isinstance(owner_uid, str)
+                            or not owner_uid
                         ):
                             raise RuntimeError(
                                 "invalid or incomplete owned-resource watch event"
                             )
                         records.append(
                             dict(
-                                event=fields[0],
+                                event=event["type"],
                                 kind=kind,
-                                uid=fields[2],
-                                owner_uid=fields[3],
+                                uid=uid,
+                                owner_uid=owner_uid,
                             )
                         )
                 return records

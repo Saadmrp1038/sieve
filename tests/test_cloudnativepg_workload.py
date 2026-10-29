@@ -96,18 +96,25 @@ elif verb=='get':
  k=a[1].split('.')[0].rstrip('s')
  if '--watch' in a:
   previous=None; transient=False
+  def event(action,uid):
+   kind='Deployment' if k=='deployment' else 'Service'
+   if a[-1]=='json':
+    print(json.dumps({'type':action,'object':{'kind':kind,'metadata':{'uid':uid,'ownerReferences':[{'uid':'pooler-uid'}]}}},indent=2),flush=True)
+   else:
+    # kubectl's text tabwriter expands JSONPath tabs during a watch.
+    print('   '.join([action,kind,uid,'pooler-uid']),flush=True)
   while True:
    try:current=json.loads(path.read_text())
    except json.JSONDecodeError:time.sleep(.001);continue
    obj=current.get(k);uid=obj['metadata']['uid'] if obj else None
    if uid!=previous and not (current['scenario']=='stalled' and previous is not None):
-    if previous:print('DELETED\t'+('Deployment' if k=='deployment' else 'Service')+'\t'+previous+'\tpooler-uid',flush=True)
-    if uid:print('ADDED\t'+obj['kind']+'\t'+uid+'\tpooler-uid',flush=True)
+    if previous:event('DELETED',previous)
+    if uid:event('ADDED',uid)
     previous=uid
    if current['scenario']=='transient' and not transient and current.get('pooler',{}).get('metadata',{}).get('annotations',{}).get('sieve.testing/phase') in ('C','D'):
     transient=True
-    print('ADDED\t'+('Deployment' if k=='deployment' else 'Service')+'\ttransient-'+k+'\tpooler-uid',flush=True)
-    print('DELETED\t'+('Deployment' if k=='deployment' else 'Service')+'\ttransient-'+k+'\tpooler-uid',flush=True)
+    event('ADDED','transient-'+k)
+    event('DELETED','transient-'+k)
    time.sleep(.001)
  if k=='pod':
   items=[]

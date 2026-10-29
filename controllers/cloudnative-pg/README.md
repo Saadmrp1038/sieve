@@ -42,6 +42,8 @@ event streams must acknowledge both deleted child UIDs and remain active through
 the observation window and SQL checks, so a
 short-lived recreated child is counted even when ordinary Gets miss it. Broken
 or incomplete watch streams are harness failures, not healthy cleanup evidence.
+The raw `owned-child-watch-*.json-stream` files contain kubectl's structured watch
+events; incremental JSON decoding avoids its text printer's tab expansion.
 
 The benchmark pins PostgreSQL and PgBouncer by digest using
 `SIEVE_CNPG_POSTGRES_IMAGE` and `SIEVE_CNPG_PGBOUNCER_IMAGE`.
