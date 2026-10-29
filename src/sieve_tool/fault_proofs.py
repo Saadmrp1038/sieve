@@ -23,13 +23,13 @@ class SemanticCheck(BaseModel):
 
 class SemanticOutcome(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
-    schema_version: Literal[1]
+    schema_version: int = Field(ge=1, le=1)
     checks: list[SemanticCheck] = Field(min_length=1)
 
 
 class FaultProof(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
-    schema_version: Literal[1]
+    schema_version: int = Field(ge=1, le=1)
     physically_verified: bool
     reasons: list[str]
     semantic_status: Literal["unknown", "passed", "failed"]

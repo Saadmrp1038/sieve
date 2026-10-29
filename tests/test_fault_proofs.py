@@ -187,6 +187,35 @@ def test_malformed_process_evidence_cannot_verify_a_fault(tmp_path, invalid):
         save_case(tmp_path, deleted=True, injection_json=invalid)
 
 
+@pytest.mark.parametrize("version", [True, 1.0])
+def test_semantic_schema_version_requires_an_integer(tmp_path, version):
+    with pytest.raises(ArtifactError, match="schema_version"):
+        save_case(
+            tmp_path,
+            deleted=True,
+            semantic={
+                "schema_version": version,
+                "checks": [{"name": "data preserved", "passed": True}],
+            },
+        )
+
+
+@pytest.mark.parametrize("version", [True, 1.0])
+def test_report_rejects_noninteger_proof_versions(tmp_path, capsys, version):
+    proof = save_case(
+        tmp_path,
+        deleted=True,
+        semantic={
+            "schema_version": 1,
+            "checks": [{"name": "data preserved", "passed": True}],
+        },
+    )
+    proof["schema_version"] = version
+    (tmp_path / "case/fault-proof.json").write_text(json.dumps(proof))
+    assert cli.main(["report", "--proofs", "--results", str(tmp_path)]) == 1
+    assert "schema_version" in capsys.readouterr().err
+
+
 def test_existing_ready_replica_is_not_a_new_replacement(tmp_path):
     proof = save_case(tmp_path, deleted=True, existing_replica=True)
     assert proof["physically_verified"] is False
