@@ -104,8 +104,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return response
 
-    def delete(resource: Resource, path: str) -> None:
-        response = json.loads(
+    def delete(resource: Resource, path: str) -> Resource:
+        response: Resource = json.loads(
             kubectl(
                 "delete",
                 "--raw",
@@ -128,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
                 "delete response does not identify the UID-tested mutation"
             )
         evidence["deletions"].append({"resource": resource, "response": response})
+        return response
         save()
 
     def sql(pod: str, statement: str) -> str:
@@ -218,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
             if not owner:
                 raise RuntimeError("Pooler disappeared")
             evidence["owner_before"] = owner
+            expected_owner = owner
             for kind in ("deployment", "service"):
                 child = get(kind, POOLER)
                 if not child or not any(
@@ -385,9 +387,9 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 )
                 if (
-                    response["spec"] != owner["spec"]
+                    response["spec"] != expected_owner["spec"]
                     or any(
-                        response["metadata"][k] != owner["metadata"][k]
+                        response["metadata"][k] != expected_owner["metadata"][k]
                         for k in ("uid", "generation")
                     )
                     or response["metadata"]["annotations"][PHASE] != phase
@@ -407,13 +409,43 @@ def main(argv: list[str] | None = None) -> int:
             update("B", add_finalizer=True)
             time.sleep(args.update_interval)
             live = get("poolers.postgresql.cnpg.io", POOLER)
-            if live is None:
-                raise RuntimeError("Pooler disappeared before delete")
-            delete(
+            if (
+                live is None
+                or live["spec"] != expected_owner["spec"]
+                or any(
+                    live["metadata"][k] != expected_owner["metadata"][k]
+                    for k in ("uid", "generation")
+                )
+            ):
+                raise RuntimeError("Pooler declared state changed before delete")
+            expected_owner = delete(
                 live, f"/apis/postgresql.cnpg.io/v1/namespaces/default/poolers/{POOLER}"
             )
+            if (
+                expected_owner.get("spec") != owner["spec"]
+                or expected_owner.get("metadata", {}).get("uid")
+                != owner["metadata"]["uid"]
+                or type(expected_owner["metadata"].get("generation")) is not int
+                or expected_owner["metadata"]["generation"]
+                not in (
+                    owner["metadata"]["generation"],
+                    owner["metadata"]["generation"] + 1,
+                )
+                or not expected_owner["metadata"].get("deletionTimestamp")
+            ):
+                raise RuntimeError(
+                    "owner deletion response does not identify its declared state"
+                )
+            evidence["declared_owner_after_delete"] = expected_owner
             deleting = get("poolers.postgresql.cnpg.io", POOLER)
-            if not deleting or not deleting["metadata"].get("deletionTimestamp"):
+            if (
+                not deleting
+                or deleting["spec"] != expected_owner["spec"]
+                or any(
+                    deleting["metadata"][k] != expected_owner["metadata"][k]
+                    for k in ("uid", "generation", "deletionTimestamp")
+                )
+            ):
                 raise RuntimeError("owner deletion did not enter finalization")
             evidence["owner_deleting"] = deleting
             old_children = {}
@@ -531,11 +563,11 @@ def main(argv: list[str] | None = None) -> int:
                         ),
                     },
                     {
-                        "name": "pooler_spec_identity_unchanged_during_finalization",
+                        "name": "pooler_spec_identity_matches_declared_deletion",
                         "passed": final_owner is not None
                         and final_owner["spec"] == owner["spec"]
                         and all(
-                            final_owner["metadata"][k] == owner["metadata"][k]
+                            final_owner["metadata"][k] == expected_owner["metadata"][k]
                             for k in ("uid", "generation")
                         )
                         and bool(final_owner["metadata"].get("deletionTimestamp")),

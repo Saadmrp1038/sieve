@@ -131,12 +131,15 @@ elif verb=='patch':
   if op['op']=='test':
    if parent.get(parts[-1])!=op['value']:raise SystemExit('UID precondition failed')
   else:parent[parts[-1]]=op['value']
+ if s['scenario']=='unexpected-generation' and r['metadata'].get('annotations',{}).get('sieve.testing/phase')=='C':r['metadata']['generation']+=1
  r['metadata']['resourceVersion']=str(int(r['metadata']['resourceVersion'])+1);emit(r)
 elif verb=='delete':
  raw=a[a.index('--raw')+1]; k=raw.split('/')[-2].rstrip('s'); body=json.load(sys.stdin); r=s[k]
  if r['metadata']['uid']!=body['preconditions']['uid']:raise SystemExit('UID precondition failed')
  uid=r['metadata']['uid'];s.setdefault('deletions',[]).append({'kind':k,'uid':uid})
- if k=='pooler':r['metadata']['deletionTimestamp']='2026-10-28T18:00:00Z'
+ if k=='pooler':
+  r['metadata']['deletionTimestamp']='2026-10-28T18:00:00Z';r['metadata']['generation']+=1
+  emit(r);raise SystemExit(0)
  else:s[k]=None
  emit({'kind':'Status','status':'Success','details':{'uid':uid}})
 elif verb=='exec':
@@ -160,7 +163,14 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
 
 @pytest.mark.parametrize(
     "scenario, expected",
-    [("fixed", 0), ("buggy", 1), ("lost-data", 1), ("transient", 1), ("stalled", 1)],
+    [
+        ("fixed", 0),
+        ("buggy", 1),
+        ("lost-data", 1),
+        ("transient", 1),
+        ("stalled", 1),
+        ("unexpected-generation", 1),
+    ],
 )
 def test_workload_detects_recreated_children_and_lost_sql_rows(
     tmp_path, kubernetes_boundary, scenario, expected
@@ -193,10 +203,14 @@ def test_workload_detects_recreated_children_and_lost_sql_rows(
         timeout=20,
     )
     assert result.returncode == expected, result.stdout + result.stderr
-    if scenario == "stalled":
+    if scenario in ("stalled", "unexpected-generation"):
         evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
         assert evidence["status"] == "harness_or_setup_failure"
-        assert "watch did not acknowledge" in evidence["error"]
+        assert (
+            "watch did not acknowledge"
+            if scenario == "stalled"
+            else "update changed undeclared"
+        ) in evidence["error"]
         assert not (tmp_path / "semantic-outcome.json").exists()
         return
     semantic = json.loads((tmp_path / "semantic-outcome.json").read_text())

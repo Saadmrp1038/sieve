@@ -33,7 +33,12 @@ the workload requests owner deletion and independently deletes the owned
 Deployment and Service before C. D and a 45-second observation window follow.
 It checks for any recreated children while the owner is terminating, preserved
 Cluster/Pooler identity/specification, matching SQL data on all three instances,
-and exactly one writable primary. It retains all accepted mutations and returned
+and exactly one writable primary. Kubernetes may advance a custom resource's
+generation when accepting deletion. The exact returned deletion object declares
+the expected generation for C/D and final checks; UID/spec stay unchanged, and
+any further undeclared generation change still fails. The accepted deletion
+object is saved as `declared_owner_after_delete`. It retains all accepted mutations
+and returned
 objects in `workload-updates.json` and `benchmark-observations.json`, and writes
 explicit checks to `semantic-outcome.json`. Application failure returns nonzero.
 Independent Deployment and Service watches start before the A/B/C/D sequence and
