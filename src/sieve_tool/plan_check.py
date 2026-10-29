@@ -35,8 +35,11 @@ def diagnose(plans: Path, trace: Path) -> int:
                 "independent update evidence belongs to a different workload"
             )
         diagnostics: list[dict[str, object]] = []
+        stale += any(
+            isinstance(action, ReconnectControllerAction)
+            for action in plan.actions or []
+        )
         for index, action in enumerate(plan.actions or []):
-            stale += int(isinstance(action, ReconnectControllerAction))
             for definition in action.trigger.definitions:
                 condition, observation = (
                     definition.condition,

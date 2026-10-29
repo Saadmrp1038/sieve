@@ -11,6 +11,36 @@ from sieve_tool import cli
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_stale_coverage_counts_plans_instead_of_reconnect_actions(tmp_path, capsys):
+    plans = tmp_path / "plans"
+    plans.mkdir()
+    document = yaml.safe_load((ROOT / "fixtures/plans/restart.yaml").read_text())
+    action = document["actions"][0]
+    action.update(
+        actionType="reconnectController", reconnectAPIServer="kind-control-plane2"
+    )
+    document["actions"].append(dict(action))
+    (plans / "two-reconnects.yaml").write_text(yaml.safe_dump(document))
+    trace = tmp_path / "baseline.log"
+    trace.write_text("")
+    assert (
+        cli.main(
+            [
+                "--repo",
+                str(ROOT),
+                "check-plans",
+                "--plans",
+                str(plans),
+                "--trace",
+                str(trace),
+            ]
+        )
+        == 1
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["generated"] == report["stale_state_plans"] == 1
+
+
 def test_plan_check_reports_an_unobserved_occurrence_and_zero_stale_coverage(
     tmp_path, capsys
 ):
