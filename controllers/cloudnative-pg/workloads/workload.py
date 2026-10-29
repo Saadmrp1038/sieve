@@ -457,6 +457,19 @@ def main(argv: list[str] | None = None) -> int:
             followers.close()
             events = watch_events(complete=True)
             evidence["owned_child_events"] = events
+            if any(
+                not any(
+                    r["kind"] == kind
+                    and r["uid"] == uid
+                    and r["event"] == "DELETED"
+                    and r["owner_uid"] == owner["metadata"]["uid"]
+                    for r in events
+                )
+                for kind, uid in old_children.items()
+            ):
+                raise RuntimeError(
+                    "owned-resource watch did not acknowledge child deletion"
+                )
             evidence["recreated_child_events"] = [
                 r
                 for r in events

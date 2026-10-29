@@ -38,7 +38,8 @@ objects in `workload-updates.json` and `benchmark-observations.json`, and writes
 explicit checks to `semantic-outcome.json`. Application failure returns nonzero.
 Independent Deployment and Service watches start before the A/B/C/D sequence and
 must acknowledge the original children before deletion begins. Their complete
-event streams remain active through the observation window and SQL checks, so a
+event streams must acknowledge both deleted child UIDs and remain active through
+the observation window and SQL checks, so a
 short-lived recreated child is counted even when ordinary Gets miss it. Broken
 or incomplete watch streams are harness failures, not healthy cleanup evidence.
 

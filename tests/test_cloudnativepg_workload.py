@@ -73,7 +73,7 @@ elif verb=='get':
    try:current=json.loads(path.read_text())
    except json.JSONDecodeError:time.sleep(.001);continue
    obj=current.get(k);uid=obj['metadata']['uid'] if obj else None
-   if uid!=previous:
+   if uid!=previous and not (current['scenario']=='stalled' and previous is not None):
     if previous:print('DELETED\t'+('Deployment' if k=='deployment' else 'Service')+'\t'+previous+'\tpooler-uid',flush=True)
     if uid:print('ADDED\t'+obj['kind']+'\t'+uid+'\tpooler-uid',flush=True)
     previous=uid
@@ -126,7 +126,7 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
 
 @pytest.mark.parametrize(
     "scenario, expected",
-    [("fixed", 0), ("buggy", 1), ("lost-data", 1), ("transient", 1)],
+    [("fixed", 0), ("buggy", 1), ("lost-data", 1), ("transient", 1), ("stalled", 1)],
 )
 def test_workload_detects_recreated_children_and_lost_sql_rows(
     tmp_path, kubernetes_boundary, scenario, expected
@@ -159,6 +159,12 @@ def test_workload_detects_recreated_children_and_lost_sql_rows(
         timeout=20,
     )
     assert result.returncode == expected, result.stdout + result.stderr
+    if scenario == "stalled":
+        evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+        assert evidence["status"] == "harness_or_setup_failure"
+        assert "watch did not acknowledge" in evidence["error"]
+        assert not (tmp_path / "semantic-outcome.json").exists()
+        return
     semantic = json.loads((tmp_path / "semantic-outcome.json").read_text())
     checks = {c["name"]: c["passed"] for c in semantic["checks"]}
     assert checks["no_children_recreated_after_owner_deletion"] is (
