@@ -47,6 +47,8 @@ elif verb=='get':
   items=[]
   for i in range(1,4):
    obj=resource('Pod','sieve-db-'+str(i),'pod-'+str(i),{});obj['metadata']['ownerReferences']=[{'uid':s['cluster']['metadata']['uid'],'kind':'Cluster','controller':True}];obj['status']={'conditions':[{'type':'Ready','status':'True'}]};items.append(obj)
+  if s.get('scenario')=='shared-cluster-label':
+   obj=resource('Pod','sieve-pooler-xyz','pooler-pod',{});obj['metadata']['ownerReferences']=[{'uid':'pooler-replicaset','kind':'ReplicaSet','controller':True}];obj['status']={'conditions':[{'type':'Ready','status':'True'}]};items.append(obj)
   emit({'items':items})
  else:emit(s.get(k))
 elif verb=='patch':
@@ -144,3 +146,15 @@ def test_replacement_rejects_stale_ownership_and_missing_acknowledged_rows(
     checks = json.loads((tmp_path / "semantic-outcome.json").read_text())["checks"]
     assert {c["name"]: c["passed"] for c in checks}[failed_check] is False
     assert "FINISH-SIEVE-TEST" not in (tmp_path / "workload.log").read_text()
+
+
+def test_replacement_checks_only_database_pods_with_the_current_cluster_owner(
+    tmp_path, replacement_cluster
+):
+    state, environment = replacement_cluster
+    state.write_text(json.dumps({"scenario": "shared-cluster-label"}))
+    result = run_workload(tmp_path, environment)
+    assert result.returncode == 0, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "replacement-observations.json").read_text())
+    assert set(evidence["database_rows"]) == {"sieve-db-1", "sieve-db-2", "sieve-db-3"}
+    assert len(evidence["database_pods"]) == 3

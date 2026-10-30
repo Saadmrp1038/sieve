@@ -339,6 +339,16 @@ def main(argv: list[str] | None = None) -> int:
             pods = json.loads(
                 kubectl("get", "pods", "-l", "cnpg.io/cluster=" + CLUSTER, "-o", "json")
             )["items"]
+            pods = [
+                pod
+                for pod in pods
+                if any(
+                    owner.get("uid") == cluster["metadata"]["uid"]
+                    and owner.get("kind") == "Cluster"
+                    and owner.get("controller") is True
+                    for owner in pod["metadata"].get("ownerReferences", [])
+                )
+            ]
             evidence["database_pods"] = pods
             rows = {
                 p["metadata"]["name"]: json.loads(sql(p["metadata"]["name"], query))
