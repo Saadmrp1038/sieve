@@ -33,7 +33,7 @@ EXPECTED_ROWS = [[i, f"ack-{i}"] for i in range(1, 33)]
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
-    if argv and argv[0] == "pooler-replacement":
+    if argv and argv[0] in ("pooler-replacement", "pooler-replacement-clients"):
         from replacement import main as replacement_main
 
         return replacement_main(argv)

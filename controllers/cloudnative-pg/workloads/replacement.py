@@ -6,8 +6,11 @@ import math
 import os
 import time
 from collections.abc import Callable
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
+
+from clients import Clients
 
 from sieve_tool.process import ProcessError, ProcessTimeout, deadline, execution
 from sieve_tool.testing.child_repair import Resource, get
@@ -21,7 +24,9 @@ EXPECTED_ROWS = [[i, f"ack-{i}"] for i in range(1, 33)]
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("workload", choices=["pooler-replacement"])
+    parser.add_argument(
+        "workload", choices=["pooler-replacement", "pooler-replacement-clients"]
+    )
     parser.add_argument("output", type=Path)
     parser.add_argument("--ready-timeout", type=float, default=300)
     parser.add_argument("--poll-interval", type=float, default=1)
@@ -174,7 +179,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         return response
 
-    with execution(log_dir=directory / "workload-commands"):
+    with execution(log_dir=directory / "workload-commands"), ExitStack() as stack:
+        clients = (
+            Clients(directory, stack, kubectl)
+            if args.workload == "pooler-replacement-clients"
+            else None
+        )
+        if clients:
+            evidence["client_events"] = clients.events
         try:
             kubectl(
                 "apply",
@@ -220,6 +232,11 @@ def main(argv: list[str] | None = None) -> int:
             evidence["acknowledged_rows"] = json.loads(sql(primary, query))
             if evidence["acknowledged_rows"] != EXPECTED_ROWS:
                 raise RuntimeError("Initial SQL acknowledgments differ")
+            if clients:
+                sql(
+                    primary,
+                    "CREATE ROLE sieve_probe LOGIN PASSWORD 'sieve-public-probe-fixture'; GRANT CONNECT ON DATABASE postgres TO sieve_probe; GRANT USAGE ON SCHEMA public TO sieve_probe; GRANT SELECT ON sieve_benchmark TO sieve_probe;",
+                )
             old = json.loads(
                 kubectl(
                     "create", "-f", "-", "-o", "json", payload=pooler_document(1, "A")
@@ -242,9 +259,25 @@ def main(argv: list[str] | None = None) -> int:
                 return None
 
             evidence["old_children"] = wait(initial_children, "initial owned children")
+            if clients:
+                clients.start()
+                wait(
+                    lambda: (
+                        (get("pod", "sieve-client") or {})
+                        .get("status", {})
+                        .get("phase")
+                        == "Running"
+                    ),
+                    "client pod running",
+                )
+                clients.follow()
+                wait(clients.warm, "successful queries through both routes")
+                clients.mark("clients_warm")
             evidence["armed_old_pooler"] = phase_patch(old_uid, "B")
             save()
             time.sleep(args.replacement_delay)
+            if clients:
+                clients.mark("delete_requested")
             response = json.loads(
                 kubectl(
                     "delete",
@@ -267,6 +300,8 @@ def main(argv: list[str] | None = None) -> int:
                 != old_uid
             ):
                 raise RuntimeError("Delete receipt does not identify old Pooler UID")
+            if clients:
+                clients.mark("delete_accepted")
             evidence["delete_response"] = response
             save()
             wait(
@@ -288,6 +323,8 @@ def main(argv: list[str] | None = None) -> int:
             evidence["new_pooler"] = new
             save()
             evidence["released_new_pooler"] = phase_patch(new["metadata"]["uid"], "C")
+            if clients:
+                clients.mark("replacement_C_accepted")
             save()
 
             def sample() -> bool:
@@ -330,11 +367,39 @@ def main(argv: list[str] | None = None) -> int:
                 if str(error) != "Timed out: replacement convergence":
                     raise
                 evidence["convergence_timeout"] = str(error)
+            if clients:
+                clients.mark("converged")
             stable = converged
             end = time.monotonic() + args.observe_seconds
             while time.monotonic() < end:
                 stable = sample() and stable
                 time.sleep(min(args.poll_interval, max(0, end - time.monotonic())))
+            if clients:
+                clients.mark("observation_complete")
+                evidence["clients"] = clients.finish()
+                checks.extend(
+                    [
+                        {
+                            "name": "continuous_client_evidence_complete",
+                            "passed": all(
+                                m["complete"] for m in evidence["clients"].values()
+                            ),
+                        },
+                        {
+                            "name": "client_query_results_correct",
+                            "passed": all(
+                                m["bad_results"] == 0
+                                for m in evidence["clients"].values()
+                            ),
+                        },
+                        {
+                            "name": "both_client_routes_recovered",
+                            "passed": all(
+                                m["recovered"] for m in evidence["clients"].values()
+                            ),
+                        },
+                    ]
+                )
             final = evidence["samples"][-1]
             pods = json.loads(
                 kubectl("get", "pods", "-l", "cnpg.io/cluster=" + CLUSTER, "-o", "json")

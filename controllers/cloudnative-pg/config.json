@@ -29,6 +29,9 @@
     "controller_pod_label": "cloudnative-pg",
     "controller_deployment_file_path": "controllers/cloudnative-pg/deploy/operator.yaml",
     "test_setting": {
+        "pooler-replacement-clients": {
+            "num_workers": 0
+        },
         "pooler-replacement": {
             "num_workers": 0
         },

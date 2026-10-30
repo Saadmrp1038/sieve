@@ -22,6 +22,29 @@ unchanged. A passing no-fault control and two healthy learning baselines gate
 fault execution. The experiment caps ordinary fault attempts at two, plus at
 most two failure-confirmation runs.
 
+## Continuous clients during replacement
+
+`pooler-replacement-clients` uses the same replacement sequence and old-read
+pause actions. Before phase B, an independent Pod starts two fresh-connection
+query loops: one through `sieve-pooler.default.svc`, the other directly through
+`sieve-db-rw.default.svc`. Both must produce successful warm-up queries. Every
+attempt records timestamps, stdout, stderr, exit code and timeout; the expected
+aggregate is `32|528|32`. The benchmark creates its own public synthetic SQL
+login and reads no existing authentication Secret. The client Pod has no owner
+reference, Cluster label or service-account token mount.
+
+Each loop starts a query every 0.2 seconds after its previous result, caps each
+query at four seconds, and stops after 420 seconds plus at most one in-flight
+query. It normally stops after the replacement has converged and the ordinary
+30-second observation window completes. Complete contiguous logs, clean client
+termination, correct results and successful post-convergence queries are required.
+Connection errors during the deliberately destructive replacement are measured,
+not automatically called an operator defect. Compare them against the matched
+`actions: null` control on the same test image. This measures fresh connection
+availability; it does not establish persistent-session or transaction behavior.
+The finite experiment allows one vanilla setup control, two learning baselines,
+and at most two matched no-fault/paused-read pairs, with 900-second phase limits.
+
 ## Original calibration
 
 The initial calibration targets upstream [#11359](https://github.com/cloudnative-pg/cloudnative-pg/pull/11359).
