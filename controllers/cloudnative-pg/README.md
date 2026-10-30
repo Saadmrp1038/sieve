@@ -1,5 +1,29 @@
 # CloudNativePG benchmark profile
 
+## Pooler identity replacement experiment
+
+`pooler-replacement` is separate from the original calibration workload. It
+creates a healthy one-instance Pooler, records its children and UID, and adds
+phase B. Ten seconds later it deletes that UID with Background propagation and
+creates a Pooler under the same name with a new UID and two instances. A
+UID-tested phase-C patch supplies an independent release condition. It checks
+convergence and stability of correctly owned replacement children, the requested
+replica count, unchanged Cluster identity/spec, all 32 acknowledged database
+rows on three instances, and exactly one writable primary.
+
+The two manually authored plans in `plans/pooler-replacement/` use existing
+Sieve actions: hold a Pooler read after it fetched the old object until the new
+identity's C receipt, or restart after API delivery of C. These plans are not
+generated-plan coverage. The after-read hold requires a separate physical audit
+of actual hold/release, the returned old UID and replacement API/cache ordering;
+the generic missed-state proof does not establish that scenario. No pause is
+released by a timer. Native operator code, worker counts and prior evidence are
+unchanged. A passing no-fault control and two healthy learning baselines gate
+fault execution. The experiment caps ordinary fault attempts at two, plus at
+most two failure-confirmation runs.
+
+## Original calibration
+
 The initial calibration targets upstream [#11359](https://github.com/cloudnative-pg/cloudnative-pg/pull/11359).
 The unmodified parent `e819964e03fb638c0acaf13b45a9e862c9e3eadb` can recreate a
 Pooler's Deployment and Service after deletion starts. The unmodified fixed
