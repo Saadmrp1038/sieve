@@ -1,0 +1,435 @@
+{
+  "schema_version": 1,
+  "status": "bounded_unchanged_replay_effective_application_pass",
+  "original_remaining_index": 54,
+  "original_index": 55,
+  "plan_filename": "intermediate-state-test-plan-58.yaml",
+  "plan_sha256": "b21ee834332f07caee2a5f1cb64e385a37d3ff9dfbaabc8452b1c040879c9acc",
+  "trigger_occurrence": 165,
+  "worker_count": 10,
+  "operator_subject_revision": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+  "runtime_source_commit": "40d9999c5d2a2b9f22f6f9d559e3f5e59992f18a",
+  "runtime_source_archive_sha256": "e6ecb40f0fe42b296c8246e0ec088d017a7c49755947829aaf2aa0eaaeb7abed",
+  "unchanged_runner_sha256": "c456d1c86c56a75ad6814e50962a5fec10c11853b80d3599b66ed9aa12577d2e",
+  "scoped_campaign_manifest_sha256": "4a536a9e64a4d030654292f9033fcff94eb8db7b7003126497dd48dbfac8b7be",
+  "service_limit_seconds": 1800,
+  "phase_limit_seconds": 1500,
+  "injection_limit_seconds": 600,
+  "automatic_repeat_count": 0,
+  "started_at": "2026-10-29T20:15:02.024300+00:00",
+  "finished_at": "2026-10-29T20:21:28.312332+00:00",
+  "runner_case_seconds": 385.31448840303347,
+  "matching_writes_total": 175,
+  "matching_writes_before_trigger": 165,
+  "matching_write_operation_counts": {
+    "Patch": 64,
+    "StatusUpdate": 111
+  },
+  "matching_write_phase_counts": {
+    "null": 5,
+    "Setting up primary": 5,
+    "Waiting for the instances to become active": 148,
+    "Creating a new replica": 4,
+    "Cluster in healthy state": 13
+  },
+  "matching_write_165": {
+    "line_position": 819,
+    "operation": "StatusUpdate",
+    "phase": "Cluster in healthy state",
+    "resourceVersion": "1242"
+  },
+  "first_trigger_log_position": 822,
+  "physical": {
+    "verified": true,
+    "triggered": true,
+    "deleted_controller_uids": [
+      "516277f4-be89-4aeb-8025-75a28ad1b014"
+    ],
+    "distinct_ready_nonterminating_replacements": [
+      "5ce43409-2e71-4a5d-828c-339e074e2134"
+    ],
+    "coordinator_restart_count": 1,
+    "injection_process_completed": true
+  },
+  "application": {
+    "node_operand_images": {
+      "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce": "sha256:cad3ed8339b7ca42eb707b1d300cb6668ec6a6aa982684d1495439bd2f27cb6e",
+      "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8": "sha256:a1b691fd55b36c59f387a0ef65a6e3bd40cd32e199a6cf41b8ed2cca5e84ce8c"
+    },
+    "accepted_deletions": [
+      {
+        "kind": "Deployment",
+        "uid": "ebf981c6-fd31-4e94-a942-fcbcbc932811"
+      },
+      {
+        "kind": "Pooler",
+        "uid": "e495e1c7-af2e-4a0c-8e64-adcb3f98bc82"
+      },
+      {
+        "kind": "Deployment",
+        "uid": "8d8236d7-897c-4030-b7a1-0a7f1e232122"
+      },
+      {
+        "kind": "Service",
+        "uid": "fd444be7-9434-4872-ae63-21561f78a81e"
+      }
+    ],
+    "active_owner_new_ready_uid": "8d8236d7-897c-4030-b7a1-0a7f1e232122",
+    "streams": {
+      "deployment": {
+        "events": 2,
+        "old_uid": "8d8236d7-897c-4030-b7a1-0a7f1e232122",
+        "old_deletion_positions": [
+          1
+        ],
+        "recreated": []
+      },
+      "service": {
+        "events": 2,
+        "old_uid": "fd444be7-9434-4872-ae63-21561f78a81e",
+        "old_deletion_positions": [
+          1
+        ],
+        "recreated": []
+      }
+    },
+    "recreated_children": [],
+    "sql_stdout_files": [
+      "0228-ceb63230.stdout.log",
+      "0226-25c486f4.stdout.log",
+      "0080-510b78c0.stdout.log",
+      "0227-6e026fce.stdout.log"
+    ],
+    "sql_role_stdout_files": [
+      [
+        "0230-fa110983.stdout.log",
+        "t"
+      ],
+      [
+        "0229-908932c2.stdout.log",
+        "f"
+      ],
+      [
+        "0231-efadc425.stdout.log",
+        "t"
+      ]
+    ],
+    "acknowledged_and_replicated_rows": 32,
+    "ready_database_instances": 3,
+    "one_writable_primary": true,
+    "declared_parent_identities_specs_preserved": true,
+    "owner_generation_before": 1,
+    "owner_generation_declared_after_deletion": 2,
+    "owner_generation_final": 2,
+    "accepted_update_versions": [
+      "1485",
+      "1507",
+      "1545",
+      "1572"
+    ],
+    "semantic_failures": [],
+    "process": {
+      "status": "completed",
+      "returncode": 0,
+      "duration_seconds": 226.088809577981,
+      "log": "commands/0023-6eefaf26"
+    },
+    "operator_panics": 0
+  },
+  "api": {
+    "api_events": 600,
+    "api_recreated_children": [],
+    "accepted_update_versions_in_api": [
+      "1485",
+      "1507",
+      "1545",
+      "1572"
+    ],
+    "ca_captured_and_matches_raw_api": true,
+    "all_saved_state_objects_match_api_reconstruction": 48
+  },
+  "leader_transition_evidence": {
+    "lease_key": "lease/default/db9c8771.cnpg.io",
+    "actual_changes": [
+      {
+        "api_position": 28,
+        "holder": "cnpg-controller-manager-556cb46657-fk7jx_6599ad52-1b4c-4df0-95a0-a0d372e5571d",
+        "transitions": 0,
+        "lease_uid": "f9ccdcf2-c83c-489b-a95a-303d3efbeece",
+        "resourceVersion": "661"
+      },
+      {
+        "api_position": 427,
+        "holder": "cnpg-controller-manager-556cb46657-frd89_75f4e212-7083-4473-8dd6-69ed4eaf8cf4",
+        "transitions": 1,
+        "lease_uid": "f9ccdcf2-c83c-489b-a95a-303d3efbeece",
+        "resourceVersion": "1363"
+      }
+    ],
+    "old_controller_uid": "516277f4-be89-4aeb-8025-75a28ad1b014",
+    "old_controller_name": "cnpg-controller-manager-556cb46657-fk7jx",
+    "old_deletion_started_position": 373,
+    "old_deleted_position": 391,
+    "replacement_controller_uid": "5ce43409-2e71-4a5d-828c-339e074e2134",
+    "replacement_controller_name": "cnpg-controller-manager-556cb46657-frd89",
+    "baseline_lease_transitions": [
+      0,
+      0
+    ],
+    "classification": "Leader holder changed exactly once from the deleted controller to its observed Ready replacement; counter0to1 is the recorded restart effect."
+  },
+  "semantic_status": "passed",
+  "raw_cli_returncode": 1,
+  "public_proof_report_returncode": 0,
+  "raw_alarms": [
+    "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+    "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+    "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"configMapResourceVersion\"][\"metrics\"][\"cnpg-default-monitoring\"] is 657 after reference run, but 616 after testing run",
+    "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run"
+  ],
+  "alarm_classifications": [
+    {
+      "category": "instrumentation_binary_hash",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run"
+    },
+    {
+      "category": "instrumentation_binary_hash",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run"
+    },
+    {
+      "category": "cross_cluster_monitoring_resource_version",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"configMapResourceVersion\"][\"metrics\"][\"cnpg-default-monitoring\"] is 657 after reference run, but 616 after testing run"
+    },
+    {
+      "category": "verified_restart_leader_lease_transition",
+      "alarm": "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run"
+    }
+  ],
+  "raw_alarm_count": 4,
+  "api_retry_count": 0,
+  "result_directory": "runs/cloudnativepg-plan54-bounded-20261029-vm",
+  "file_count": 683,
+  "bytes": 160102888,
+  "result_manifest": ".cache/cloudnativepg/plan54-followup-20261029/result-hashes.json",
+  "result_manifest_sha256": "f679dc6a58174103c23d427f15d5ed7a69085651e49ab714a0a9d9b98a6c26b8",
+  "independent_review": "runs/cloudnativepg-plan54-bounded-20261029-review.json",
+  "independent_review_sha256": "7d6604c8c41906c12aa75cbd658f8f8e3c0b18f70d2e927408a6ea3e8de2123e",
+  "public_proof_report": ".cache/cloudnativepg/plan54-followup-20261029/proof-report.json",
+  "prior_investigation": {
+    "plan": {
+      "remaining_index": 54,
+      "original_index": 55,
+      "batch_index": 5,
+      "source_path": "learn/cloudnative-pg/pooler-finalizer-updates/learn/intermediate-state/intermediate-state-test-plan-58.yaml",
+      "family": "intermediate-state",
+      "filename": "intermediate-state-test-plan-58.yaml",
+      "sha256": "b21ee834332f07caee2a5f1cb64e385a37d3ff9dfbaabc8452b1c040879c9acc"
+    },
+    "trigger_occurrence": 165,
+    "exact_observer": "github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile",
+    "resource_key": "cluster/default/sieve-db",
+    "condition": "onObjectUpdate, no state-diff predicate",
+    "prior_replays": [
+      {
+        "result_directory": "runs/cloudnativepg-remaining-batch-05-vm/test-054/cloudnative-pg/pooler-finalizer-updates/test/intermediate-state-test-plan-58",
+        "plan_sha256": "b21ee834332f07caee2a5f1cb64e385a37d3ff9dfbaabc8452b1c040879c9acc",
+        "server_sha256": "2e8ea2e6c66087a139b8511655aad474165e173a6b884140e6d5c4e42f56ca86",
+        "matching_writes": 157,
+        "shortfall": 8,
+        "by_operation": {
+          "Patch": 54,
+          "StatusUpdate": 103
+        },
+        "by_cluster_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 130,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "coordinator_notifications_sent": 157,
+        "coordinator_notifications_completed": 157,
+        "first_matching_write": "2026-10-29 15:44:02.838918",
+        "last_matching_write": "2026-10-29 15:46:19.003601",
+        "matching_write_span_seconds": 136.164683,
+        "writes_by_elapsed_minute": {
+          "0": 109,
+          "1": 45,
+          "2": 3
+        },
+        "maximum_interwrite_gap_seconds": 8.501153,
+        "injection_process": {
+          "status": "timed_out",
+          "returncode": 124,
+          "duration_seconds": 599.3058444929775,
+          "log": "commands/0024-cfde8461"
+        },
+        "application_status": "passed",
+        "physical_effect": false,
+        "harness_RPC_or_panic_markers": 0
+      },
+      {
+        "result_directory": "runs/cloudnativepg-remaining-diagnostic-54-59-94f5a0e-vm/test-054/cloudnative-pg/pooler-finalizer-updates/test/intermediate-state-test-plan-58",
+        "plan_sha256": "b21ee834332f07caee2a5f1cb64e385a37d3ff9dfbaabc8452b1c040879c9acc",
+        "server_sha256": "74ee00ca7f9f15c8fce0601d8ccabc1a73b95fea16b2c7f4b83913e3a2b3ca7f",
+        "matching_writes": 163,
+        "shortfall": 2,
+        "by_operation": {
+          "Patch": 56,
+          "StatusUpdate": 107
+        },
+        "by_cluster_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 136,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "coordinator_notifications_sent": 163,
+        "coordinator_notifications_completed": 163,
+        "first_matching_write": "2026-10-29 16:49:50.056768",
+        "last_matching_write": "2026-10-29 16:52:11.781066",
+        "matching_write_span_seconds": 141.724298,
+        "writes_by_elapsed_minute": {
+          "0": 108,
+          "1": 51,
+          "2": 4
+        },
+        "maximum_interwrite_gap_seconds": 8.576668,
+        "injection_process": {
+          "status": "timed_out",
+          "returncode": 124,
+          "duration_seconds": 599.3342687429395,
+          "log": "commands/0024-639a0374"
+        },
+        "application_status": "passed",
+        "physical_effect": false,
+        "harness_RPC_or_panic_markers": 0
+      }
+    ],
+    "learning_baselines": [
+      {
+        "name": "learn_prev",
+        "trace_sha256": "b491cf21bea102c6ef83022c003fa6e0bd61b7f6bf356e05e88efa51b1e4db61",
+        "successful_matching_writes": 192,
+        "by_operation": {
+          "Patch": 68,
+          "StatusUpdate": 124
+        },
+        "write_errors": {}
+      },
+      {
+        "name": "learn",
+        "trace_sha256": "85321e5c096a709cc4fc852a162976996989a07c5000a90e84b53646ce5ad9ed",
+        "successful_matching_writes": 187,
+        "by_operation": {
+          "Patch": 65,
+          "StatusUpdate": 122
+        },
+        "write_errors": {}
+      }
+    ],
+    "superseded_review": {
+      "path": ".cache/cloudnativepg/plan54-followup-20261029/prior-investigation.json",
+      "reason": "Learning events live in sieve-server.log, not controller.log; the first investigation incorrectly reported zero learning writes. Original replay counts are unchanged."
+    },
+    "unchanged_source_hashes": {
+      "go/coordinator/test_coordinator.go": "8e34bc3ba435119728bb791f5885a4b1dd54175656183877ebb43fb22c822a50",
+      "go/coordinator/test_plan.go": "461d10c9a5d53ddf241058f65aea6be766eb3200dfc0d41fd00d4e5cff4d4edd",
+      "go/client/test_client.go": "20bfa1bc5a8197d534853462e8b538045da847d5ea4580302f27b6d78f2149fb"
+    },
+    "conclusion": "Both prior coordinator logs contain fewer than165matchingnotifications, and every observednotification completed. The unqualified trigger increments for each matching update, so it never reached165. Successfulwritecounts vary acrossfreshclusters/learning/replays; baseline support doesnotguarantee occurrence reachability. No dropped observednotifications, observer mismatch, state-diff filtering, RPCerror or physicalrestart wasfound. Individual causesof differingreconciliation/event counts remain observational, notproven causal attributions."
+  },
+  "phase_comparison": {
+    "plan_remaining_index": 54,
+    "phase_counts": [
+      {
+        "kind": "learning",
+        "name": "learn_prev",
+        "total_matching_writes": 192,
+        "by_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 165,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "occurrence165phase": "Waiting for the instances to become active"
+      },
+      {
+        "kind": "learning",
+        "name": "learn",
+        "total_matching_writes": 187,
+        "by_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 160,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "occurrence165phase": "Waiting for the instances to become active"
+      },
+      {
+        "kind": "replay",
+        "name": "runs/cloudnativepg-remaining-batch-05-vm/test-054/cloudnative-pg/pooler-finalizer-updates/test/intermediate-state-test-plan-58",
+        "total_matching_writes": 157,
+        "by_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 130,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "occurrence165_observed": false
+      },
+      {
+        "kind": "replay",
+        "name": "runs/cloudnativepg-remaining-diagnostic-54-59-94f5a0e-vm/test-054/cloudnative-pg/pooler-finalizer-updates/test/intermediate-state-test-plan-58",
+        "total_matching_writes": 163,
+        "by_phase": {
+          "null": 5,
+          "Setting up primary": 5,
+          "Waiting for the instances to become active": 136,
+          "Creating a new replica": 4,
+          "Cluster in healthy state": 13
+        },
+        "occurrence165_observed": false
+      }
+    ],
+    "confirmed": "All cross-run count differences lie in waiting-for-instances startup. Otherphasescontribute27updatesin eachtrace. Learningbaseline165occurrencehappensduringstartup; bothreplaysleavewaitingphasebeforethetotalreaches165. Noindependentstate-basedgateforces165replayevents. The6writeoriginal-versusdiagnosticdifferenceis2Patch+4StatusUpdate,allinwaitingphase.",
+    "causal_limit": "These traces establish event-count/reachability variability; they do not isolate which underlying startup scheduling, readiness notification or queue timing produced it. No controller logic defect or lost observed RPC is established."
+  },
+  "native_readiness_proof": {
+    "subject_revision": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+    "source_path": ".cache/cloudnativepg/upstream/internal/controller/cluster_controller.go",
+    "source_sha256": "2e8d02a0c8bdef823e521761e01151ceb9ba6524c0659de6668bb1dbb175a94a",
+    "original_and_built_sha256_match": true,
+    "native_behavior": "While allInstancesAreActive is false, RegisterPhase records WaitingForInstancesToBeActive and reconciliation requeues after1second. No count165guarantee.",
+    "interpretation": "This supports startup/readiness timing sensitivity of an unqualified write-occurrence trigger. The traces isolate the variable count to that phase; they do not identify the individual scheduling cause."
+  },
+  "preserved_existing_files": {
+    "docs/rfe/managed-child-repair/cloudnativepg-remaining-plans-results.json": "4ab56139c4836d82676427b6b085a612aa5b793699c7048c34049845344bac33",
+    "docs/rfe/managed-child-repair/cloudnativepg-remaining-plans-validation.md": "c55c71ea664f18f5a8721393b843b0e010ef273420496072e1618ffa746d14df",
+    ".cache/cloudnativepg/remaining/campaign.json": "d9895aa6c21c63d27d63f33df0460cc6879a5b18acbb2dc892c360d90b2a1169",
+    ".cache/cloudnativepg/remaining/campaign-runtime-40d9999.json": "3a5215d4f1ecaf854ea9764b0a7aed5a6aaf6bfd1f92d768f3e652503e2ff0ca",
+    ".cache/cloudnativepg/remaining/runtime-source-40d9999.json": "635153aa37e50a4df4377f84948e5c41c441d48d07a13efb9952a5f4d206c1f9",
+    ".cache/cloudnativepg/remaining/campaign-state.json": "38f613a78f4e7cd7accb33e97877839b393a91e693442403ce5c0c696f76059f",
+    ".cache/cloudnativepg/remaining/batch-05-result-hashes.json": "d0752b546bb884cfb0a39e82db8944b4bc585da50dfc9ad4b9b3945ba94af84b",
+    ".cache/cloudnativepg/remaining/diagnostic-54-59-94f5a0e-result-hashes.json": "30d7542d204af7c1a3fd876a513b4466c869e369512be1835aca61f392070824",
+    "runs/cloudnativepg-remaining-batch-05-review.json": "6caacca2ee50394d44ddad5f8ec282fb6736f8f7e7986fc1f1501073ff7feae5",
+    "runs/cloudnativepg-remaining-batch-05-review-failure.json": "9edf2a9caf40ef34436a30c2fde42ee282894083e01bcfc5ac707cd8a574fd99",
+    "runs/cloudnativepg-remaining-diagnostic-54-59-94f5a0e-review.json": "fdf116c4988b337377846d4776c30e916f3e6da737acd29b23fc54f49ce85b08",
+    "tests/test_trace_errors.py": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287"
+  },
+  "prior_completed_aggregate_unchanged": true,
+  "prior_campaign_unique_increment": 0,
+  "post_followup_distinct_effective_coverage": {
+    "count": 77,
+    "selected_unique": 77,
+    "basis": "Union of prior76verifiedoriginalindices pluspostcampaignplan54. Priorfirstattemptfailuresanduntriggeredtrialsremainunchanged."
+  },
+  "all_remaining_and_post_followup_raw_alarms": 345,
+  "no_new_operator_bug_substantiated": true,
+  "cause_limit": "Priorfailuresweredefiniteoccurrenceshortfalls(157/163<165). Allcountvariationacrossbaselines/priorreplaysliesinwaiting-for-instancesstartup,whose nativegate requeuesafter1second. The specific scheduling/readiness causeisnotisolated. A fixedcountdoesnotidentifyastablephase:learning165waswaiting;thisreplay165washealthy.",
+  "created_at": "2026-10-29T20:24:31.025051+00:00"
+}

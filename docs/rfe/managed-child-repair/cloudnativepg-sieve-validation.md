@@ -2,6 +2,11 @@
 
 October 28, 2026 (America/Chicago; artifact timestamps use UTC).
 
+This report records the initial calibration. The subsequent
+[remaining 77-plan campaign](cloudnativepg-remaining-plans-validation.md) was
+completed October 29; its original outcomes, diagnostics and coverage limits
+are reported separately.
+
 The VM reproduced the known Pooler lifecycle bug on the upstream parent commit
 and passed the same application checks on its fixed commit. **All four injected
 runs physically missed the selected intermediate state:** two fixed runs passed

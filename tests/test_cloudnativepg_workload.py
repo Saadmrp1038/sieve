@@ -123,10 +123,24 @@ elif verb=='get':
   for i in range(1,4):
    r=resource('Pod','sieve-db-'+str(i),'pod-'+str(i));r['metadata']['ownerReferences']=[{'uid':'cluster-uid','kind':'Cluster','controller':True}];r['status']={'conditions':[{'type':'Ready','status':'True'}]};items.append(r)
   emit({'items':items})
- elif k in ('deployment','service'):emit(child(k))
+ elif k in ('deployment','service'):
+  if k=='service' and s['scenario']=='missing-service':emit(None)
+  elif k=='service' and s['scenario']=='slow-service':
+   time.sleep(3);emit(child(k))
+  elif k=='service' and s['scenario']=='foreign-service':
+   r=child(k);r['metadata']['ownerReferences'][0]['uid']='foreign-pooler';emit(r)
+  elif k=='service' and s['scenario']=='delayed-service' and s.get('service_reads',0)<3:
+   s['service_reads']=s.get('service_reads',0)+1;emit(None)
+  else:emit(child(k))
  else:emit(s.get(k))
 elif verb=='patch':
  k=a[1].split('.')[0].rstrip('s'); r=s[k]; operations=json.loads(a[a.index('-p')+1])
+ phase=next((o['value'].get('sieve.testing/phase') for o in operations if o['path']=='/metadata/annotations'),None)
+ if s['scenario'] in ('webhook-restarts','webhook-unavailable','webhook-denied') and phase=='B' and (s['scenario']!='webhook-restarts' or not s.get('webhook_refusals')):
+  s['webhook_refusals']=s.get('webhook_refusals',0)+1;save()
+  message='Error from server (Forbidden): pooler metadata update denied by policy' if s['scenario']=='webhook-denied' else 'Error from server (InternalError): Internal error occurred: failed calling webhook "vpooler.cnpg.io": failed to call webhook: Post "https://cnpg-webhook-service.default.svc:443/validate-postgresql-cnpg-io-v1-pooler?timeout=10s": dial tcp 10.96.0.1:443: connect: connection refused'
+  print(message,file=sys.stderr)
+  raise SystemExit(1)
  for op in operations:
   parts=[v.replace('~1','/').replace('~0','~') for v in op['path'].strip('/').split('/')]; parent=r
   for v in parts[:-1]:parent=parent.setdefault(v,{})
@@ -191,6 +205,231 @@ def test_accepted_deletion_is_saved_before_an_interrupted_repair_wait(
         mutation["response"]["details"]["uid"]
         == mutation["resource"]["metadata"]["uid"]
     )
+
+
+def test_workload_waits_for_the_initial_owned_service_after_deployment_readiness(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "delayed-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "passed"
+    assert len(evidence["deletions"]) == 4
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["response"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == list("ABCD")
+    assert json.loads(state.read_text())["service_reads"] == 3
+
+
+@pytest.mark.parametrize("scenario", ["missing-service", "foreign-service"])
+def test_initial_service_wait_rejects_missing_or_foreign_children(
+    tmp_path, kubernetes_boundary, scenario
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": scenario}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert evidence["error"] == (
+        "Timed out: initial Pooler service"
+        if scenario == "missing-service"
+        else "Pooler child ownership is unproven"
+    )
+    assert not evidence["deletions"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
+
+
+def test_initial_service_response_after_readiness_deadline_cannot_start_mutations(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "slow-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "1",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert evidence["error"] == "Timed out: initial Pooler service"
+    assert not evidence["deletions"]
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert not updates["updates"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
+
+
+def test_initial_service_polling_interval_cannot_extend_readiness_deadline(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "missing-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--poll-interval",
+            "10",
+            "--ready-timeout",
+            "1",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=6,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["error"] == "Timed out: initial Pooler service"
+    assert not evidence["deletions"]
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert not updates["updates"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
+
+
+def test_workload_retains_rejected_admission_and_retries_after_controller_restart(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "webhook-restarts"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["state"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == list("ABCD")
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "passed"
+    assert len(evidence["api_retries"]) == 1
+    rejected = tmp_path / evidence["api_retries"][0]["command_log"]
+    assert (
+        "connect: connection refused" in rejected.with_suffix(".stderr.log").read_text()
+    )
+    assert json.loads(state.read_text())["webhook_refusals"] == 1
+
+
+@pytest.mark.parametrize("scenario", ["webhook-denied", "webhook-unavailable"])
+def test_admission_retry_fails_closed_for_policy_rejection_or_expired_budget(
+    tmp_path, kubernetes_boundary, scenario
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": scenario}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "2",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert not (tmp_path / "semantic-outcome.json").exists()
+    if scenario == "webhook-denied":
+        assert json.loads(state.read_text())["webhook_refusals"] == 1
+        assert not evidence.get("api_retries")
+    else:
+        assert len(evidence["api_retries"]) > 1
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert [
+        u["state"]["metadata"]["annotations"]["sieve.testing/phase"]
+        for u in updates["updates"]
+    ] == ["A"]
 
 
 @pytest.mark.parametrize(

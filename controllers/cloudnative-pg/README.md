@@ -43,6 +43,18 @@ objects in `workload-updates.json` and `benchmark-observations.json`, and writes
 explicit checks to `semantic-outcome.json`. Application failure returns nonzero.
 Accepted deletion receipts are saved before repair waits, including when the
 workload is interrupted before convergence.
+Setup waits within the existing readiness timeout for both initial children to
+exist before checking their owner UIDs. A Ready Deployment can precede Service
+creation when a restart interrupts the creating reconciliation. Missing children
+still time out, and an existing child with a different owner still fails.
+Readiness lookups and polling sleeps share that timeout; a stalled lookup or
+an oversized polling interval cannot extend it or start mutations afterward.
+An injected controller restart can temporarily remove the Pooler admission
+webhook. If the API explicitly rejects a request because that webhook's connection
+is refused, the workload retains the failed command logs and retries the same
+request within the existing readiness timeout. It records each retry in
+`benchmark-observations.json`; policy denials, ambiguous failures and exhausted
+timeouts still fail. This adds no reconciliation wait between accepted updates.
 Independent Deployment and Service watches start before the A/B/C/D sequence and
 must acknowledge the original children before deletion begins. Their complete
 event streams must acknowledge both deleted child UIDs and remain active through

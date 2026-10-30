@@ -7,12 +7,20 @@ import os
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from sieve_tool.paths import repository_root
-from sieve_tool.process import ManagedProcess, execution
-from sieve_tool.testing.child_repair import Resource, get, kubectl
+from sieve_tool.process import (
+    ManagedProcess,
+    ProcessError,
+    ProcessTimeout,
+    deadline,
+    execution,
+)
+from sieve_tool.testing.child_repair import Resource, get
+from sieve_tool.testing.child_repair import kubectl as run_kubectl
 
 CLUSTER = "sieve-db"
 POOLER = "sieve-pooler"
@@ -89,13 +97,54 @@ def main(argv: list[str] | None = None) -> int:
                 json.dumps({"schema_version": 1, "checks": checks}, indent=2) + "\n"
             )
 
+    def kubectl(*arguments: str, payload: Resource | None = None) -> str:
+        end = time.monotonic() + args.ready_timeout
+        with deadline(args.ready_timeout):
+            while True:
+                try:
+                    return run_kubectl(*arguments, payload=payload)
+                except ProcessError as error:
+                    if error.returncode != 1 or error.log is None:
+                        raise
+                    log = Path(error.log)
+                    message = log.with_suffix(".stderr.log").read_text()
+                    if not (
+                        message.startswith("Error from server (InternalError):")
+                        and 'failed calling webhook "vpooler.cnpg.io"' in message
+                        and "failed to call webhook:" in message
+                        and "cnpg-webhook-service.default.svc" in message
+                        and "connect: connection refused" in message
+                        and not log.with_suffix(".stdout.log").read_text().strip()
+                    ):
+                        raise
+                    # This admission rejection precedes acceptance. Keep every
+                    # failed request; retry the same UID-guarded mutation only.
+                    evidence.setdefault("api_retries", []).append(
+                        {
+                            "reason": "pooler_admission_webhook_connection_refused",
+                            "operation": arguments[0],
+                            "command_log": str(log.relative_to(directory)),
+                        }
+                    )
+                    save()
+                    remaining = end - time.monotonic()
+                    if remaining <= 0:
+                        raise
+                    time.sleep(min(args.poll_interval, remaining))
+
     def wait[T](predicate: Callable[[], T | None], description: str) -> T:
         end = time.monotonic() + args.ready_timeout
-        while time.monotonic() < end:
-            value = predicate()
-            if value:
-                return value
-            time.sleep(args.poll_interval)
+        with deadline(args.ready_timeout):
+            while time.monotonic() < end:
+                try:
+                    value = predicate()
+                except ProcessTimeout:
+                    if time.monotonic() >= end:
+                        break
+                    raise
+                if value and time.monotonic() < end:
+                    return value
+                time.sleep(min(args.poll_interval, max(0, end - time.monotonic())))
         raise RuntimeError("Timed out: " + description)
 
     def apply(document: Resource) -> Resource:
@@ -221,12 +270,14 @@ def main(argv: list[str] | None = None) -> int:
             evidence["owner_before"] = owner
             expected_owner = owner
             for kind in ("deployment", "service"):
-                child = get(kind, POOLER)
-                if not child or not any(
+                initial_child = wait(
+                    partial(get, kind, POOLER), "initial Pooler " + kind
+                )
+                if not any(
                     r.get("uid") == owner["metadata"]["uid"]
                     and r.get("kind") == "Pooler"
                     and r.get("controller") is True
-                    for r in child["metadata"].get("ownerReferences", [])
+                    for r in initial_child["metadata"].get("ownerReferences", [])
                 ):
                     raise RuntimeError("Pooler child ownership is unproven")
             # Positive control: an active owner still repairs a missing Deployment.
