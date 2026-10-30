@@ -12,7 +12,13 @@ from pathlib import Path
 from typing import Any
 
 from sieve_tool.paths import repository_root
-from sieve_tool.process import ManagedProcess, ProcessError, deadline, execution
+from sieve_tool.process import (
+    ManagedProcess,
+    ProcessError,
+    ProcessTimeout,
+    deadline,
+    execution,
+)
 from sieve_tool.testing.child_repair import Resource, get
 from sieve_tool.testing.child_repair import kubectl as run_kubectl
 
@@ -128,11 +134,17 @@ def main(argv: list[str] | None = None) -> int:
 
     def wait[T](predicate: Callable[[], T | None], description: str) -> T:
         end = time.monotonic() + args.ready_timeout
-        while time.monotonic() < end:
-            value = predicate()
-            if value:
-                return value
-            time.sleep(args.poll_interval)
+        with deadline(args.ready_timeout):
+            while time.monotonic() < end:
+                try:
+                    value = predicate()
+                except ProcessTimeout:
+                    if time.monotonic() >= end:
+                        break
+                    raise
+                if value and time.monotonic() < end:
+                    return value
+                time.sleep(min(args.poll_interval, max(0, end - time.monotonic())))
         raise RuntimeError("Timed out: " + description)
 
     def apply(document: Resource) -> Resource:

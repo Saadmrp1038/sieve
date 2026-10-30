@@ -125,6 +125,8 @@ elif verb=='get':
   emit({'items':items})
  elif k in ('deployment','service'):
   if k=='service' and s['scenario']=='missing-service':emit(None)
+  elif k=='service' and s['scenario']=='slow-service':
+   time.sleep(3);emit(child(k))
   elif k=='service' and s['scenario']=='foreign-service':
    r=child(k);r['metadata']['ownerReferences'][0]['uid']='foreign-pooler';emit(r)
   elif k=='service' and s['scenario']=='delayed-service' and s.get('service_reads',0)<3:
@@ -275,6 +277,73 @@ def test_initial_service_wait_rejects_missing_or_foreign_children(
         else "Pooler child ownership is unproven"
     )
     assert not evidence["deletions"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
+
+
+def test_initial_service_response_after_readiness_deadline_cannot_start_mutations(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "slow-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--update-interval",
+            "0.001",
+            "--observe-seconds",
+            "0.05",
+            "--poll-interval",
+            "0.01",
+            "--ready-timeout",
+            "1",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert evidence["error"] == "Timed out: initial Pooler service"
+    assert not evidence["deletions"]
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert not updates["updates"]
+    assert not (tmp_path / "semantic-outcome.json").exists()
+
+
+def test_initial_service_polling_interval_cannot_extend_readiness_deadline(
+    tmp_path, kubernetes_boundary
+):
+    state, environment = kubernetes_boundary
+    state.write_text(json.dumps({"scenario": "missing-service"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/cloudnative-pg/workloads/workload.py"),
+            "pooler-finalizer-updates",
+            str(tmp_path / "workload.log"),
+            "--poll-interval",
+            "10",
+            "--ready-timeout",
+            "1",
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=6,
+    )
+    assert result.returncode == 1
+    evidence = json.loads((tmp_path / "benchmark-observations.json").read_text())
+    assert evidence["error"] == "Timed out: initial Pooler service"
+    assert not evidence["deletions"]
+    updates = json.loads((tmp_path / "workload-updates.json").read_text())
+    assert not updates["updates"]
     assert not (tmp_path / "semantic-outcome.json").exists()
 
 

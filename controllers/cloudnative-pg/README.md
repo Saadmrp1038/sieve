@@ -47,6 +47,8 @@ Setup waits within the existing readiness timeout for both initial children to
 exist before checking their owner UIDs. A Ready Deployment can precede Service
 creation when a restart interrupts the creating reconciliation. Missing children
 still time out, and an existing child with a different owner still fails.
+Readiness lookups and polling sleeps share that timeout; a stalled lookup or
+an oversized polling interval cannot extend it or start mutations afterward.
 An injected controller restart can temporarily remove the Pooler admission
 webhook. If the API explicitly rejects a request because that webhook's connection
 is refused, the workload retains the failed command logs and retries the same
