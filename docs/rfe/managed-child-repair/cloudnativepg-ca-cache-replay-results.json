@@ -1,0 +1,2809 @@
+{
+  "schema_version": 1,
+  "status": "independently_reviewed_bounded_known_bug_calibration",
+  "completed_at_UTC": "2026-10-31T22:39:40.508380+00:00",
+  "conclusion": "The documented default shared-CA client lookup race reproduced in 2/2 affected Sieve runs and 0/1 fixed run. Both affected runs failed the transient-error invariant; all six workloads eventually became healthy. No new operator bug or permanent outage is claimed.",
+  "upstream": {
+    "issue": "https://github.com/cloudnative-pg/cloudnative-pg/issues/10988",
+    "fix_PR": "https://github.com/cloudnative-pg/cloudnative-pg/pull/10989",
+    "pins": {
+      "buggy": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+      "fixed": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331"
+    },
+    "source_diff_files": [
+      "internal/controller/cluster_pki.go",
+      "internal/controller/cluster_pki_test.go"
+    ]
+  },
+  "counts": {
+    "actual_workloads": 6,
+    "fixed_learning_controls": 2,
+    "affected_no_fault_controls": 1,
+    "fault_workloads": 3,
+    "physically_verified_faults": 3,
+    "affected_target_reproductions": 2,
+    "fixed_target_reproductions": 0,
+    "application_passes": 4,
+    "transient_error_semantic_failures": 2,
+    "eventual_ready_three_instances": 6,
+    "original_fault_raw_alarms": 8,
+    "additional_offline_control_postprocess_raw_alarms": 3,
+    "all_retained_alarm_occurrences": 11,
+    "distinct_failed_reconciliations": 3,
+    "new_operator_bugs": 0,
+    "unverified_faults": 0,
+    "automatic_experiment_repeats": 0
+  },
+  "bounds": {
+    "workload_phase_seconds": 900,
+    "two_learning_workloads_single_CLI_seconds": 1800,
+    "stage_service_seconds": 3000,
+    "actual_workloads_max": 6,
+    "automatic_repeats": 0
+  },
+  "schedule": {
+    "plans": {
+      "no-fault.yaml": "095e63de0cc35e6cb832074423a461c25f077991af333e9b13843f45031fb228",
+      "delay-ca-receipt.yaml": "3783132722e923cbaf0a011ea8034e7f923742e1076d62e179ac1d3e0619a40f"
+    },
+    "plan_source_commit": "a1433c4b239a6b95c944d495ee9e0b24b2f6ba6d",
+    "description": "Pause actual leading API Secret-cache receipt of the first shared CA ADDED event. Resume the same scope on (duplicate CA Create AND actual bootstrap-error phase) OR first replication-certificate Create. Identical YAML in all fault arms; no timer release.",
+    "operator_workers": 10,
+    "controller_restarts": 0,
+    "watch_or_provider_changes": false,
+    "oracle_masks_changed": false,
+    "generic_physical_verdicts_preserved": "Unsupported action sequence, physically_verified=false. Separate independent hold/request/API audit and 18 rejecting mutations provide the physical evidence."
+  },
+  "provenance": {
+    "workload_source_commit": "9d29fb27f7e55bc9160929e2748bf3a575281769",
+    "reporting_fix_commit": "19dbc11e95c6a9566c51bfdf7ff8770257772e71",
+    "runtime_pair": {
+      "pins": {
+        "buggy": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+        "fixed": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331"
+      },
+      "registry": "sieve-cnpg-ca-cache-20261031",
+      "snapshots": {
+        "buggy": {
+          "directory": "/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/snapshot-9d29fb2-ca-cache-buggy-source-retry1-deployment-retry1-reporting-fix",
+          "source_commit": "9d29fb27f7e55bc9160929e2748bf3a575281769",
+          "subject_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "archive_sha256": "99096152b325d137cc8804ba3f5802dac50a3b2d898902244eac27ada2ede7a2",
+          "manifest_sha256": "d86a12842b9cddaf780bdfc0e472039caf20ce9f31e9e3a92c0da780d8307b15",
+          "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-reporting-fix-source.json",
+          "archive": "/Users/pial/Projects/sieve/.cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-reporting-fix.tar.gz"
+        },
+        "fixed": {
+          "directory": "/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/snapshot-9d29fb2-ca-cache-fixed-source-retry1-deployment-retry1-reporting-fix",
+          "source_commit": "9d29fb27f7e55bc9160929e2748bf3a575281769",
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "archive_sha256": "ce4b0aa9cb7a8da799e5b4edc89ec137e01331d051d1f3b03a382e7b6c3f4ea8",
+          "manifest_sha256": "03569ce8720d45035d921a84c4ada28ddd38e02d9adea8aa1dd7a051500cf2c9",
+          "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-reporting-fix-source.json",
+          "archive": "/Users/pial/Projects/sieve/.cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-reporting-fix.tar.gz"
+        }
+      },
+      "release_manifest_sha256": "ff1aca776fccf6ae921c8e12648e6c415fb9a411530da3213eb89592aeaa10a9",
+      "native_compiler": "go1.26.4",
+      "client_go": "v0.36.2",
+      "controller_runtime": "v0.24.1",
+      "source_changes": [
+        "internal/controller/cluster_pki.go",
+        "internal/controller/cluster_pki_test.go"
+      ],
+      "instance_manager": "fixed vanilla in every arm",
+      "operator_workers": 10,
+      "source_bundle": {
+        "sha256": "3d5a5ad681916d2429d8311841b74443d8da8428a63049355906e20726ac4659",
+        "remote": "/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/ca-cache-replay-20261031/upstream-pair-complete.git",
+        "pins": [
+          "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331"
+        ]
+      },
+      "parent_runtime_pair_sha256": "82d735811f08bd0778fa340c8ffbc8c9c576668c41ed135ce4b8e56ac531b290",
+      "deployment_manifest_correction": {
+        "status": "native_installation_manifest_verified",
+        "manifest_sha256": "ff1aca776fccf6ae921c8e12648e6c415fb9a411530da3213eb89592aeaa10a9",
+        "source_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+        "path": "releases/cnpg-1.30.0-rc1.yaml",
+        "native_CRD_names": [
+          "backups.postgresql.cnpg.io",
+          "clusterimagecatalogs.postgresql.cnpg.io",
+          "clusters.postgresql.cnpg.io",
+          "databaseroles.postgresql.cnpg.io",
+          "databases.postgresql.cnpg.io",
+          "failoverquorums.postgresql.cnpg.io",
+          "imagecatalogs.postgresql.cnpg.io",
+          "poolers.postgresql.cnpg.io",
+          "publications.postgresql.cnpg.io",
+          "scheduledbackups.postgresql.cnpg.io",
+          "subscriptions.postgresql.cnpg.io"
+        ],
+        "all_native_CRDs_present": true,
+        "DatabaseRole_read_watch_RBAC_present": true,
+        "identical_in_subject_pair": true,
+        "native_images_rebuilt": false,
+        "previous_wrong_manifest_sha256": "e0c5ff41bf5b01c0775bf225929b8423d543cd23e9742e4274fe7de8499cf93a"
+      },
+      "reporting_fix_commit": "19dbc11e95c6a9566c51bfdf7ff8770257772e71"
+    },
+    "build_review": {
+      "status": "independently_verified",
+      "source": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-retry1-vm",
+      "manifest_sha256": "a8dbcb80eb865ade3a6fb97c4ff9dbd37c9d286e243a50a364ca612f447e87c8",
+      "file_count": 7921,
+      "bytes": 287238787,
+      "builds": [
+        {
+          "variant": "fixed",
+          "mode": "vanilla",
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:vanilla",
+          "image_id": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+          "binary_sha256": "a1c0b23cce979cbd20b9900f544f594aa0a96a6ceb0accb0e869d2d0b5905956",
+          "original_Go_files_verified": 964,
+          "changed_Go_files": [],
+          "native_versions_verified": 115,
+          "native_compiler": "go1.26.4"
+        },
+        {
+          "variant": "fixed",
+          "mode": "learn",
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn",
+          "image_id": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+          "binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+          "original_Go_files_verified": 964,
+          "changed_Go_files": [
+            "internal/controller/cluster_controller.go",
+            "internal/controller/pooler_controller.go"
+          ],
+          "native_versions_verified": 115,
+          "native_compiler": "go1.26.4"
+        },
+        {
+          "variant": "buggy",
+          "mode": "test",
+          "subject_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "image": "sieve-cnpg-ca-cache-20261031-buggy/cloudnative-pg:test",
+          "image_id": "sha256:12ebe08bde212efe11c04905763f7d57f2de322b82100cd34e112bb3bada99fb",
+          "binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+          "original_Go_files_verified": 963,
+          "changed_Go_files": [],
+          "native_versions_verified": 115,
+          "native_compiler": "go1.26.4"
+        },
+        {
+          "variant": "fixed",
+          "mode": "test",
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test",
+          "image_id": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+          "binary_sha256": "dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1",
+          "original_Go_files_verified": 964,
+          "changed_Go_files": [],
+          "native_versions_verified": 115,
+          "native_compiler": "go1.26.4"
+        }
+      ]
+    },
+    "API_build_summary_sha256": "55fe9ea72633f6d9a41ef2c1a0bd91492104c2292aef73c2eeafa71c79cf5ab3",
+    "shared_client_source_sha256": "b612181f9ff50d3e3703c3ab348be94da7bd4abab77d66761ceed1e8881bc37b",
+    "unchanged_operand_images": {
+      "SIEVE_CNPG_POSTGRES_IMAGE": {
+        "tag": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "pinned": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+        "image_id": "sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+        "architecture": "amd64"
+      },
+      "SIEVE_CNPG_PGBOUNCER_IMAGE": {
+        "tag": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1",
+        "pinned": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+        "image_id": "sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+        "architecture": "amd64"
+      }
+    },
+    "immutable_oracle_hashes": {
+      "cloudnative-pg/ca-secret-bootstrap/state.json": "24a0a4d2589386034be6ef35f302fb1b2b011b0d728b45ac84cfb023644ad5d5",
+      "cloudnative-pg/ca-secret-bootstrap/controller_family.json": "d1897893fe90652e99e2d34d74f8c813041bfabd500a70052d16b658bd2ae3b2",
+      "cloudnative-pg/ca-secret-bootstrap/mask.json": "4a8e1e445fa6fc9d308eb0ccedee90bfb096139fe81c41cd93801847557cab16",
+      "cloudnative-pg/ca-secret-bootstrap/event.json": "8505f5315f08e69bec28836877aec848a101950996f4a917e67615a6d3cc2da9"
+    },
+    "oracle_dependency_control_summary_sha256": "0e54f608c8596d02f51ce8c8bb2563d86a2aa1d6eb41066b7ed4d7cdbad040c2",
+    "original_declared_dependency_versions_verified": 115,
+    "native_module_scope_note": "Original declared go.mod versions verified; no independent claim that the entire baseline effective module graph was separately resolved."
+  },
+  "control_review": {
+    "status": "independently_verified",
+    "stage": "controls-retry1",
+    "manifest_sha256": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+    "files": 1223,
+    "bytes": 93028592,
+    "cases": [
+      {
+        "name": "fixed-learning",
+        "directory": "fixed-learning/cloudnative-pg/ca-secret-bootstrap/learn_prev",
+        "variant": "fixed",
+        "mode": "learn",
+        "API": {
+          "events": 368,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [],
+        "application_status": "passed",
+        "process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 145.76404876203742,
+          "log": "commands/0023-2d7b6379"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": true
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "00f0450e-ec57-45f2-8ae8-b39d99765aa9",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn",
+          "image_id": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+          "binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [],
+        "raw_alarms": [],
+        "raw": null,
+        "generic_fault_proof": null
+      },
+      {
+        "name": "fixed-learning",
+        "directory": "fixed-learning/cloudnative-pg/ca-secret-bootstrap/learn",
+        "variant": "fixed",
+        "mode": "learn",
+        "API": {
+          "events": 363,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [],
+        "application_status": "passed",
+        "process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 139.51367930497508,
+          "log": "commands/0052-41292d49"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": true
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "745321f3-f7ab-4a7e-956e-8d563ec979ba",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn",
+          "image_id": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+          "binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [],
+        "raw_alarms": [],
+        "raw": null,
+        "generic_fault_proof": null
+      },
+      {
+        "name": "buggy-no-fault",
+        "directory": "buggy-no-fault/cloudnative-pg/ca-secret-bootstrap/test/no-fault",
+        "variant": "buggy",
+        "mode": "test",
+        "API": {
+          "events": 358,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [],
+        "application_status": "passed",
+        "process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 137.7506476540584,
+          "log": "commands/0023-a059c406"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": true
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "c3b4d30a-c8f1-4cb3-840b-32f4767a721c",
+          "image": "sieve-cnpg-ca-cache-20261031-buggy/cloudnative-pg:test",
+          "image_id": "sha256:12ebe08bde212efe11c04905763f7d57f2de322b82100cd34e112bb3bada99fb",
+          "binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [],
+        "raw_alarms": [],
+        "raw": {
+          "duration": 293.6238787174225,
+          "injection_completed": false,
+          "workload_completed": false,
+          "number_errors": 0,
+          "detected_errors": [],
+          "no_exception": false,
+          "exception_message": "Traceback (most recent call last):\n  File \"/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/snapshot-9d29fb2-ca-cache-buggy-source-retry1-deployment-retry1/src/sieve_tool/runtime/runner.py\", line 259, in run_test\n    return post_process(test_context)\n  File \"/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/snapshot-9d29fb2-ca-cache-buggy-source-retry1-deployment-retry1/src/sieve_tool/runtime/runner.py\", line 159, in post_process\n    test_result = check(test_context)\n  File \"/users/Pial/sieve-ci-20261026/.cache/cloudnativepg/snapshot-9d29fb2-ca-cache-buggy-source-retry1-deployment-retry1/src/sieve_tool/oracle/oracle.py\", line 170, in check\n    first_action = plan.actions[0] if plan.actions is not None else None\n                   ~~~~~~~~~~~~^^^\nIndexError: list index out of range\n",
+          "test_plan_content": "workload: ca-secret-bootstrap\nactions: []\n",
+          "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+          "execution": {
+            "status": "completed",
+            "returncode": 0,
+            "duration_seconds": 137.7506476540584,
+            "log": "commands/0023-a059c406"
+          }
+        },
+        "generic_fault_proof": {
+          "schema_version": 1,
+          "physically_verified": false,
+          "reasons": [
+            "physical proof for this action sequence is unavailable",
+            "raw injection outcome is incomplete or has a harness exception"
+          ],
+          "semantic_status": "failed",
+          "semantic_checks": [
+            {
+              "name": "three_ready_owned_instances",
+              "passed": true
+            },
+            {
+              "name": "owned_PKI_secrets",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_32_rows_on_three_instances",
+              "passed": true
+            },
+            {
+              "name": "exactly_one_writable_primary",
+              "passed": true
+            },
+            {
+              "name": "bootstrap_stays_ready",
+              "passed": true
+            },
+            {
+              "name": "no_auxiliary_object_bootstrap_errors",
+              "passed": true
+            }
+          ],
+          "raw_alarms": [],
+          "missed_state": null,
+          "workload_completed": false,
+          "triggered_actions": [],
+          "evidence_sha256": {
+            "apiserver1.log": "697b48b354b11f75aab52936b1f08eddd716d9bbdf60f316fc4fd4712ab339ca",
+            "sieve-server.log": "5760e7880000545eae9b2a74a78e4872d53fd430f051cb0f16311aaece79faa7",
+            "injection-process-outcome.json": "3f24ca8a361a04bf90f317c883456e65ded0dc27bdbaeadf57256ea34d407c71",
+            "process-outcome.json": "58664ad24dedf1b4e11268f0af26188b182b14efcd6ba9df81f7cfe3163df17c",
+            "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+            "semantic-outcome.json": "b057f620cbfc59b2d3794422a35aabfc49cf42c57351e675bbe404f4de4d3cc4"
+          }
+        }
+      }
+    ],
+    "scope": "Three application controls independently verified; original no-fault postprocessor exception retained, repaired offline postprocess evaluated separately",
+    "original_reporting_failure_preserved": "controls-retry1-review-reporting-failure.json",
+    "postprocess": {
+      "raw_file": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-postprocess/cloudnative-pg-ca-secret-bootstrap-no-fault.yaml.json",
+      "raw_sha256": "a2fd6e52fca0576167f9ce441b5e4020a823a54b56c563e8b315bb93d5c92e9b",
+      "CLI_exit_code": 1,
+      "reason": "Three retained provenance differences; no application/trace failure",
+      "verdict": {
+        "duration": 0.11532092094421387,
+        "injection_completed": true,
+        "workload_completed": true,
+        "number_errors": 3,
+        "detected_errors": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+        ],
+        "no_exception": true,
+        "exception_message": "",
+        "test_plan_content": "workload: ca-secret-bootstrap\nactions: []\n",
+        "host": "Pial-M5-Pro",
+        "execution": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 137.7506476540584,
+          "log": "commands/0023-a059c406"
+        }
+      },
+      "alarm_classifications": [
+        {
+          "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+          "classification": "exact_built_learning_vs_test_binary_difference",
+          "substantive_application_failure": false
+        },
+        {
+          "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+          "classification": "exact_pinned_subject_commit_difference",
+          "substantive_application_failure": false
+        },
+        {
+          "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+          "classification": "exact_built_learning_vs_test_binary_difference",
+          "substantive_application_failure": false
+        }
+      ],
+      "additional_workload_attempts": 0
+    },
+    "application_controls_passed": 3,
+    "first_setup_actual_workload_attempts": 0,
+    "native_image_or_plan_changes": false
+  },
+  "fault_review": {
+    "status": "independently_verified",
+    "stage": "faults-reporting-fix",
+    "manifest_sha256": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+    "files": 1109,
+    "bytes": 43517097,
+    "cases": [
+      {
+        "name": "buggy-fault-1",
+        "directory": "buggy-fault-1/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "variant": "buggy",
+        "mode": "test",
+        "API": {
+          "events": 366,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [
+          {
+            "position": 43,
+            "RV": "738",
+            "status": {
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:32Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                }
+              ],
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "operatorCertificateFingerprint": "d9b12417663f5f24f2ba08dec58a31b424e155a113321c2949c9da466241db2b",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists"
+            }
+          },
+          {
+            "position": 45,
+            "RV": "740",
+            "status": {
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:32Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                }
+              ],
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "operatorCertificateFingerprint": "d9b12417663f5f24f2ba08dec58a31b424e155a113321c2949c9da466241db2b",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists"
+            }
+          },
+          {
+            "position": 66,
+            "RV": "773",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:15:32 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:32Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:33Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "658"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "d9b12417663f5f24f2ba08dec58a31b424e155a113321c2949c9da466241db2b",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "742",
+                "clientCaSecretVersion": "736",
+                "replicationSecretVersion": "741",
+                "serverCaSecretVersion": "736",
+                "serverSecretVersion": "737"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          },
+          {
+            "position": 67,
+            "RV": "774",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:15:32 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:32Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:33Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:34Z",
+                  "message": "No instances are present in the cluster to report a system ID.",
+                  "reason": "NotFound",
+                  "status": "False",
+                  "type": "ConsistentSystemID"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "658"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "d9b12417663f5f24f2ba08dec58a31b424e155a113321c2949c9da466241db2b",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "742",
+                "clientCaSecretVersion": "736",
+                "replicationSecretVersion": "741",
+                "serverCaSecretVersion": "736",
+                "serverSecretVersion": "737"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          },
+          {
+            "position": 69,
+            "RV": "777",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:15:32 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:15:32 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:32Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:33Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:20:34Z",
+                  "message": "No instances are present in the cluster to report a system ID.",
+                  "reason": "NotFound",
+                  "status": "False",
+                  "type": "ConsistentSystemID"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "658"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "d9b12417663f5f24f2ba08dec58a31b424e155a113321c2949c9da466241db2b",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "742",
+                "clientCaSecretVersion": "736",
+                "replicationSecretVersion": "741",
+                "serverCaSecretVersion": "736",
+                "serverSecretVersion": "737"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "targetPrimary": "sieve-ca-bootstrap-1",
+              "targetPrimaryTimestamp": "2026-10-31T22:20:34.293946Z",
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          }
+        ],
+        "application_status": "semantic_failure",
+        "process": {
+          "status": "failed",
+          "returncode": 1,
+          "duration_seconds": 143.56282783905044,
+          "log": "commands/0023-50a09ed3"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": false
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "a1d92d65-ff1d-4bd9-964d-2cff9844502b",
+          "image": "sieve-cnpg-ca-cache-20261031-buggy/cloudnative-pg:test",
+          "image_id": "sha256:12ebe08bde212efe11c04905763f7d57f2de322b82100cd34e112bb3bada99fb",
+          "binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [
+          {
+            "ts": "2026-10-31T22:20:32.286420346Z",
+            "msg": "while reconciling postgres cluster objects",
+            "error": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "c995827c-a15b-4c00-8fc7-51d81a9280f9"
+          },
+          {
+            "ts": "2026-10-31T22:20:32.376520509Z",
+            "msg": "Reconciler error",
+            "error": "cannot create Cluster auxiliary objects: generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "c995827c-a15b-4c00-8fc7-51d81a9280f9"
+          },
+          {
+            "ts": "2026-10-31T22:20:32.545694843Z",
+            "msg": "while reconciling postgres cluster objects",
+            "error": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "3a65411d-b3ed-488c-b2bc-83cc4b2b36fd"
+          },
+          {
+            "ts": "2026-10-31T22:20:32.614599985Z",
+            "msg": "Reconciler error",
+            "error": "cannot create Cluster auxiliary objects: generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "3a65411d-b3ed-488c-b2bc-83cc4b2b36fd"
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+        ],
+        "raw": {
+          "duration": 300.8772974014282,
+          "injection_completed": true,
+          "workload_completed": false,
+          "number_errors": 3,
+          "detected_errors": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+          ],
+          "no_exception": true,
+          "exception_message": "",
+          "test_plan_content": "workload: ca-secret-bootstrap\nactions:\n  - actionType: pauseAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: ca_created\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n      expression: ca_created\n  - actionType: resumeAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: duplicate_ca_request\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n        - triggerName: bootstrap_error\n          condition:\n            conditionType: onObjectUpdateTo\n            resourceKey: cluster/default/sieve-ca-bootstrap\n            occurrence: 1\n            stateMatch: '{\"status\":{\"phase\":\"Unable to create required cluster objects\"}}'\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n        - triggerName: replication_certificate\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-replication\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n      expression: (duplicate_ca_request&bootstrap_error)|replication_certificate\n",
+          "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+          "execution": {
+            "status": "failed",
+            "returncode": 1,
+            "duration_seconds": 143.56282783905044,
+            "log": "commands/0023-50a09ed3"
+          }
+        },
+        "generic_fault_proof": {
+          "schema_version": 1,
+          "physically_verified": false,
+          "reasons": [
+            "physical proof for this action sequence is unavailable"
+          ],
+          "semantic_status": "failed",
+          "semantic_checks": [
+            {
+              "name": "three_ready_owned_instances",
+              "passed": true
+            },
+            {
+              "name": "owned_PKI_secrets",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_32_rows_on_three_instances",
+              "passed": true
+            },
+            {
+              "name": "exactly_one_writable_primary",
+              "passed": true
+            },
+            {
+              "name": "bootstrap_stays_ready",
+              "passed": true
+            },
+            {
+              "name": "no_auxiliary_object_bootstrap_errors",
+              "passed": false
+            }
+          ],
+          "raw_alarms": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+          ],
+          "missed_state": null,
+          "workload_completed": false,
+          "triggered_actions": [
+            0,
+            1
+          ],
+          "evidence_sha256": {
+            "apiserver1.log": "399a5e2bead4c415f2aab4f449124cff1ab354325762e2cfe95da58ee2056062",
+            "sieve-server.log": "acaf77b96800d5e8076bfc0e9abf32c0242027a8e1e8abec9bfc44693ca4cb38",
+            "injection-process-outcome.json": "c0d563977354051e36cf5712aad091b1195bf53277c4780be555bad5315aa0a5",
+            "process-outcome.json": "b83a0de3af33e62228b67c077f494aea2f522b2fe192582685a47bfe9ea8b316",
+            "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+            "semantic-outcome.json": "32ce2d0c778fa7435fabb09bf94beb7f4cff2d98059b22a5855e6a5b5d914c80"
+          }
+        },
+        "alarm_classifications": [
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          },
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "classification": "exact_pinned_subject_commit_difference",
+            "substantive_application_failure": false
+          },
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          }
+        ],
+        "independent_physical_proof": {
+          "name": "buggy-fault-1",
+          "physical": {
+            "verified": true,
+            "variant": "buggy",
+            "result": "documented_duplicate_Create_and_AlreadyExists_reproduced",
+            "actual_holds": 1,
+            "actual_releases": 1,
+            "hold_line": 63,
+            "close_channel_line": 75,
+            "resume_done_line": 76,
+            "CA_API_event_position": 42,
+            "CA_UID": "c1a05470-c444-4d90-9bb9-e50450e6eae1",
+            "CA_owner_UID": "25a8d07c-d381-4e7f-adb2-a6cbeeac1062",
+            "CA_request_lines": [
+              50,
+              64,
+              80
+            ],
+            "CA_request_count": 3,
+            "CA_request_lines_during_hold": [
+              64
+            ],
+            "post_release_CA_request_lines": [
+              80
+            ],
+            "target_error_API_positions": [
+              43,
+              45,
+              66,
+              67,
+              69
+            ],
+            "replication_request_lines": [
+              88
+            ],
+            "cache_NotFound_basis": "inferred from unchanged native ensureCASecret: only NotFound permits the observed second Create; informer contents are not fabricated",
+            "generic_proof_unchanged": true
+          },
+          "negative_controls": [
+            {
+              "mutation": "missing_hold",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "missing_release",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "wrong_persisted_CA_UID",
+              "rejected": true,
+              "reason": ""
+            },
+            {
+              "mutation": "missing_duplicate_during_hold",
+              "rejected": true,
+              "reason": "Exactly one target duplicate CA request during hold is required"
+            },
+            {
+              "mutation": "unexplained_post_release_CA_Create",
+              "rejected": true,
+              "reason": "Post-release CA Create lacks a corresponding actual server-CA API error"
+            },
+            {
+              "mutation": "missing_actual_API_error",
+              "rejected": true,
+              "reason": "Target API error phase unproven"
+            }
+          ],
+          "raw_inputs_unchanged": true
+        },
+        "native_error_classifications": [
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:20:32.286420346Z",
+              "msg": "while reconciling postgres cluster objects",
+              "error": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "c995827c-a15b-4c00-8fc7-51d81a9280f9"
+            },
+            "classification": "documented_shared_CA_client_lookup_race"
+          },
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:20:32.376520509Z",
+              "msg": "Reconciler error",
+              "error": "cannot create Cluster auxiliary objects: generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "c995827c-a15b-4c00-8fc7-51d81a9280f9"
+            },
+            "classification": "documented_shared_CA_client_lookup_race"
+          },
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:20:32.545694843Z",
+              "msg": "while reconciling postgres cluster objects",
+              "error": "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "3a65411d-b3ed-488c-b2bc-83cc4b2b36fd"
+            },
+            "classification": "additional_observed_server_CA_retry_after_API_cache_release"
+          },
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:20:32.614599985Z",
+              "msg": "Reconciler error",
+              "error": "cannot create Cluster auxiliary objects: generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "3a65411d-b3ed-488c-b2bc-83cc4b2b36fd"
+            },
+            "classification": "additional_observed_server_CA_retry_after_API_cache_release"
+          }
+        ],
+        "actual_hold_seconds": 0.149315,
+        "distinct_failed_reconciliations": 2,
+        "audit_status": "independently_verified_known_bug_reproduced"
+      },
+      {
+        "name": "fixed-fault",
+        "directory": "fixed-fault/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "variant": "fixed",
+        "mode": "test",
+        "API": {
+          "events": 362,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [],
+        "application_status": "passed",
+        "process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 144.3107602139935,
+          "log": "commands/0023-d829ece8"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": true
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "de57cd51-a328-4711-bcd6-e73ed11a0e8f",
+          "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test",
+          "image_id": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+          "binary_sha256": "dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run"
+        ],
+        "raw": {
+          "duration": 300.9993357658386,
+          "injection_completed": true,
+          "workload_completed": true,
+          "number_errors": 2,
+          "detected_errors": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run"
+          ],
+          "no_exception": true,
+          "exception_message": "",
+          "test_plan_content": "workload: ca-secret-bootstrap\nactions:\n  - actionType: pauseAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: ca_created\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n      expression: ca_created\n  - actionType: resumeAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: duplicate_ca_request\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n        - triggerName: bootstrap_error\n          condition:\n            conditionType: onObjectUpdateTo\n            resourceKey: cluster/default/sieve-ca-bootstrap\n            occurrence: 1\n            stateMatch: '{\"status\":{\"phase\":\"Unable to create required cluster objects\"}}'\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n        - triggerName: replication_certificate\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-replication\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n      expression: (duplicate_ca_request&bootstrap_error)|replication_certificate\n",
+          "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+          "execution": {
+            "status": "completed",
+            "returncode": 0,
+            "duration_seconds": 144.3107602139935,
+            "log": "commands/0023-d829ece8"
+          }
+        },
+        "generic_fault_proof": {
+          "schema_version": 1,
+          "physically_verified": false,
+          "reasons": [
+            "physical proof for this action sequence is unavailable"
+          ],
+          "semantic_status": "passed",
+          "semantic_checks": [
+            {
+              "name": "three_ready_owned_instances",
+              "passed": true
+            },
+            {
+              "name": "owned_PKI_secrets",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_32_rows_on_three_instances",
+              "passed": true
+            },
+            {
+              "name": "exactly_one_writable_primary",
+              "passed": true
+            },
+            {
+              "name": "bootstrap_stays_ready",
+              "passed": true
+            },
+            {
+              "name": "no_auxiliary_object_bootstrap_errors",
+              "passed": true
+            }
+          ],
+          "raw_alarms": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run"
+          ],
+          "missed_state": null,
+          "workload_completed": true,
+          "triggered_actions": [
+            0,
+            1
+          ],
+          "evidence_sha256": {
+            "apiserver1.log": "1d8f8b932cf37b9f4dcffcc58963a73552ca70928824f13942416e25f67227c2",
+            "sieve-server.log": "fb90568ae25a07309145c0b131e59a1039fdd63b00897926a80c11ec39e0b288",
+            "injection-process-outcome.json": "28f93d1ac784cdb97d024e49e1021bef1eabaa0bb1bded6d93a7fafe8ec02214",
+            "process-outcome.json": "2be1c699b35c9c65f6e2ab883b8ae0e9f3a93ae7b64fa22dbd51f1bd94c59084",
+            "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+            "semantic-outcome.json": "b057f620cbfc59b2d3794422a35aabfc49cf42c57351e675bbe404f4de4d3cc4"
+          }
+        },
+        "alarm_classifications": [
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          },
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          }
+        ],
+        "independent_physical_proof": {
+          "name": "fixed-fault",
+          "physical": {
+            "verified": true,
+            "variant": "fixed",
+            "result": "same_hold_fixed_source_reuses_created_CA_without_duplicate",
+            "actual_holds": 1,
+            "actual_releases": 1,
+            "hold_line": 63,
+            "close_channel_line": 69,
+            "resume_done_line": 70,
+            "CA_API_event_position": 42,
+            "CA_UID": "bf5cf44a-13cc-4a7d-8ec0-61485cdea886",
+            "CA_owner_UID": "4dd1b2b0-a319-499f-9396-beda7584f7dc",
+            "CA_request_lines": [
+              50
+            ],
+            "CA_request_count": 1,
+            "CA_request_lines_during_hold": [],
+            "post_release_CA_request_lines": [],
+            "target_error_API_positions": [],
+            "replication_request_lines": [
+              64
+            ],
+            "cache_NotFound_basis": "no second CA lookup/Create observed; fixed native source reuses the first returned CA object",
+            "generic_proof_unchanged": true
+          },
+          "negative_controls": [
+            {
+              "mutation": "missing_hold",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "missing_release",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "wrong_persisted_CA_UID",
+              "rejected": true,
+              "reason": ""
+            },
+            {
+              "mutation": "unexpected_fixed_duplicate_Create",
+              "rejected": true,
+              "reason": ""
+            },
+            {
+              "mutation": "missing_replication_release_predicate",
+              "rejected": true,
+              "reason": ""
+            },
+            {
+              "mutation": "missing_persisted_CA_Create",
+              "rejected": true,
+              "reason": ""
+            }
+          ],
+          "raw_inputs_unchanged": true
+        },
+        "native_error_classifications": [],
+        "actual_hold_seconds": 0.062708,
+        "distinct_failed_reconciliations": 0,
+        "audit_status": "independently_verified_fixed_comparison_pass"
+      },
+      {
+        "name": "buggy-fault-2",
+        "directory": "buggy-fault-2/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "variant": "buggy",
+        "mode": "test",
+        "API": {
+          "events": 362,
+          "all_saved_objects_equal_full_API": 43
+        },
+        "bootstrap_API_errors": [
+          {
+            "position": 43,
+            "RV": "698",
+            "status": {
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:34Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                }
+              ],
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "operatorCertificateFingerprint": "124e0940769010cbb8e7ff2f3168104519a655c20f03a580b87c8e89daa7820a",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists"
+            }
+          },
+          {
+            "position": 65,
+            "RV": "734",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:25:34 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:25:35 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:25:34 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:34Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:36Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "624"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "124e0940769010cbb8e7ff2f3168104519a655c20f03a580b87c8e89daa7820a",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "700",
+                "clientCaSecretVersion": "696",
+                "replicationSecretVersion": "699",
+                "serverCaSecretVersion": "696",
+                "serverSecretVersion": "697"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          },
+          {
+            "position": 66,
+            "RV": "735",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:25:34 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:25:35 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:25:34 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:34Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:36Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:36Z",
+                  "message": "No instances are present in the cluster to report a system ID.",
+                  "reason": "NotFound",
+                  "status": "False",
+                  "type": "ConsistentSystemID"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "624"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "124e0940769010cbb8e7ff2f3168104519a655c20f03a580b87c8e89daa7820a",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "700",
+                "clientCaSecretVersion": "696",
+                "replicationSecretVersion": "699",
+                "serverCaSecretVersion": "696",
+                "serverSecretVersion": "697"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          },
+          {
+            "position": 68,
+            "RV": "738",
+            "status": {
+              "availableArchitectures": [
+                {
+                  "goArch": "amd64",
+                  "hash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01"
+                }
+              ],
+              "certificates": {
+                "clientCASecret": "sieve-ca-bootstrap-ca",
+                "expirations": {
+                  "sieve-ca-bootstrap-ca": "2027-01-29 22:25:34 +0000 UTC",
+                  "sieve-ca-bootstrap-replication": "2027-01-29 22:25:35 +0000 UTC",
+                  "sieve-ca-bootstrap-server": "2027-01-29 22:25:34 +0000 UTC"
+                },
+                "replicationTLSSecret": "sieve-ca-bootstrap-replication",
+                "serverAltDNSNames": [
+                  "sieve-ca-bootstrap-rw",
+                  "sieve-ca-bootstrap-rw.default",
+                  "sieve-ca-bootstrap-rw.default.svc",
+                  "sieve-ca-bootstrap-rw.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-r",
+                  "sieve-ca-bootstrap-r.default",
+                  "sieve-ca-bootstrap-r.default.svc",
+                  "sieve-ca-bootstrap-r.default.svc.cluster.local",
+                  "sieve-ca-bootstrap-ro",
+                  "sieve-ca-bootstrap-ro.default",
+                  "sieve-ca-bootstrap-ro.default.svc",
+                  "sieve-ca-bootstrap-ro.default.svc.cluster.local"
+                ],
+                "serverCASecret": "sieve-ca-bootstrap-ca",
+                "serverTLSSecret": "sieve-ca-bootstrap-server"
+              },
+              "cloudNativePGCommitHash": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+              "cloudNativePGOperatorHash": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+              "conditions": [
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:34Z",
+                  "message": "Cluster Is Not Ready",
+                  "reason": "ClusterIsNotReady",
+                  "status": "False",
+                  "type": "Ready"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:36Z",
+                  "message": "Cluster has not been bootstrapped yet",
+                  "reason": "BootstrapPending",
+                  "status": "False",
+                  "type": "Initialized"
+                },
+                {
+                  "lastTransitionTime": "2026-10-31T22:30:36Z",
+                  "message": "No instances are present in the cluster to report a system ID.",
+                  "reason": "NotFound",
+                  "status": "False",
+                  "type": "ConsistentSystemID"
+                }
+              ],
+              "configMapResourceVersion": {
+                "metrics": {
+                  "cnpg-default-monitoring": "624"
+                }
+              },
+              "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+              "managedRolesStatus": {},
+              "operatorCertificateFingerprint": "124e0940769010cbb8e7ff2f3168104519a655c20f03a580b87c8e89daa7820a",
+              "pgDataImageInfo": {
+                "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+                "majorVersion": 18
+              },
+              "phase": "Unable to create required cluster objects",
+              "phaseReason": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "poolerIntegrations": {
+                "pgBouncerIntegration": {}
+              },
+              "readService": "sieve-ca-bootstrap-r",
+              "secretsResourceVersion": {
+                "applicationSecretVersion": "700",
+                "clientCaSecretVersion": "696",
+                "replicationSecretVersion": "699",
+                "serverCaSecretVersion": "696",
+                "serverSecretVersion": "697"
+              },
+              "selector": "cnpg.io/cluster=sieve-ca-bootstrap,cnpg.io/podRole=instance",
+              "switchReplicaClusterStatus": {},
+              "targetPrimary": "sieve-ca-bootstrap-1",
+              "targetPrimaryTimestamp": "2026-10-31T22:30:36.925040Z",
+              "topology": {
+                "successfullyExtracted": true
+              },
+              "writeService": "sieve-ca-bootstrap-rw"
+            }
+          }
+        ],
+        "application_status": "semantic_failure",
+        "process": {
+          "status": "failed",
+          "returncode": 1,
+          "duration_seconds": 141.95566093898378,
+          "log": "commands/0023-f682a2a0"
+        },
+        "semantic_checks": [
+          {
+            "name": "three_ready_owned_instances",
+            "passed": true
+          },
+          {
+            "name": "owned_PKI_secrets",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_32_rows_on_three_instances",
+            "passed": true
+          },
+          {
+            "name": "exactly_one_writable_primary",
+            "passed": true
+          },
+          {
+            "name": "bootstrap_stays_ready",
+            "passed": true
+          },
+          {
+            "name": "no_auxiliary_object_bootstrap_errors",
+            "passed": false
+          }
+        ],
+        "SQL": {
+          "instances": 3,
+          "acknowledged_rows_each": 32,
+          "successful_full_row_receipts": 3,
+          "one_writable_primary": true
+        },
+        "native": {
+          "controller_UID": "f8cd8369-4dea-4148-a1d2-d77a324db278",
+          "image": "sieve-cnpg-ca-cache-20261031-buggy/cloudnative-pg:test",
+          "image_id": "sha256:12ebe08bde212efe11c04905763f7d57f2de322b82100cd34e112bb3bada99fb",
+          "binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+          "workers": 10,
+          "restarts": 0,
+          "subject_commit": "105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1",
+          "same_fixed_vanilla_instance_manager": true
+        },
+        "native_errors": [
+          {
+            "ts": "2026-10-31T22:30:34.900823243Z",
+            "msg": "while reconciling postgres cluster objects",
+            "error": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "bf32f7f1-e8e6-4aa8-b2f5-666d6b923c16"
+          },
+          {
+            "ts": "2026-10-31T22:30:34.955206441Z",
+            "msg": "Reconciler error",
+            "error": "cannot create Cluster auxiliary objects: generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+            "reconcileID": "bf32f7f1-e8e6-4aa8-b2f5-666d6b923c16"
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+        ],
+        "raw": {
+          "duration": 298.183162689209,
+          "injection_completed": true,
+          "workload_completed": false,
+          "number_errors": 3,
+          "detected_errors": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+          ],
+          "no_exception": true,
+          "exception_message": "",
+          "test_plan_content": "workload: ca-secret-bootstrap\nactions:\n  - actionType: pauseAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: ca_created\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n      expression: ca_created\n  - actionType: resumeAPIServer\n    apiServerName: kind-control-plane\n    pauseScope: secret/default/sieve-ca-bootstrap-ca\n    trigger:\n      definitions:\n        - triggerName: duplicate_ca_request\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-ca\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n        - triggerName: bootstrap_error\n          condition:\n            conditionType: onObjectUpdateTo\n            resourceKey: cluster/default/sieve-ca-bootstrap\n            occurrence: 1\n            stateMatch: '{\"status\":{\"phase\":\"Unable to create required cluster objects\"}}'\n          observationPoint:\n            when: beforeAPIServerRecv\n            by: kind-control-plane\n        - triggerName: replication_certificate\n          condition:\n            conditionType: onObjectCreate\n            resourceKey: secret/default/sieve-ca-bootstrap-replication\n            occurrence: 1\n          observationPoint:\n            when: beforeControllerWrite\n            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n      expression: (duplicate_ca_request&bootstrap_error)|replication_certificate\n",
+          "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+          "execution": {
+            "status": "failed",
+            "returncode": 1,
+            "duration_seconds": 141.95566093898378,
+            "log": "commands/0023-f682a2a0"
+          }
+        },
+        "generic_fault_proof": {
+          "schema_version": 1,
+          "physically_verified": false,
+          "reasons": [
+            "physical proof for this action sequence is unavailable"
+          ],
+          "semantic_status": "failed",
+          "semantic_checks": [
+            {
+              "name": "three_ready_owned_instances",
+              "passed": true
+            },
+            {
+              "name": "owned_PKI_secrets",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_32_rows_on_three_instances",
+              "passed": true
+            },
+            {
+              "name": "exactly_one_writable_primary",
+              "passed": true
+            },
+            {
+              "name": "bootstrap_stays_ready",
+              "passed": true
+            },
+            {
+              "name": "no_auxiliary_object_bootstrap_errors",
+              "passed": false
+            }
+          ],
+          "raw_alarms": [
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run"
+          ],
+          "missed_state": null,
+          "workload_completed": false,
+          "triggered_actions": [
+            0,
+            1
+          ],
+          "evidence_sha256": {
+            "apiserver1.log": "60a83bcd6be72180406ae8fd04c3e1b773ffc14a9429164f9c6f96872b965d7e",
+            "sieve-server.log": "f8bd53e5acbc82bebe29e36b046d5e28594d37f75ca4741b45c63a423fd98caa",
+            "injection-process-outcome.json": "09ffc4c73b825a02e4163132d28f49d36b1f61a59e48e3c9acfa2f57ec49688e",
+            "process-outcome.json": "0de11e71395b3d4202b1c9f8f2a119cc438073ef776ed25d9a3c5018b558ed65",
+            "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+            "semantic-outcome.json": "32ce2d0c778fa7435fabb09bf94beb7f4cff2d98059b22a5855e6a5b5d914c80"
+          }
+        },
+        "alarm_classifications": [
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          },
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+            "classification": "exact_pinned_subject_commit_difference",
+            "substantive_application_failure": false
+          },
+          {
+            "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+            "classification": "exact_built_learning_vs_test_binary_difference",
+            "substantive_application_failure": false
+          }
+        ],
+        "independent_physical_proof": {
+          "name": "buggy-fault-2",
+          "physical": {
+            "verified": true,
+            "variant": "buggy",
+            "result": "documented_duplicate_Create_and_AlreadyExists_reproduced",
+            "actual_holds": 1,
+            "actual_releases": 1,
+            "hold_line": 63,
+            "close_channel_line": 75,
+            "resume_done_line": 76,
+            "CA_API_event_position": 42,
+            "CA_UID": "a12454e9-4d4c-4dd4-8ba2-4bdb842b7658",
+            "CA_owner_UID": "0e1af1a8-ee4a-4c90-851a-d62503632a50",
+            "CA_request_lines": [
+              50,
+              64
+            ],
+            "CA_request_count": 2,
+            "CA_request_lines_during_hold": [
+              64
+            ],
+            "post_release_CA_request_lines": [],
+            "target_error_API_positions": [
+              43,
+              65,
+              66,
+              68
+            ],
+            "replication_request_lines": [
+              80
+            ],
+            "cache_NotFound_basis": "inferred from unchanged native ensureCASecret: only NotFound permits the observed second Create; informer contents are not fabricated",
+            "generic_proof_unchanged": true
+          },
+          "negative_controls": [
+            {
+              "mutation": "missing_hold",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "missing_release",
+              "rejected": true,
+              "reason": "Actual unique hold/release missing"
+            },
+            {
+              "mutation": "wrong_persisted_CA_UID",
+              "rejected": true,
+              "reason": ""
+            },
+            {
+              "mutation": "missing_duplicate_during_hold",
+              "rejected": true,
+              "reason": "Exactly one target duplicate CA request during hold is required"
+            },
+            {
+              "mutation": "unexplained_post_release_CA_Create",
+              "rejected": true,
+              "reason": "Post-release CA Create lacks a corresponding actual server-CA API error"
+            },
+            {
+              "mutation": "missing_actual_API_error",
+              "rejected": true,
+              "reason": "Target API error phase unproven"
+            }
+          ],
+          "raw_inputs_unchanged": true
+        },
+        "native_error_classifications": [
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:30:34.900823243Z",
+              "msg": "while reconciling postgres cluster objects",
+              "error": "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "bf32f7f1-e8e6-4aa8-b2f5-666d6b923c16"
+            },
+            "classification": "documented_shared_CA_client_lookup_race"
+          },
+          {
+            "native_error": {
+              "ts": "2026-10-31T22:30:34.955206441Z",
+              "msg": "Reconciler error",
+              "error": "cannot create Cluster auxiliary objects: generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists",
+              "reconcileID": "bf32f7f1-e8e6-4aa8-b2f5-666d6b923c16"
+            },
+            "classification": "documented_shared_CA_client_lookup_race"
+          }
+        ],
+        "actual_hold_seconds": 0.196782,
+        "distinct_failed_reconciliations": 1,
+        "audit_status": "independently_verified_known_bug_reproduced"
+      }
+    ],
+    "verdict": "Target documented shared-CA client race reproduced in both affected runs and absent in the fixed run; all three recovered",
+    "raw_alarms_retained": 8,
+    "negative_physical_evidence_controls": 18,
+    "original_failed_physical_review": "faults-reporting-fix-physical-review-initial.json",
+    "physical_auditor_correction": "Initial auditor assumed exactly two CA Creates across the entire run. Actual first affected run had the required one duplicate during the hold plus one subsequent server-CA retry after release. The final audit still requires exactly one duplicate during the hold, the matching actual client-CA API error, stable persisted CA UID/data/ownership and actual hold/release; each extra request requires its own subsequent matching server-CA API error. All raw evidence and the failed review remain unchanged."
+  },
+  "cohort_supplement": {
+    "status": "independently_verified",
+    "cases": [
+      {
+        "stage": "controls-retry1",
+        "name": "fixed-learning",
+        "directory": "fixed-learning/cloudnative-pg/ca-secret-bootstrap/learn_prev",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:0e8d45c9a2d199b368bf760b636ed18d1ab0a4e4212e98d45291a70958bb2bd1",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0097-331b991d.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 0,
+        "sampled_error_reasons": [],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      },
+      {
+        "stage": "controls-retry1",
+        "name": "fixed-learning",
+        "directory": "fixed-learning/cloudnative-pg/ca-secret-bootstrap/learn",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:0e8d45c9a2d199b368bf760b636ed18d1ab0a4e4212e98d45291a70958bb2bd1",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0094-9f8582a6.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 0,
+        "sampled_error_reasons": [],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      },
+      {
+        "stage": "controls-retry1",
+        "name": "buggy-no-fault",
+        "directory": "buggy-no-fault/cloudnative-pg/ca-secret-bootstrap/test/no-fault",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:8506a52ae0b4f5b3d55c77825448b4f3e62b78d1d83daa072a26d6b781898e4c",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0092-fc71c874.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 0,
+        "sampled_error_reasons": [],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      },
+      {
+        "stage": "faults-reporting-fix",
+        "name": "buggy-fault-1",
+        "directory": "buggy-fault-1/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:8506a52ae0b4f5b3d55c77825448b4f3e62b78d1d83daa072a26d6b781898e4c",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0097-0df851cf.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 2,
+        "sampled_error_reasons": [
+          "generating server CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists"
+        ],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      },
+      {
+        "stage": "faults-reporting-fix",
+        "name": "fixed-fault",
+        "directory": "fixed-fault/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:b2f6e36657054f14c38050c42595fa6e8d7515d9d65807541c09ebdcf5d38bfc",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0095-70a5f2a3.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 0,
+        "sampled_error_reasons": [],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      },
+      {
+        "stage": "faults-reporting-fix",
+        "name": "buggy-fault-2",
+        "directory": "buggy-fault-2/cloudnative-pg/ca-secret-bootstrap/test/delay-ca-receipt",
+        "actual_reported_commit_matches_pinned_source": true,
+        "actual_reported_operator_binary_matches_built_binary": true,
+        "reported_operator_binary_sha256": "975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01",
+        "container_runtime_image_ID": "docker.io/library/import-2026-10-31@sha256:8506a52ae0b4f5b3d55c77825448b4f3e62b78d1d83daa072a26d6b781898e4c",
+        "image_ID_note": "Runtime import/manifest digest; build review separately records Docker image configuration ID",
+        "acknowledged_insert_receipt": "0095-268df68a.stdout.log",
+        "acknowledged_insert_receipt_sha256": "f9bc0b652e9d6d7d0da445d39371f3ffd35fe8b8b5793eff12a1893e9cef475e",
+        "final_ready_instances": 3,
+        "final_phase": "Cluster in healthy state",
+        "sampled_auxiliary_errors": 2,
+        "sampled_error_reasons": [
+          "generating client CA certificate: secrets \"sieve-ca-bootstrap-ca\" already exists"
+        ],
+        "all_SQL_reads_precede_final_30_second_stability_observation": true
+      }
+    ]
+  },
+  "PKI_reviews": [
+    {
+      "status": "independently_verified",
+      "source_manifest_sha256": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+      "cases": [
+        {
+          "name": "fixed-learning-0",
+          "verified_at_VM_timestamp": "2026-10-31T12:48:38.672599+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "bc243b61-d70c-4df8-b387-94bdd7d2032b",
+              "RV": "705",
+              "certificate_sha256": "8e03a1b6e659c59fa350d36c6e55d2d1aa8ea0b26f124526e9d0f935e37f73ea"
+            },
+            "server": {
+              "UID": "aff25a84-140d-4318-8f53-cc59784b5eb8",
+              "RV": "706",
+              "certificate_sha256": "b14d277c136959d2320655ff8d865a044253c928d530500039cbbc885b8fc5f6"
+            },
+            "replication": {
+              "UID": "7489e150-e419-4bf8-95c3-3f2acf326207",
+              "RV": "707",
+              "certificate_sha256": "eac1a4bc6dbe7410969d53a2d1d4777a81b0e56be0ce4bdb1d675d27be72b12c"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        },
+        {
+          "name": "fixed-learning-1",
+          "verified_at_VM_timestamp": "2026-10-31T12:48:38.672599+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "ec7bf74c-1053-4575-991b-3d4902811f76",
+              "RV": "736",
+              "certificate_sha256": "6f1baffea27a710f81d238c5d162ffbc61ade1314105e7f44e91428dd3d9eabb"
+            },
+            "server": {
+              "UID": "ed166a3e-575a-4a65-b17f-60c071ad52b6",
+              "RV": "737",
+              "certificate_sha256": "84a34788c1d6b86de52587fa9da4632bcd5d1b978bd6329a8db4af8d7cbb03d3"
+            },
+            "replication": {
+              "UID": "7c791136-fe1c-45cb-acb6-59dbc71ea4bc",
+              "RV": "739",
+              "certificate_sha256": "29627d32d29af5c54125c7e2f066ef73fa4267d3d10c65296aa6093759ef9daa"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        },
+        {
+          "name": "buggy-no-fault-0",
+          "verified_at_VM_timestamp": "2026-10-31T12:48:38.672599+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "6c560157-513c-419a-aa19-fd0d453edecb",
+              "RV": "711",
+              "certificate_sha256": "8087e527e4c5bdc4c7110391b6a434ece488c4a0abd084da226b1d69c758e4df"
+            },
+            "server": {
+              "UID": "861777d3-e4fe-4775-b48c-512f61df08bf",
+              "RV": "713",
+              "certificate_sha256": "9477303544e9b647a49fb0622dcc16f7d1fa88be156fd9ea35662e9d9e9d5f81"
+            },
+            "replication": {
+              "UID": "4fa4c863-5731-4f04-9762-483e594b479d",
+              "RV": "715",
+              "certificate_sha256": "54efd2b271ff13e87483c079b0f0dded60b19f07d4dfa2ed346a436d865c1f19"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        }
+      ]
+    },
+    {
+      "status": "independently_verified",
+      "source_manifest_sha256": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+      "cases": [
+        {
+          "name": "buggy-fault-1-0",
+          "verified_at_VM_timestamp": "2026-10-31T22:33:02.185141+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "c1a05470-c444-4d90-9bb9-e50450e6eae1",
+              "RV": "736",
+              "certificate_sha256": "55e332216aa6c97d97aa1172474707551235559ff714aed3d95b78698a5724e8"
+            },
+            "server": {
+              "UID": "2adc2313-5aac-4cd8-8ad2-4990a54c4e68",
+              "RV": "737",
+              "certificate_sha256": "4392221f57120a2a5df71d33db0a517c82c84e056ac7683cf1d1ff7a76818a2e"
+            },
+            "replication": {
+              "UID": "688f8acf-2e77-4a5e-be93-0ed19e5f3150",
+              "RV": "741",
+              "certificate_sha256": "7d8d46d92931538bc3ac1ee4a98ca899933f0a8af40bd6cbca8a1975fb6b3f8c"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        },
+        {
+          "name": "fixed-fault-0",
+          "verified_at_VM_timestamp": "2026-10-31T22:33:02.185141+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "bf5cf44a-13cc-4a7d-8ec0-61485cdea886",
+              "RV": "752",
+              "certificate_sha256": "69d2d7542f1973c63183b0039435c8780bc1e4e1be2515a7f52b8d74cdcf00b2"
+            },
+            "server": {
+              "UID": "5bedcd54-6bf6-4f03-b9d4-1090b5f05f7e",
+              "RV": "753",
+              "certificate_sha256": "2085a9b0d2b4b8f0448d8df4e6f4aef7dc36825ee95ee87bbb3a6a3d272bfe3e"
+            },
+            "replication": {
+              "UID": "9a04af02-62c8-48d9-a77a-ea117eb3fa45",
+              "RV": "754",
+              "certificate_sha256": "d7a0d350f5e1892ba0ba81d77dcb3ea2ddcee2fc4e51b58d81419119ee3cd21a"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        },
+        {
+          "name": "buggy-fault-2-0",
+          "verified_at_VM_timestamp": "2026-10-31T22:33:02.185141+00:00",
+          "secrets": {
+            "ca": {
+              "UID": "a12454e9-4d4c-4dd4-8ba2-4bdb842b7658",
+              "RV": "696",
+              "certificate_sha256": "a4005138f36279f4acd042f97daeae69988cb2543f16eddbd270588f7b9cf525"
+            },
+            "server": {
+              "UID": "85a96e63-62fc-4c2b-a29e-b7e1cb639293",
+              "RV": "697",
+              "certificate_sha256": "08a35331a2f10c7f68c78ddff30ccab7243bb9fda7b7314c390b5ba3c411d187"
+            },
+            "replication": {
+              "UID": "5068043a-4535-4b10-a2dd-1aac63facba1",
+              "RV": "699",
+              "certificate_sha256": "94713fc1c23747db56e5e0e3404234d055fd9586f1ab8cd20c4b9b7e69626ef1"
+            }
+          },
+          "both_leaf_certificates_trust_the_same_actual_CA": true
+        }
+      ]
+    }
+  ],
+  "all_raw_alarm_occurrences": [
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-1",
+      "index": 0,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-1",
+      "index": 1,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+      "classification": "exact_pinned_subject_commit_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-1",
+      "index": 2,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "fixed-fault",
+      "index": 0,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "fixed-fault",
+      "index": 1,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-2",
+      "index": 0,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-2",
+      "index": 1,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+      "classification": "exact_pinned_subject_commit_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "faults-reporting-fix",
+      "case": "buggy-fault-2",
+      "index": 2,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "separate_offline_control_postprocess",
+      "case": "buggy-no-fault",
+      "index": 0,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "separate_offline_control_postprocess",
+      "case": "buggy-no-fault",
+      "index": 1,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGCommitHash\"] is 96cb6b05aea5f76ddac43d21e0f178e0a8b1b331 after reference run, but 105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1 after testing run",
+      "classification": "exact_pinned_subject_commit_difference",
+      "substantive_application_failure": false
+    },
+    {
+      "stage": "separate_offline_control_postprocess",
+      "case": "buggy-no-fault",
+      "index": 2,
+      "raw_alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-ca-bootstrap[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but 975487aa6c25bd235d183ab2186665c157c4d743edf4ba48e3508e455d0a5a01 after testing run",
+      "classification": "exact_built_learning_vs_test_binary_difference",
+      "substantive_application_failure": false
+    }
+  ],
+  "preserved_failures": [
+    {
+      "stage": "initial native build",
+      "actual_workloads": 0,
+      "reason": "Exact PR-head commit was absent from normal clone; complete pinned history bundle supplied in a fresh build retry",
+      "manifest": "build-result-hashes.json"
+    },
+    {
+      "stage": "initial deployment controls",
+      "actual_workloads": 0,
+      "reason": "Selected 1.29.1 installation omitted DatabaseRole CRD needed by native main 1.30.0-rc1; exact source-bundled installation corrected in fresh snapshots",
+      "review": "controls-review-failure.json"
+    },
+    {
+      "stage": "successful no-fault workload original reporting",
+      "actual_additional_workloads": 0,
+      "reason": "Empty actions list caused postprocessing IndexError after successful application execution; original raw exception retained, separate copied-artifact postprocess uses TDD fix",
+      "review": "controls-retry1-review-reporting-failure.json"
+    },
+    {
+      "stage": "initial independent physical auditor",
+      "actual_additional_workloads": 0,
+      "reason": "Assumed only two CA Creates in entire affected run. First affected run additionally retried server CA after release. Final supplemental audit preserves strict target hold/duplicate/error proof and separately substantiates each post-release retry.",
+      "review": "faults-reporting-fix-physical-review-initial.json"
+    },
+    {
+      "stage": "initial final integrity helper",
+      "actual_additional_workloads": 0,
+      "reason": "Older complete manifests omit cached byte total; new helper derives bytes from the same exactly matching file/size/hash maps.",
+      "log": "final-integrity.log"
+    }
+  ],
+  "limitations": [
+    "This reproduces a documented upstream bug; it is not a new discovery.",
+    "One fixed fault trial bounds the conclusion to this exact source pair, default shared-CA setup and event schedule.",
+    "Affected cache NotFound is inferred from the unchanged native ensureCASecret path plus duplicate Create and real AlreadyExists, not fabricated informer state or directly logged Get contents.",
+    "First affected trial has an additional server-CA AlreadyExists retry after API-cache release. This is retained separately and does not establish that the client-CA fix eliminates every possible server-CA cache race.",
+    "The one-second workload sampler saw the later server-CA phase in affected trial 1; the full API timeline and native error identify the preceding target client-CA error.",
+    "No permanently stuck cluster is demonstrated: schedule release is outcome driven and all cases recovered.",
+    "SQL writes/reads are after database readiness and before the final 30-second stability observation; this is not a continuous-query outage test for an existing application.",
+    "The raw no-fault postprocessing exception and generic unsupported physical verdicts remain unchanged."
+  ],
+  "local_validation": {
+    "public_CLI_empty_action_regression": "RED IndexError before repair, GREEN afterward",
+    "history_alarm_negative": "Different ADDED count still returns failure and the exact raw history alarm",
+    "Python_tests": 423,
+    "subtests": 10,
+    "Ruff": "passed, untouched user file excluded",
+    "format": "passed, untouched user file excluded",
+    "strict_mypy_sources": 38,
+    "wheel": "passed",
+    "physical_negative_controls_rejected": 18
+  },
+  "evidence_trees": [
+    {
+      "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/build-result-hashes.json",
+      "manifest_sha256": "2bc74c49a3af8524a181e10c8542968077b89d2e7487f5641a860e3771c946f0",
+      "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-vm",
+      "remote": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-ca-cache-build-20261031",
+      "files": 8,
+      "bytes": 11849
+    },
+    {
+      "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-result-hashes.json",
+      "manifest_sha256": "a8dbcb80eb865ade3a6fb97c4ff9dbd37c9d286e243a50a364ca612f447e87c8",
+      "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-retry1-vm",
+      "remote": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-ca-cache-build-retry1-20261031",
+      "files": 7921,
+      "bytes": 287238787
+    },
+    {
+      "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-result-hashes.json",
+      "manifest_sha256": "6b1fab2cd3c79afd343a464e66775f03fbfd6909e2eb87ba47a7d46869e0c166",
+      "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-vm",
+      "remote": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-ca-cache-controls-20261031",
+      "files": 96,
+      "bytes": 3486279
+    },
+    {
+      "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-result-hashes.json",
+      "manifest_sha256": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+      "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-retry1-vm",
+      "remote": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-ca-cache-controls-retry1-20261031",
+      "files": 1223,
+      "bytes": 93028592
+    },
+    {
+      "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-result-hashes.json",
+      "manifest_sha256": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+      "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-faults-reporting-fix-vm",
+      "remote": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-ca-cache-faults-reporting-fix-20261031",
+      "files": 1109,
+      "bytes": 43517097
+    }
+  ],
+  "new_experiment_files_verified": 10357,
+  "new_experiment_bytes_verified": 427282604,
+  "all_prior_and_current_integrity": {
+    "status": "independently_verified",
+    "preserved_inputs_unchanged": 64,
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "whole_trees": [
+      {
+        "manifest": ".cache/cloudnativepg/api-build-result-hashes.json",
+        "manifest_sha256": "94ee7ec63d04200aaad2bd58cd8884827ed161a6f240c5b766016153db09a3c7",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-api-build-vm",
+        "files": 12,
+        "bytes": 12159
+      },
+      {
+        "manifest": ".cache/cloudnativepg/api-build-retry1-result-hashes.json",
+        "manifest_sha256": "a2ed029d44ff9ff80cdbcf55b274b5da77241d0ce7686f86568c575a9df2f23a",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-api-build-retry1-vm",
+        "files": 68,
+        "bytes": 6815344
+      },
+      {
+        "manifest": ".cache/cloudnativepg/build-result-hashes.json",
+        "manifest_sha256": "a926ad6ddc0d85b57c67008bf8bb5a09d0ee4c9365698dc8f4d5bd9e70557c7d",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-build-vm",
+        "files": 10273,
+        "bytes": 371821235
+      },
+      {
+        "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/build-result-hashes.json",
+        "manifest_sha256": "2bc74c49a3af8524a181e10c8542968077b89d2e7487f5641a860e3771c946f0",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-vm",
+        "files": 8,
+        "bytes": 11849
+      },
+      {
+        "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-result-hashes.json",
+        "manifest_sha256": "a8dbcb80eb865ade3a6fb97c4ff9dbd37c9d286e243a50a364ca612f447e87c8",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-retry1-vm",
+        "files": 7921,
+        "bytes": 287238787
+      },
+      {
+        "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-result-hashes.json",
+        "manifest_sha256": "6b1fab2cd3c79afd343a464e66775f03fbfd6909e2eb87ba47a7d46869e0c166",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-vm",
+        "files": 96,
+        "bytes": 3486279
+      },
+      {
+        "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-result-hashes.json",
+        "manifest_sha256": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-retry1-vm",
+        "files": 1223,
+        "bytes": 93028592
+      },
+      {
+        "manifest": ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-result-hashes.json",
+        "manifest_sha256": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-faults-reporting-fix-vm",
+        "files": 1109,
+        "bytes": 43517097
+      },
+      {
+        "manifest": ".cache/cloudnativepg/calibration-result-hashes.json",
+        "manifest_sha256": "1281c0d25984c1def6329cd0351743154036fd0dda53ae314a72757df5bebf97",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-calibration-vm",
+        "files": 14377,
+        "bytes": 567142608
+      },
+      {
+        "manifest": ".cache/cloudnativepg/controls-result-hashes.json",
+        "manifest_sha256": "61648a9bf0cc04a262a635411a49a63a5e0120848c60841b026c6545141e20eb",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-vm",
+        "files": 10361,
+        "bytes": 374793228
+      },
+      {
+        "manifest": ".cache/cloudnativepg/controls-retry1-result-hashes.json",
+        "manifest_sha256": "067a23d46670d7febfaf72eb447ff69e244112ef54eb3e94dd430d293915d2c9",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry1-vm",
+        "files": 10875,
+        "bytes": 377764023
+      },
+      {
+        "manifest": ".cache/cloudnativepg/controls-retry2-result-hashes.json",
+        "manifest_sha256": "3bceac24be97915bece5a09a120a63aeb5e8138443a748d0b885277c26100d21",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry2-vm",
+        "files": 10567,
+        "bytes": 376048440
+      },
+      {
+        "manifest": ".cache/cloudnativepg/controls-retry3-result-hashes.json",
+        "manifest_sha256": "86527f3b01e170801a736f747838e07de0e92e6bde174b161932e2b3ba4b61fe",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry3-vm",
+        "files": 10597,
+        "bytes": 376135316
+      },
+      {
+        "manifest": ".cache/cloudnativepg/controls-retry4-result-hashes.json",
+        "manifest_sha256": "cdc64b0588a3a8d92727cf7636b4e1857b3a8d032ab3be61df920a52759fffac",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry4-vm",
+        "files": 11214,
+        "bytes": 381223332
+      },
+      {
+        "manifest": ".cache/cloudnativepg/go-result-hashes.json",
+        "manifest_sha256": "ec5c087e4ce5817ea4ab2c2b76ff1eccf07bf570342ce5dbbcdb2554e9189923",
+        "local": "/Users/pial/Projects/sieve/runs/sieve-improvements-verification-vm",
+        "files": 9,
+        "bytes": 36865
+      },
+      {
+        "manifest": ".cache/cloudnativepg/module-proof-result-hashes.json",
+        "manifest_sha256": "565a155e3c2426c97b396d27fc2051470ef0ec9d0acf1745c74203505f7e9886",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-module-proof-vm",
+        "files": 11,
+        "bytes": 252188
+      },
+      {
+        "manifest": ".cache/cloudnativepg/plan54-followup-20261029/result-hashes.json",
+        "manifest_sha256": "f679dc6a58174103c23d427f15d5ed7a69085651e49ab714a0a9d9b98a6c26b8",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-plan54-bounded-20261029-vm",
+        "files": 683,
+        "bytes": 160102888
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-client-confirmation-20261030/confirmation1-result-hashes.json",
+        "manifest_sha256": "e712f3ba83f06445175e328c4794075cf240adc02a8f18cfb4475fb2093c8543",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-confirmation-20261030-vm",
+        "files": 11449,
+        "bytes": 410283260
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-client-impact-20261029/control-result-hashes.json",
+        "manifest_sha256": "77c7cc1d61ce381081e094ed9b3eb05bdec6f5b95471db1213da078ea8dabf17",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-control-vm",
+        "files": 10868,
+        "bytes": 385219075
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-client-impact-20261029/learn-result-hashes.json",
+        "manifest_sha256": "04438f437edaf54d10af1d9c2882d457cb54c8ed88f81e615687a23c4055788a",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-learn-vm",
+        "files": 11583,
+        "bytes": 505029171
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-client-impact-20261029/pair1-result-hashes.json",
+        "manifest_sha256": "2080efc78178154c98ae5fc1ba22d0fa865c2e183cec0d3d1255690a0fd15dfc",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-pair1-vm",
+        "files": 11435,
+        "bytes": 409731059
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-client-impact-20261029/pair2-result-hashes.json",
+        "manifest_sha256": "e529a8f5915a2a172e362d958f3b736ce07af36ba0461cf554e9cfba0441dab2",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-pair2-vm",
+        "files": 11469,
+        "bytes": 410705678
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-probe-isolation-20261030/learn-result-hashes.json",
+        "manifest_sha256": "b97fa6a77950948adcb1e688305074b0d9c02094ddc6d4bcb840d87fe1c705c8",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-learn-vm",
+        "files": 11499,
+        "bytes": 509952965
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-probe-isolation-20261030/pair1-result-hashes.json",
+        "manifest_sha256": "43114c205b6c517eee11915fc5daf48d471201f4e1d309e18d5130c79d7ae25f",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-pair1-vm",
+        "files": 11377,
+        "bytes": 409616854
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-probe-isolation-20261030/pair2-result-hashes.json",
+        "manifest_sha256": "b514afe011e4be31905b6d4d20f844d1b73cd6ea39ad484f26a86c1ef3debce6",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-pair2-vm",
+        "files": 11367,
+        "bytes": 409703180
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/control-result-hashes.json",
+        "manifest_sha256": "cb949d00fa9e2730e12e8b865dd7308812c9bb636a7e44d781c0cb5a5725eb25",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-control-vm",
+        "files": 10841,
+        "bytes": 384922875
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/control-retry1-result-hashes.json",
+        "manifest_sha256": "9f308cfcf59f79d1b7e837b6875fa89447b052f79b09149599cb266e7bf83aa2",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-control-retry1-vm",
+        "files": 10848,
+        "bytes": 384864035
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/learn-result-hashes.json",
+        "manifest_sha256": "f915bd001255f6da4496af64e2ddc38c6a3ec16343b2657f5c4ad2dad8eeae21",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-learn-vm",
+        "files": 11578,
+        "bytes": 512777768
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/test-repeat1-result-hashes.json",
+        "manifest_sha256": "c63c909862f08f2a9e1a9bd2ddd84655185b5d487ad1f0b905260b6ddd134b44",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-test-repeat1-vm",
+        "files": 10895,
+        "bytes": 394492667
+      },
+      {
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/test-result-hashes.json",
+        "manifest_sha256": "ba4da692137af9c2244d8d491c8070bdc83a44fa6c906f9486bf33643a6c06e0",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-test-vm",
+        "files": 11477,
+        "bytes": 409756121
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-00-result-hashes.json",
+        "manifest_sha256": "fe3843862209f62f20bddcb66ee278d3838f45be19a857099ca969618b083071",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-00-vm",
+        "files": 5,
+        "bytes": 11720
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-00-retry1-result-hashes.json",
+        "manifest_sha256": "d2c95a544cdc21fd11f93fabf0dc40bc70c359939f1a1820301776ca064737ee",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-00-retry1-vm",
+        "files": 5681,
+        "bytes": 295873352
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-01-result-hashes.json",
+        "manifest_sha256": "231b9c23cc2e8db6547dd0afcfd955b6fcc4a234c16ae60d77d06e69f0330bad",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-01-vm",
+        "files": 5546,
+        "bytes": 328135164
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-02-result-hashes.json",
+        "manifest_sha256": "7dcae78fea08be033e71084c579d1977898e07cb4df9c8554c032365041c75b8",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-02-vm",
+        "files": 5418,
+        "bytes": 320998426
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-03-result-hashes.json",
+        "manifest_sha256": "9b1a87ce8fe202a8d03b5e3de18699d1a1e9a48ae5e548260bebf4c11d60420f",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-03-vm",
+        "files": 5596,
+        "bytes": 322316288
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-04-result-hashes.json",
+        "manifest_sha256": "05beef2dd85c15df1f657ac252c26297eb4c7bf70db8dcb80cc27d1238401530",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-04-vm",
+        "files": 5516,
+        "bytes": 323158684
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-05-result-hashes.json",
+        "manifest_sha256": "d0752b546bb884cfb0a39e82db8944b4bc585da50dfc9ad4b9b3945ba94af84b",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-05-vm",
+        "files": 5317,
+        "bytes": 329083685
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-06-result-hashes.json",
+        "manifest_sha256": "11ec41f6397d1796a3092ebb027c094c9f9720825818b10b22ca7c12afa9c0ed",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-06-vm",
+        "files": 5391,
+        "bytes": 288742736
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/batch-07-result-hashes.json",
+        "manifest_sha256": "3a42ca6ba26fc5960fdbb5483cd9aff8fa5105009caf6ee674b8427ba3529dcb",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-07-vm",
+        "files": 3879,
+        "bytes": 239054234
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/diagnostic-54-59-94f5a0e-result-hashes.json",
+        "manifest_sha256": "30d7542d204af7c1a3fd876a513b4466c869e369512be1835aca61f392070824",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-diagnostic-54-59-94f5a0e-vm",
+        "files": 1104,
+        "bytes": 182506029
+      },
+      {
+        "manifest": ".cache/cloudnativepg/remaining/diagnostic-69-40d9999-result-hashes.json",
+        "manifest_sha256": "82fd19928e186b632aa153cac0759b3550ea861b4345486838f815927e7f802e",
+        "local": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-diagnostic-69-40d9999-vm",
+        "files": 677,
+        "bytes": 153913335
+      }
+    ],
+    "unsupported_manifests": [],
+    "files_verified": 280220,
+    "bytes_verified": 11740278591
+  },
+  "VM_idle": true,
+  "push_or_PR_for_this_work": false,
+  "support_file_sha256": {
+    ".cache/cloudnativepg/ca-cache-replay-20261031/all-tests.log": "0bed928f7aa0ab0779c9417a2266f7751562d9c9b438d07c8ea89952c842381b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/audit-physical-stage-final.py": "e4dd1fdd33444ca0b624763abd75882a98d57c1e1d9510eaafa06692b312c754",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/audit-physical-stage-v2.py": "60cc38b0ddb9b0294eb7178e1b13f3eb677e74ac77e7c094d8a6b03f8f888354",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/audit-physical-stage-v3.py": "23525ff4a2a1e413f2eaeb03ca0b261eefa055afe0ec4f9ad30b676537fc9f28",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/audit-physical-stage.py": "aa030cb353445caeb5221cd957ea240666ffec331043d50da868cb94f0e8d455",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bootstrap-green.log": "8d2731c312d70766295cbc0fed1037f4b4c5b7565ebc2e4dba1274ac62c75f1f",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bootstrap-positive-green.log": "57be52af4623aba7a288aead2dd5009536a86c289e7cfad4320fe4586d4c738b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bootstrap-positive-red.log": "0b5d055e0a7770603c9279f30e2468a1679d78f9a38c9de2cde600d776495fdf",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bootstrap-readiness-red.log": "6e32d4d3ae91fad7d90d24757bae7539d8a7d80e1ec7da1690c26a8619eb63d5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/boundary-final.log": "5cdeccc5f9f1ab251522e851af56f42ef4ec7d4a7e434e3fbbcb4c83282f11eb",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-collection.log": "6d8d282c6400b0a90be5483aad20cf66e9e1e3119c4e6fbf7d13ded2ed31128c",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-job.json": "be4ac1222e2be5f4a4998345e4806f4744998facec7cb53bf9fdeeaf08459620",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-result-hashes.json": "2bc74c49a3af8524a181e10c8542968077b89d2e7487f5641a860e3771c946f0",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-collection-attempt2.log": "033d6dee2da1ecaf4a0a5cf7b5dd5fc8030f0ff77e634586910cb2fc8eef7a8b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-collection.log": "601f926a717416b1c973bf3097110c7d7642a4f3bdccb8b303e64e2cd791fbf1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-job.json": "34b8eca6628b7ad1e3a0b92e85a83076b85de20d07ccfe96ba7f713aac13113c",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-result-hashes.json": "a8dbcb80eb865ade3a6fb97c4ff9dbd37c9d286e243a50a364ca612f447e87c8",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1.py": "4261f45067a775d0157cd9e98d6337b768672086fc670e59300b7897476707d3",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build-review.json": "3f02d7f5fea32311fcffd71fb58dde5f8256a042a57f35feb7d0fb4de9c518c3",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/build.py": "50cc96af6eaea229e0e6ba17ef9e0bbc31fb62af780b2735acdd38a321680205",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bundle-complete-transfer.log": "97d155ad6945acff4c5895a7131126261d4b71278ac5f6acf091a270bb712d79",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/bundle-transfer.log": "8e396829f954b579b0b72af9354d1e4e5bba1d7fa7ed2a3da5225a4cabdac964",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/cohort-supplement-final.json": "5eee591c2df37344f8f8f2de890f54070d774647f0fc65031ecd45e31821e7ab",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-collection.log": "850c1400720edcb02f84572dbe835500958e227c867ba25228ba225310819594",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-job.json": "d3dd983c004175da8bec7378d52a51d0597f55b348fa39a6048932c038790781",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-result-hashes.json": "6b1fab2cd3c79afd343a464e66775f03fbfd6909e2eb87ba47a7d46869e0c166",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-collection.log": "22a1121bc1898d09472d1af33d3277cc809b6ea5005743529d225ac83d0d7a44",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-job.json": "858ef763f67a52aa135bc525dc8d8eb8e2021c436ef940469c2eed4a6cb2538d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-pki-review.json": "1838c12b9eeba52fba45737c8465a69cb9b374b390ab403c627e224b0c5d3e95",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-postprocess-inputs.json": "0f744138b54bb9e5f8aedc5a605d75518148788abe704af8fbb6059fdfeec83b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-postprocess.log": "b63e1072fbbf9daa8a0de10f1eb1041b244ab563a5ef480c40218d239bf17f55",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-result-hashes.json": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-review-initial.json": "1bb45d208cb5d45c8a0bb319a9764a1255816766b87f69b81ed43af288335b67",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-review-reporting-failure.json": "ae9775e54ef9dfe29de4b7b5a7a2be56f06bac8249d3530d0b349072c65219d3",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-review.json": "7e13411eeab4b32361429dfea0147588ddb21035c20d0e3d146a5960133a8433",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-review-failure.json": "7cd1ac01da2255f61febd4a6ea74604b6fa6d2df34bd53b016237b83c9f0b269",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-review-initial.json": "af670e960ee848b803fec06b583553e92251f8041481539b131123f7a540574c",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/controls-review-initial.log": "a8f912b52a2fdfd87d7219246432e404c27c9635f732cca485ab26b114e87785",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/deployment-manifest-correction.json": "814991405634859aeccd5bca7705ba2b49ed493851d3ba4af8770a1f2fdfbf72",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-collection.log": "b50bf2757ce7954233653deb6cdfb06adf148a54b683519b3b206f125712265d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-job.json": "e98f788c8a3dbf2cf3e44ee526862326a9cdd7ee4039a71f968fa0cf814cc843",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-audit-final.log": "5f4ec69d1862076cf3d0a81523722bbf7ca39856f430bc6bf592da02404236b5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-audit-v2.log": "bdac12e3865dbbaa0e4c833735dd3e9e6a505b2e64a624656820ab15dc4bd3bb",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-audit-v3.log": "bed8afb9dd105cae86850cff1fa9252377c0f08f829c57c133f086b1ed94a992",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-audit.log": "8f7edaa91a05e4db8d2ec18b2eb521b83e7bf6809e7882391ee78e0324b3c4ff",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-review-final.json": "5f4ec69d1862076cf3d0a81523722bbf7ca39856f430bc6bf592da02404236b5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-review-initial.json": "8f7edaa91a05e4db8d2ec18b2eb521b83e7bf6809e7882391ee78e0324b3c4ff",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-review-v2.json": "bdac12e3865dbbaa0e4c833735dd3e9e6a505b2e64a624656820ab15dc4bd3bb",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-physical-review-v3.json": "bed8afb9dd105cae86850cff1fa9252377c0f08f829c57c133f086b1ed94a992",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-pki-audit.log": "a759d86189e913d24868e14c9c19fd287aca0ded479ccf915a47a0e0c6e3b11f",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-pki-review.json": "33393005ce99e5bd73bbb598756590278f1e983edb7a1ac25a2ada90a3d08518",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-result-hashes.json": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-review-initial.json": "0ac774ee49f862b0a3a523e1d7adac59fa64404c7165fb8ee773e6f8b47ee1eb",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-review.json": "d597470c2eb9c01bc79ed263d3d81ddf9c73a1c8abf462d9c55c2db233620c01",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-review.log": "32f3d9a8b08990264bc8ff8dcd1752c3ab0393ef43f062a7351391de2052e5fa",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/fetch-full-history.log": "e51637ae99b5a3490f71ca75fabe806c430dc610fc76aafe4afe05299fa30316",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-integrity-v2.json": "a1667db83d206445016ba82c948404a17579a6ec6001efdeeccbd4df40b08afd",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-integrity-v2.log": "42f57d6f9137c6f35a0c2e74bf32714fa46b5aa9649f1348970afaef62f86822",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-integrity-v2.py": "a6c51403920dce1f9a901cb1cabd5b67cab194245cbf6b566652d85532538c38",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-integrity.log": "9b3e9d399ab2987411e8e3754929b473ac747b980ab38befe06a989ec798ccc6",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-integrity.py": "51d466726d3752f977e478f4c97359a4ac5680db3de3b4deff2c6e8ee90f4674",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-review.log": "96e06185dba3c5f8e8fe3e3d2ba7fac03ddc094441d98f321b1682529c21e4e5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-review.py": "7956ca586adb361aea7dcf64634913953cd8ead50c635f2a38207db3a6dbb14c",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/final-vm-state.log": "648ab61bbf7bdc355a69b8f69fc703641f120cc97ebdead603ec39bb621190a9",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/format.log": "02eae0eec614f7dd9e5ec647c9e728a9b5668c203cb5bb4f7227070524c44795",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-build-retry1.log": "cab019a962fa7cace8403489bd2644453ca64ee0e36ab51384ad5d6676204cac",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-build-retry1.py": "3a581e0f801a49dd15ee2072864776dc1edf4882c7973748af937f292fba6fec",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-build.log": "798fc0ea5c63347374f57e20ecc4a0a3c7a88e1cf0960925c9e3e1650eeee53a",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-build.py": "e2a4353a4692c7345b0c2c13f1ddfc09eba55b9019a230d9a7bb98cdb7462cc1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-controls-retry1.log": "33d257a56f0ab4173173d041ae81885f28b66c76530c48530218bc8ecb4c9bd9",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-controls.log": "a1980b49943490f2a3b16de9e05d9f0eee44d3766f1cdbdad2ecb7cfc5053760",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-faults-reporting-fix.log": "4f90a4f0be760ef60604f686ab07e525be13d89947c0bbf4a9f07a0c0678faa9",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-faults-reporting-fix.py": "6bb82c64a82a2c2541a2acfe9eb6dbb28cf317f39ec0e07471ad900012dbcfd2",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-stage-deployment-retry1.py": "123b3f44dbef7e889392ab920d7b4858dbbc009bb69a6bc2e09a45bd708deb20",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/launch-stage.py": "87115e58d8b58202a6e42c5c4a06bf7597f39eabbaae31d949887d9d9b4fcf1a",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/mypy.log": "5b8ce7baba93409ab8ce52693c77459567344e2c2f77fe3cf14b888e34f7e451",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-fix-all-tests.log": "797362b0da303b8586d09cd6928ac3c7754686b589e171161cced5e1f4861725",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-fix-format.log": "1e2a3e2494e870c6c9673511106baaea0670f3f2754bba81ff924dc4a504d597",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-fix-lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-fix-mypy.log": "5b8ce7baba93409ab8ce52693c77459567344e2c2f77fe3cf14b888e34f7e451",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-fix-wheel.log": "449160cfa51c8a1d9cd0b5459aa5fadfa51ff15b1dafd678c09dc24596818241",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-postprocess-boundary.log": "e7490cfb34fd2ca649971810794266525f236bde6d224fd4cfcd4fb7c234d9b0",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-postprocess-green.log": "976ea3fe6dfa65b827ec05fc16bf49cec94d3fda3b2d6ad4719708e74a38b32d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/nofault-postprocess-red.log": "6c9be767a712423aac2addac7fd43765e26abc634a405f8ae9357d1c1bcf695b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/physical-v2.py": "b04689633593f01abda1c4ba31d4988d5842e70440e65979a8007c0be47502e5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/physical-v3.py": "3fc174a676fb1020f7e4886974b3d97b9c2cb533436f68927131cd4f549666c1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/physical.py": "a90475ed09d377aa6f6cacb26727f4cfb8c4227fb1f60843463e24ae440d5e9f",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/pki-audit.py": "eb9b57e8fe4c012996b7e46cdd22d0e252e1ca25bb4bbc7b11c469904456c9ea",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-deployment-retry1.log": "eb7121a61fa63323723126677c9831344cf83adea1b4e379662cfe401683c5e1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-deployment-retry1.py": "57282ca11db3741be6e3dfc38f220dd27f711edf5c705e3a1757059c48bbbb8e",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-reporting-fix.log": "e6a4ed25bb489093129809e5217f4ed9747012e2e2cb43e5dbfb77ff71ee3534",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-reporting-fix.py": "c46ff2ecd3064d18f4297a678627f29f285ccb55568e7217fa8e1e68c6e4f358",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-retry1-success.log": "e815ce66aa798436cca2f856f234153a74c4f37afa7679350bc061f400f23701",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-retry1.log": "6a9f4bdcff863c15bef85db379c0b741da2b73bd0c59f59dea24bcf20eac0a64",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare-retry1.py": "b9fccac8564df031979aca62771ada4dd357097ac0cbb4e55fa8a7ddef62773d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare.log": "2c66517d63ce4767584ddcf9fa2bd494c38c39ada39abf0095b058a976b3003a",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/prepare.py": "4d8d9e957636e2de22ea4624424c1bf6613edaf74699973245cc3191f9626d7d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/preserved-inputs-post-fix-verification.json": "377fbdd619d99e3dc002bc0f7aadcc84f7129ef153c4537df5a86ae40efab3ce",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/preserved-inputs.json": "7a4ea30bdd7576139558d16bd4da1f4e0d8e8eff5ef3fd404a471157903f82cb",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/review-build.log": "77588f339534ed4ea82dc12e880eea666cfb5ed41b8180aa5fa20135482d93de",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/review-build.py": "558523dff39bd3e4268014a69465d4e3dd2efc48ba0bb9783547b69d350eebf1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/review-stage-deployment-retry1.py": "1039fd5f43ae73f339013c69eecc40475064daf3d63ac20f2e81d0ed1d9917d2",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/review-stage-reporting-fix.py": "e13c5f44b60a86b90cb0c2cf2a180efce8c8ea06cc5ade0f8ae5976e802fc150",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/review-stage.py": "0db6dc24c8d23223ccf75db6034acd10d30b48ff00a9512d43fbe6c1104edf8d",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/run-deployment-retry1.py": "ab283a55cf8501a733302777a5d38d3a527109b3dbb740452c538073f5477a3a",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/run-reporting-fix.py": "b7595bf52209e2a1d11c7a1f75dcf328f299c0ee747431c1565f15ea69c65db7",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/run.py": "42734811be7cee04f01234196c4ba45c56f33a0f1a5fa6bc2da69c3298ae4806",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-deployment-retry1-source.json": "27bc5dc561428f5dec20dbb8f4842e525b173c6a5c7674ae451f6f2115df0fda",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-reporting-fix-source.json": "d86a12842b9cddaf780bdfc0e472039caf20ce9f31e9e3a92c0da780d8307b15",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-retry1-source.json": "873861fbf0e541ef6bd4bc314a796e3a22c67fab6a21ce08ad63630d3549e46b",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-buggy-source.json": "0c0c741e28f2d1e3639e006bbd876e65d66cb802a9d6fa2b6ccdcd3d098af2fd",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-deployment-retry1-source.json": "55b71ec30c5030e997a9ff5e5fd66842478cd254dba276581419ef46559618e7",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-reporting-fix-source.json": "03569ce8720d45035d921a84c4ada28ddd38e02d9adea8aa1dd7a051500cf2c9",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-retry1-source.json": "20d9a5f10c11457577251d14f38dce26421aa7d3dd65eca79ccb77f1e5d752f3",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-fixed-source.json": "7b6a372e14400c43a705733812c49773100e6fd2c5f5b798ae2a47eee73e246e",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-pair-deployment-retry1.json": "82d735811f08bd0778fa340c8ffbc8c9c576668c41ed135ce4b8e56ac531b290",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-pair-reporting-fix.json": "d6021fb5c0bae9547f6a1077f9e632a35e083697e1ab596f8e91bfabf95460b0",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-pair-retry1.json": "63f2ee739d4aef4e5ea26f70810af8bf7a63c4653c3c561f9f956b95c6692cc2",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/runtime-pair.json": "839e3f78cc003ad3f0e617601a30e19adae15e41ed45922d9216d1fab551add5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/seal-report.py": "b43f3d11457d022658b031173b541c46c9844b82f5b4acb72abffe37b51a3858",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/selected-plan-inputs.json": "6eb7eddb14d5d50cbb241a77b8d4c32410c19a5132b1b02a044114cd1e0839e8",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/upstream-bundle.json": "5e20d2ed78f231edbc7fd4e921ec3b293d15dca21936ad753a74b7d7875df0f1",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/upstream-issue.json": "6a430e4dc63e73588116cb33705fb0d117ef58124b83dee74cf4d81613492dc2",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/upstream-pair.patch": "e2b273df19c8087ec795a2d7f3dd255ea60279c088ad01f099f114a049a25876",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/upstream-pr.json": "48c2058b453b8e447a661f0138c608f1d2b89d769f9807d3d9f69b4851a930a5",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/wheel.log": "449160cfa51c8a1d9cd0b5459aa5fadfa51ff15b1dafd678c09dc24596818241",
+    ".cache/cloudnativepg/ca-cache-replay-20261031/workload-mypy.log": "e317872697c2cbfdefa321527a6efe73290dff3a390b0fa8723b87092eccba6a"
+  },
+  "report_support_note": "The producing seal script stdout log is excluded because it is written after the results are serialized; the initial draft remains preserved separately."
+}
