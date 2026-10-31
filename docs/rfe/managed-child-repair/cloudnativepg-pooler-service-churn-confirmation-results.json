@@ -1,0 +1,4123 @@
+{
+  "schema_version": 1,
+  "completed_at_UTC": "2026-10-31T04:51:19.760912+00:00",
+  "client_date": "2026-10-30",
+  "status": "complete_reproduced_stale_Service_client_failures_and_longer_matched_interruptions",
+  "conclusion": {
+    "full_Service_churn_reproduced_with_probes": true,
+    "full_churn_probe_equipped_observations_total": 2,
+    "actual_stale_Service_connection_refusal_observations_total": 2,
+    "longer_matched_failure_span_observed_in_both_full_churn_pairs": true,
+    "full_churn_observed_extensions_seconds": [
+      2.5814639610000008,
+      4.896363802
+    ],
+    "causal_attribution_of_entire_outage_difference_established": false,
+    "operator_bug_substantiated": false,
+    "classification": "reproducible transient stale-Service client-failure pattern and repeatable observed outage extension; availability-regression candidate",
+    "limits": [
+      "Only two full-churn trials with client probes and their matched controls.",
+      "The fault delays correct Deployment/Service creation by about 1.1\u20131.3 seconds in both full-churn pairs; the full 2.6\u20134.9-second outage difference also includes variable Pod readiness and DNS timing.",
+      "Both control and fault Deployments use a 10-second TCP readiness probe; this experiment did not isolate probe timing from the churn intervention.",
+      "Fresh connections and read-only aggregate queries only; no persistent-session/write/transaction guarantee tested.",
+      "No persistent outage, bad successful query result, direct-database failure, or post-convergence query failure observed."
+    ]
+  },
+  "new_confirmation_only_counts": {
+    "matched_pairs": 1,
+    "workloads": 2,
+    "actual_physical_old_read_hold_release_verifications": 1,
+    "full_Service_churn_cases": 1,
+    "final_correctness_and_recovery_passes": 2,
+    "total_client_queries": 903,
+    "Pooler_queries": 408,
+    "Pooler_failed_queries": 70,
+    "direct_queries": 495,
+    "direct_failed_queries": 0,
+    "bad_successful_results": 0,
+    "post_convergence_query_failures": 0,
+    "raw_alarms_preserved": 19
+  },
+  "prior_report": {
+    "path": "docs/rfe/managed-child-repair/cloudnativepg-pooler-client-impact-results.json",
+    "sha256": "be8eed2988af491ad3814e3fe985ebba5c5d3f404f5448bfafd93cd38c6ea9c6",
+    "report_commit": "ed6ed52bc28e3801c29e78a4672b1f048167de6d",
+    "not_rewritten": true
+  },
+  "matched_comparisons": [
+    {
+      "pair": "pair1",
+      "full_Deployment_and_Service_churn": false,
+      "control_metrics": {
+        "pooler": {
+          "attempts": 203,
+          "successes": 172,
+          "failures": 31,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 31,
+              "first_failure_ns": 1793337951975698204,
+              "recovered_ns": 1793337970664312588,
+              "seconds_to_next_success": 18.688614384
+            }
+          ],
+          "max_failure_burst_seconds": 18.688614384,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 9,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.87.117), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 22
+          },
+          "first_query_ns": 1793337939065304725,
+          "last_query_ns": 1793338001843445026,
+          "replacement_to_convergence_seconds": 19.87526994,
+          "post_convergence_queries": 118
+        },
+        "direct": {
+          "attempts": 241,
+          "successes": 241,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793337939497453517,
+          "last_query_ns": 1793338001970679717,
+          "replacement_to_convergence_seconds": 19.87526994,
+          "post_convergence_queries": 117
+        }
+      },
+      "fault_metrics": {
+        "pooler": {
+          "attempts": 200,
+          "successes": 168,
+          "failures": 32,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 32,
+              "first_failure_ns": 1793338277282062293,
+              "recovered_ns": 1793338297224719454,
+              "seconds_to_next_success": 19.942657161
+            }
+          ],
+          "max_failure_burst_seconds": 19.942657161,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 10,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.204.239), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 22
+          },
+          "first_query_ns": 1793338264378964052,
+          "last_query_ns": 1793338327438146005,
+          "replacement_to_convergence_seconds": 20.201696289,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 242,
+          "successes": 242,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793338264776554558,
+          "last_query_ns": 1793338327584521508,
+          "replacement_to_convergence_seconds": 20.201696289,
+          "post_convergence_queries": 117
+        }
+      },
+      "observed_failure_span_extension_seconds": 1.2540427769999987,
+      "correct_Service_creation_delay_increase_seconds": -0.2221550080000001,
+      "correct_Deployment_creation_delay_increase_seconds": -0.1299742720000001,
+      "critical_path_control": {
+        "stage": "pair1",
+        "name": "no-fault",
+        "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+        "new_Pooler_API_to_correct_Service_seconds": 1.864322048,
+        "new_Pooler_API_to_correct_Deployment_seconds": 1.693863168,
+        "correct_Service_to_Deployment_Ready2_seconds": 16.68344704,
+        "Ready2_to_first_recovered_query_seconds": -0.073299444,
+        "delete_request_to_next_success_seconds": 18.977358459,
+        "first_failure_to_next_success_seconds": 18.688614384,
+        "history": [
+          {
+            "line": 643,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337929998622976,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 644,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337930116314880,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 647,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337931831309056,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 653,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337932214993920,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 655,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337932340219904,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 657,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "5618dfc9-6db1-4666-a884-48d151da2c60",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337932390552064,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.140.165"
+          },
+          {
+            "line": 661,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337932506894080,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 665,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337932693980928,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 667,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337933028470016,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 682,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337937324067072,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 692,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337941623435008,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 703,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5",
+            "owner_UIDs": [],
+            "observed_ns": 1793337951765914880,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 706,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "5618dfc9-6db1-4666-a884-48d151da2c60",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337951798039808,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.140.165"
+          },
+          {
+            "line": 708,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "de76b464-4b99-4ff1-b069-4e89618caa58",
+            "owner_UIDs": [
+              "32fa2bd1-01b5-4f4c-a59d-8a2f9be088f5"
+            ],
+            "observed_ns": 1793337951798765056,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 714,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "e4ca0ad0-711d-4b26-9838-56573ba07501",
+            "owner_UIDs": [],
+            "observed_ns": 1793337952189842944,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 716,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "e4ca0ad0-711d-4b26-9838-56573ba07501",
+            "owner_UIDs": [],
+            "observed_ns": 1793337952692204032,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 717,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "e4ca0ad0-711d-4b26-9838-56573ba07501",
+            "owner_UIDs": [],
+            "observed_ns": 1793337953024132096,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 722,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337953883706112,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 723,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "939f18fe-432b-4e99-b64b-c0e703a285f6",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337954054164992,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.87.117"
+          },
+          {
+            "line": 728,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337954113455104,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 732,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337954266080000,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 741,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337954680582912,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 744,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "e4ca0ad0-711d-4b26-9838-56573ba07501",
+            "owner_UIDs": [],
+            "observed_ns": 1793337955015580928,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 778,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337970607589888,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 780,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c7c47b9c-91bb-414c-980f-a877350f43d4",
+            "owner_UIDs": [
+              "e4ca0ad0-711d-4b26-9838-56573ba07501"
+            ],
+            "observed_ns": 1793337970737612032,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      },
+      "critical_path_fault": {
+        "stage": "pair1",
+        "name": "after-old-read",
+        "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+        "new_Pooler_API_to_correct_Service_seconds": 1.64216704,
+        "new_Pooler_API_to_correct_Deployment_seconds": 1.563888896,
+        "correct_Service_to_Deployment_Ready2_seconds": 17.197805824,
+        "Ready2_to_first_recovered_query_seconds": 0.315761502,
+        "delete_request_to_next_success_seconds": 20.166445734,
+        "first_failure_to_next_success_seconds": 19.942657161,
+        "history": [
+          {
+            "line": 626,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338255404884224,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 628,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338255429526016,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 634,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338257013467136,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 639,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338257313822976,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 641,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "3d9c3e55-e065-4313-ac08-7324e8600fd2",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338257411540992,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.152.200"
+          },
+          {
+            "line": 645,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338257465127936,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 648,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338257587204096,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 651,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338257795753984,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 653,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338258053534976,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 669,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338262867660032,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 679,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338266998942976,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 691,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "700a7827-2b0b-486e-a2b8-001ee77eac8f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338277166584064,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 695,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "3d9c3e55-e065-4313-ac08-7324e8600fd2",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338277195342080,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.152.200"
+          },
+          {
+            "line": 697,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "4aee1883-692f-4bd9-b408-2981a0752a4d",
+            "owner_UIDs": [
+              "700a7827-2b0b-486e-a2b8-001ee77eac8f"
+            ],
+            "observed_ns": 1793338277196062976,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 705,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "92c4f19a-8b3c-452f-b1a7-1a44772f441f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338278068985088,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 707,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "92c4f19a-8b3c-452f-b1a7-1a44772f441f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338278378642176,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 714,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "92c4f19a-8b3c-452f-b1a7-1a44772f441f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338279332534016,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 720,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338279632873984,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 723,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "ad8f18c3-82eb-4e7e-9dea-9ef01c09739f",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338279711152128,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.204.239"
+          },
+          {
+            "line": 725,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338279750786048,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 733,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338280098658048,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 737,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338280318308096,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 739,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "92c4f19a-8b3c-452f-b1a7-1a44772f441f",
+            "owner_UIDs": [],
+            "observed_ns": 1793338280440440832,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 789,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338296716698880,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 790,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0a9e456b-b1ed-449e-9931-8f05f9e443bd",
+            "owner_UIDs": [
+              "92c4f19a-8b3c-452f-b1a7-1a44772f441f"
+            ],
+            "observed_ns": 1793338296908957952,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      }
+    },
+    {
+      "pair": "pair2",
+      "full_Deployment_and_Service_churn": true,
+      "control_metrics": {
+        "pooler": {
+          "attempts": 198,
+          "successes": 163,
+          "failures": 35,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 35,
+              "first_failure_ns": 1793338754390213888,
+              "recovered_ns": 1793338776039327946,
+              "seconds_to_next_success": 21.649114058
+            }
+          ],
+          "max_failure_burst_seconds": 21.649114058,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 12,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.198.112), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 22,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.198.112), port 5432 failed: timeout expired": 1
+          },
+          "first_query_ns": 1793338741487896799,
+          "last_query_ns": 1793338804908609917,
+          "replacement_to_convergence_seconds": 20.747753095,
+          "post_convergence_queries": 113
+        },
+        "direct": {
+          "attempts": 245,
+          "successes": 245,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793338741880146048,
+          "last_query_ns": 1793338805387261365,
+          "replacement_to_convergence_seconds": 20.747753095,
+          "post_convergence_queries": 118
+        }
+      },
+      "fault_metrics": {
+        "pooler": {
+          "attempts": 204,
+          "successes": 171,
+          "failures": 33,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 33,
+              "first_failure_ns": 1793339087813160464,
+              "recovered_ns": 1793339112043738483,
+              "seconds_to_next_success": 24.230578019
+            }
+          ],
+          "max_failure_burst_seconds": 24.230578019,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 8,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.203.193), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 1,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.201.26), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 24
+          },
+          "first_query_ns": 1793339074903283241,
+          "last_query_ns": 1793339142958331253,
+          "replacement_to_convergence_seconds": 25.272978922,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 262,
+          "successes": 262,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793339075371364587,
+          "last_query_ns": 1793339143331245317,
+          "replacement_to_convergence_seconds": 25.272978922,
+          "post_convergence_queries": 118
+        }
+      },
+      "observed_failure_span_extension_seconds": 2.5814639610000008,
+      "correct_Service_creation_delay_increase_seconds": 1.0885143039999998,
+      "correct_Deployment_creation_delay_increase_seconds": 1.2679360000000002,
+      "critical_path_control": {
+        "stage": "pair2",
+        "name": "no-fault",
+        "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+        "new_Pooler_API_to_correct_Service_seconds": 1.86643968,
+        "new_Pooler_API_to_correct_Deployment_seconds": 1.498930944,
+        "correct_Service_to_Deployment_Ready2_seconds": 16.817271296,
+        "Ready2_to_first_recovered_query_seconds": 2.126353866,
+        "delete_request_to_next_success_seconds": 21.854689916,
+        "first_failure_to_next_success_seconds": 21.649114058,
+        "history": [
+          {
+            "line": 612,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338731719307008,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 613,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338731991309824,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 616,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338733217263872,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 620,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338733423975936,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 624,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338733550434048,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 626,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "d48cc704-3022-40bf-9893-834b12e986d8",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338733583538176,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.236.151"
+          },
+          {
+            "line": 630,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338733650011904,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 634,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338733825096960,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 636,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338734231406848,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 651,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338738881154048,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 663,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338744112600064,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 674,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac",
+            "owner_UIDs": [],
+            "observed_ns": 1793338754299206144,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 677,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "d48cc704-3022-40bf-9893-834b12e986d8",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338754331515136,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.236.151"
+          },
+          {
+            "line": 678,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "1da0590b-4d86-4da9-ba84-7442fd9ce8ca",
+            "owner_UIDs": [
+              "5c8489a4-f3ce-447c-8ed3-3cb8a3e4acac"
+            ],
+            "observed_ns": 1793338754331887104,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 685,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "268a1e62-bf1c-4c8d-9460-6111ae9343b7",
+            "owner_UIDs": [],
+            "observed_ns": 1793338755229263104,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 686,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "268a1e62-bf1c-4c8d-9460-6111ae9343b7",
+            "owner_UIDs": [],
+            "observed_ns": 1793338755813211904,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 688,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "268a1e62-bf1c-4c8d-9460-6111ae9343b7",
+            "owner_UIDs": [],
+            "observed_ns": 1793338756025787136,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 694,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338756728194048,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 697,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338756947405056,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 699,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "91048474-063e-4df5-b9b0-167a70fc8ac0",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338757095702784,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.198.112"
+          },
+          {
+            "line": 705,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338757158895104,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 710,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338757369526016,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 713,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "268a1e62-bf1c-4c8d-9460-6111ae9343b7",
+            "owner_UIDs": [],
+            "observed_ns": 1793338757530690816,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 750,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338773807990016,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 751,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7f3d90dd-3ead-4fc4-9230-ebce946a2155",
+            "owner_UIDs": [
+              "268a1e62-bf1c-4c8d-9460-6111ae9343b7"
+            ],
+            "observed_ns": 1793338773912974080,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      },
+      "critical_path_fault": {
+        "stage": "pair2",
+        "name": "after-old-read",
+        "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+        "new_Pooler_API_to_correct_Service_seconds": 2.954953984,
+        "new_Pooler_API_to_correct_Deployment_seconds": 2.766866944,
+        "correct_Service_to_Deployment_Ready2_seconds": 20.545273088,
+        "Ready2_to_first_recovered_query_seconds": 0.468608371,
+        "delete_request_to_next_success_seconds": 24.482602981,
+        "first_failure_to_next_success_seconds": 24.230578019,
+        "history": [
+          {
+            "line": 644,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339066158550016,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 646,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339066291858944,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 652,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339068147810048,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 657,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339068544559104,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 660,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339068686091776,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 661,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "1a182485-b980-413c-a3dc-59c873164d4b",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339068739799040,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.171.97"
+          },
+          {
+            "line": 669,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339068844862976,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 672,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339069002604032,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 673,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339069623755008,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 687,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339072934089984,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 699,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339077511068160,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 711,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "6384b6bb-7c76-4828-a02c-936be80c1cf9",
+            "owner_UIDs": [],
+            "observed_ns": 1793339087676428032,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 713,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "1a182485-b980-413c-a3dc-59c873164d4b",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339087699292928,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.171.97"
+          },
+          {
+            "line": 717,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "2bf06d28-d9f1-4ebb-b1cb-1c69f565e020",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339087709212928,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 723,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "15e65e61-8ac6-40bb-b5c8-f899238f49c6",
+            "owner_UIDs": [],
+            "observed_ns": 1793339088074903040,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 725,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "15e65e61-8ac6-40bb-b5c8-f899238f49c6",
+            "owner_UIDs": [],
+            "observed_ns": 1793339088233244928,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 733,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "339be706-28ff-4222-9b79-624a9b1927a3",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339089461112064,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 738,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "c082fc94-cf99-4ba7-b4b3-58c937e1e8ce",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339089662627072,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.203.193"
+          },
+          {
+            "line": 740,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "339be706-28ff-4222-9b79-624a9b1927a3",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339089663326976,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 744,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "15e65e61-8ac6-40bb-b5c8-f899238f49c6",
+            "owner_UIDs": [],
+            "observed_ns": 1793339089781990912,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 746,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "339be706-28ff-4222-9b79-624a9b1927a3",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339089799584000,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 748,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "c082fc94-cf99-4ba7-b4b3-58c937e1e8ce",
+            "owner_UIDs": [
+              "6384b6bb-7c76-4828-a02c-936be80c1cf9"
+            ],
+            "observed_ns": 1793339089980766976,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.203.193"
+          },
+          {
+            "line": 762,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339090841769984,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 765,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "bebf3de1-85b4-4248-862c-f59d7d72f676",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339091029857024,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.201.26"
+          },
+          {
+            "line": 769,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339091158690816,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 772,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339091341172992,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 779,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339091609067008,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 781,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "15e65e61-8ac6-40bb-b5c8-f899238f49c6",
+            "owner_UIDs": [],
+            "observed_ns": 1793339091764482048,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 846,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339111508413952,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 847,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "90db4728-0b0c-4b0b-a83c-245cbe52407a",
+            "owner_UIDs": [
+              "15e65e61-8ac6-40bb-b5c8-f899238f49c6"
+            ],
+            "observed_ns": 1793339111575130112,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      }
+    },
+    {
+      "pair": "confirmation1",
+      "full_Deployment_and_Service_churn": true,
+      "control_metrics": {
+        "pooler": {
+          "attempts": 200,
+          "successes": 169,
+          "failures": 31,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 31,
+              "first_failure_ns": 1793421465342208753,
+              "recovered_ns": 1793421484106787471,
+              "seconds_to_next_success": 18.764578718
+            }
+          ],
+          "max_failure_burst_seconds": 18.764578718,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 11,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.33.100), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 20
+          },
+          "first_query_ns": 1793421452455344039,
+          "last_query_ns": 1793421514587173733,
+          "replacement_to_convergence_seconds": 19.265963565,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 238,
+          "successes": 238,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793421452892016580,
+          "last_query_ns": 1793421514624390515,
+          "replacement_to_convergence_seconds": 19.265963565,
+          "post_convergence_queries": 116
+        }
+      },
+      "fault_metrics": {
+        "pooler": {
+          "attempts": 208,
+          "successes": 169,
+          "failures": 39,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 50,
+              "failed_queries": 39,
+              "first_failure_ns": 1793421794306612240,
+              "recovered_ns": 1793421817967554760,
+              "seconds_to_next_success": 23.66094252
+            }
+          ],
+          "max_failure_burst_seconds": 23.66094252,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 15,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.212.68), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 1,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.53.210), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 23
+          },
+          "first_query_ns": 1793421781660168870,
+          "last_query_ns": 1793421848699686675,
+          "replacement_to_convergence_seconds": 24.364146944,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 257,
+          "successes": 257,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793421782093864284,
+          "last_query_ns": 1793421848817750792,
+          "replacement_to_convergence_seconds": 24.364146944,
+          "post_convergence_queries": 117
+        }
+      },
+      "observed_failure_span_extension_seconds": 4.896363802,
+      "correct_Service_creation_delay_increase_seconds": 1.2585497599999997,
+      "correct_Deployment_creation_delay_increase_seconds": 1.2332088319999999,
+      "critical_path_control": {
+        "stage": "confirmation1",
+        "name": "no-fault",
+        "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+        "new_Pooler_API_to_correct_Service_seconds": 2.158235136,
+        "new_Pooler_API_to_correct_Deployment_seconds": 1.736719104,
+        "correct_Service_to_Deployment_Ready2_seconds": 16.243832064,
+        "Ready2_to_first_recovered_query_seconds": -0.052707697,
+        "delete_request_to_next_success_seconds": 18.972215337,
+        "first_failure_to_next_success_seconds": 18.764578718,
+        "history": [
+          {
+            "line": 639,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421442123902208,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 640,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421442304344832,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 645,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421443922853120,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 649,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421444323736832,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 652,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "24b09b92-bc43-4b53-b115-09ccf6464c07",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421444427787008,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.232.208"
+          },
+          {
+            "line": 653,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421444466571008,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 659,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421444573189120,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 662,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421445097107968,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 663,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421445411772928,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 678,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421449852918016,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 690,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421455094225920,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 701,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+            "owner_UIDs": [],
+            "observed_ns": 1793421465212514048,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 702,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "24b09b92-bc43-4b53-b115-09ccf6464c07",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421465236754944,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.232.208"
+          },
+          {
+            "line": 706,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owner_UIDs": [
+              "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7"
+            ],
+            "observed_ns": 1793421465262084864,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 712,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+            "owner_UIDs": [],
+            "observed_ns": 1793421465757427968,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 713,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+            "owner_UIDs": [],
+            "observed_ns": 1793421466095796224,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 716,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+            "owner_UIDs": [],
+            "observed_ns": 1793421466668893952,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 720,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421467494147072,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 723,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421467861128192,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 725,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "bdf6a83f-434a-41da-bad3-01b49c46ab3c",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421467915663104,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.33.100"
+          },
+          {
+            "line": 734,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421468110846976,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 737,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421468335431168,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 739,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+            "owner_UIDs": [],
+            "observed_ns": 1793421468474697216,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 782,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421483965030912,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 783,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "c4899919-dda3-4003-94e8-91052e350635",
+            "owner_UIDs": [
+              "b2b38f23-1f37-4f62-9993-d11eb1a36e41"
+            ],
+            "observed_ns": 1793421484159495168,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      },
+      "critical_path_fault": {
+        "stage": "confirmation1",
+        "name": "after-old-read",
+        "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+        "new_Pooler_API_to_correct_Service_seconds": 3.416784896,
+        "new_Pooler_API_to_correct_Deployment_seconds": 2.969927936,
+        "correct_Service_to_Deployment_Ready2_seconds": 19.712048128,
+        "Ready2_to_first_recovered_query_seconds": 0.108375752,
+        "delete_request_to_next_success_seconds": 23.790227758,
+        "first_failure_to_next_success_seconds": 23.66094252,
+        "history": [
+          {
+            "line": 627,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421772206159104,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 629,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421772544628992,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 633,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421773697149952,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 640,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421774135983872,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 642,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421774245174016,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 643,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "4f4a8714-29e5-41c5-b8f1-018834677683",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421774269687040,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.58.2"
+          },
+          {
+            "line": 650,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421774374823168,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 652,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421774615611904,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 654,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421775535752960,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 670,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421779419895808,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 680,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421784143677952,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 692,
+            "key": "pooler/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+            "owner_UIDs": [],
+            "observed_ns": 1793421794255977984,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 697,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "4f4a8714-29e5-41c5-b8f1-018834677683",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421794304043008,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.58.2"
+          },
+          {
+            "line": 698,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421794304187904,
+            "readyReplicas": 1,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 704,
+            "key": "pooler/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+            "owner_UIDs": [],
+            "observed_ns": 1793421794730345984,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 708,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+            "owner_UIDs": [],
+            "observed_ns": 1793421795697623040,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 717,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421796528462848,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 719,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421796644402944,
+            "readyReplicas": 0,
+            "requested_replicas": 1,
+            "clusterIP": null
+          },
+          {
+            "line": 721,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "400b88bc-c699-40d4-8334-93ad78509448",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421796696659200,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.212.68"
+          },
+          {
+            "line": 725,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+            "owner_UIDs": [],
+            "observed_ns": 1793421796832268032,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 729,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "UID": "400b88bc-c699-40d4-8334-93ad78509448",
+            "owner_UIDs": [
+              "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+            ],
+            "observed_ns": 1793421796907085824,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.212.68"
+          },
+          {
+            "line": 741,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421797700273920,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 745,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421797929862912,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 748,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "UID": "b0ce2b1e-21bb-48c4-ad86-fc95de0a8a8e",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421798147130880,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": "10.96.53.210"
+          },
+          {
+            "line": 752,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421798148897024,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 757,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421798512460032,
+            "readyReplicas": 0,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 760,
+            "key": "pooler/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+            "owner_UIDs": [],
+            "observed_ns": 1793421798735898112,
+            "readyReplicas": 0,
+            "requested_replicas": null,
+            "clusterIP": null
+          },
+          {
+            "line": 815,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421817693463040,
+            "readyReplicas": 1,
+            "requested_replicas": 2,
+            "clusterIP": null
+          },
+          {
+            "line": 820,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "UID": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owner_UIDs": [
+              "43913f53-bee3-493e-99a1-2ba140202d02"
+            ],
+            "observed_ns": 1793421817859179008,
+            "readyReplicas": 2,
+            "requested_replicas": 2,
+            "clusterIP": null
+          }
+        ]
+      }
+    }
+  ],
+  "new_cases": [
+    {
+      "name": "no-fault",
+      "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+      "old_UID": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+      "new_UID": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+      "clients": {
+        "pooler": {
+          "attempts": 200,
+          "successes": 169,
+          "failures": 31,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 51,
+              "failed_queries": 31,
+              "first_failure_ns": 1793421465342208753,
+              "recovered_ns": 1793421484106787471,
+              "seconds_to_next_success": 18.764578718
+            }
+          ],
+          "max_failure_burst_seconds": 18.764578718,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 11,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.33.100), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 20
+          },
+          "first_query_ns": 1793421452455344039,
+          "last_query_ns": 1793421514587173733,
+          "replacement_to_convergence_seconds": 19.265963565,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 238,
+          "successes": 238,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793421452892016580,
+          "last_query_ns": 1793421514624390515,
+          "replacement_to_convergence_seconds": 19.265963565,
+          "post_convergence_queries": 116
+        }
+      },
+      "stale_owner_resources": [],
+      "raw_alarms": [
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - fewer object fields than reference: pod/default/sieve-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is a nondeterministic value after reference run, but not seen after testing run"
+      ],
+      "classifications": [
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - fewer object fields than reference: pod/default/sieve-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is a nondeterministic value after reference run, but not seen after testing run",
+          "category": "independent_client_terminal_CPU_status_presence_already_varies_in_healthy_learning_and_control"
+        }
+      ],
+      "reference_RVs": {
+        "applicationSecretVersion": "748",
+        "clientCaSecretVersion": "745",
+        "replicationSecretVersion": "747",
+        "serverCaSecretVersion": "745",
+        "serverSecretVersion": "746",
+        "clientCA": "745",
+        "clientTLS": "746",
+        "serverCA": "745"
+      },
+      "physical": {
+        "kind": "matched_no_fault_control",
+        "actions": null,
+        "no_pause": true
+      },
+      "generic_fault_proof": {
+        "schema_version": 1,
+        "physically_verified": false,
+        "reasons": [
+          "physical proof for this action sequence is unavailable"
+        ],
+        "semantic_status": "passed",
+        "semantic_checks": [
+          {
+            "name": "continuous_client_evidence_complete",
+            "passed": true
+          },
+          {
+            "name": "client_query_results_correct",
+            "passed": true
+          },
+          {
+            "name": "both_client_routes_recovered",
+            "passed": true
+          },
+          {
+            "name": "pooler_identity_replaced",
+            "passed": true
+          },
+          {
+            "name": "replacement_spec_identity_preserved",
+            "passed": true
+          },
+          {
+            "name": "replacement_owns_children",
+            "passed": true
+          },
+          {
+            "name": "replacement_deployment_converged",
+            "passed": true
+          },
+          {
+            "name": "replacement_stable_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "cluster_spec_identity_unchanged",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_sql_rows_preserved",
+            "passed": true
+          },
+          {
+            "name": "one_writable_primary",
+            "passed": true
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "End state inconsistency - fewer object fields than reference: pod/default/sieve-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is a nondeterministic value after reference run, but not seen after testing run"
+        ],
+        "missed_state": null,
+        "workload_completed": true,
+        "triggered_actions": [],
+        "evidence_sha256": {
+          "apiserver1.log": "2556f658e55da4e2f6dd9110bcd2a5714925ab11ed33fbb2ef98efade1daa8ce",
+          "sieve-server.log": "9c63ae901dd7849100958dc3dfc94cdf0407c058d5aee22b1df66fe53e429613",
+          "injection-process-outcome.json": "f482b852af6ca71ddb2aee78da03b9c49e6be352f7bb76d22083b63bf88983ee",
+          "process-outcome.json": "0b61c8207f471988ca8fe83e5ad06e8836ef3877d4f621b9706ece8e71c62cb4",
+          "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+          "semantic-outcome.json": "91a8b2bf01dc890a9c5bf3aa7f7bb303de383972b1a3eef1f6c1e7dc76c3120d"
+        }
+      },
+      "container_and_source_proof": {
+        "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+        "metrics": {
+          "pooler": {
+            "attempts": 200,
+            "successes": 169,
+            "failures": 31,
+            "bad_results": 0,
+            "complete": true,
+            "post_convergence_failures": 0,
+            "failure_bursts": [
+              {
+                "first_failed_seq": 51,
+                "failed_queries": 31,
+                "first_failure_ns": 1793421465342208753,
+                "recovered_ns": 1793421484106787471,
+                "seconds_to_next_success": 18.764578718
+              }
+            ],
+            "max_failure_burst_seconds": 18.764578718,
+            "failure_messages": {
+              "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 11,
+              "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.33.100), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 20
+            },
+            "first_query_ns": 1793421452455344039,
+            "last_query_ns": 1793421514587173733,
+            "replacement_to_convergence_seconds": 19.265963565,
+            "post_convergence_queries": 117
+          },
+          "direct": {
+            "attempts": 238,
+            "successes": 238,
+            "failures": 0,
+            "bad_results": 0,
+            "complete": true,
+            "post_convergence_failures": 0,
+            "failure_bursts": [],
+            "max_failure_burst_seconds": 0,
+            "failure_messages": {},
+            "first_query_ns": 1793421452892016580,
+            "last_query_ns": 1793421514624390515,
+            "replacement_to_convergence_seconds": 19.265963565,
+            "post_convergence_queries": 116
+          }
+        },
+        "real_client_Pod_UID": "d122e6e1-f40b-47d7-981a-787245dcd103",
+        "independent_Pod": true,
+        "client_source_sha256": "52e77ccfa4d72ccf80384acae84b061a3b67b77cd03c3396650f897f04ba2c50",
+        "synthetic_public_login_only": true,
+        "old_service_ip": "10.96.232.208",
+        "new_service_ip": "10.96.33.100",
+        "events": {
+          "clients_warm": {
+            "wall_ns": 1793421454890800405,
+            "monotonic_ns": 997749310807904
+          },
+          "delete_requested": {
+            "wall_ns": 1793421465134572134,
+            "monotonic_ns": 997759554581123
+          },
+          "delete_accepted": {
+            "wall_ns": 1793421465276720330,
+            "monotonic_ns": 997759696727174
+          },
+          "replacement_C_accepted": {
+            "wall_ns": 1793421466704938653,
+            "monotonic_ns": 997761124945290
+          },
+          "converged": {
+            "wall_ns": 1793421484400535699,
+            "monotonic_ns": 997778820542547
+          },
+          "observation_complete": {
+            "wall_ns": 1793421514400617765,
+            "monotonic_ns": 997808820625334
+          },
+          "stop_requested": {
+            "wall_ns": 1793421514400627622,
+            "monotonic_ns": 997808820633831
+          }
+        }
+      },
+      "independent_API": {
+        "saved_objects_equal_API": 56,
+        "API_events": 509,
+        "accepted_positions": {
+          "old_pooler": 335,
+          "armed_old_pooler": 385,
+          "new_pooler": 407,
+          "released_new_pooler": 411
+        },
+        "old_parent_deleted_position": 396,
+        "child_history": [
+          {
+            "position": 345,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 347,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "24b09b92-bc43-4b53-b115-09ccf6464c07",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 348,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 354,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 357,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 373,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 397,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "24b09b92-bc43-4b53-b115-09ccf6464c07",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 401,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "7983552e-96c9-445f-b046-c47ca177da13",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "0e545a4f-f99b-4f90-9fd2-ddaf06e604f7",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 415,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 418,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 419,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "bdf6a83f-434a-41da-bad3-01b49c46ab3c",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 428,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 431,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 470,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 471,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "c4899919-dda3-4003-94e8-91052e350635",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "b2b38f23-1f37-4f62-9993-d11eb1a36e41",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          }
+        ]
+      },
+      "native_build_proof": {
+        "build_proofs": [
+          {
+            "mode": "vanilla",
+            "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+            "image_id": "sha256:e8726c439fcef417c6dc7b5bde2eb95d7a96f291519d1fc48f0702ce12be9d3e",
+            "binary_sha256": "7d196a9038e8ee35cbd6f99db53a1c937e3765c52df4d9b67013a259f91ff501",
+            "original_Go_files_identical": 1002
+          },
+          {
+            "mode": "test",
+            "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+            "image_id": "sha256:cfc186e0238e82269bb27ab3a8312a0cf9b49801d3a774a03111f52da75a4564",
+            "binary_sha256": "28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1",
+            "original_Go_files_identical": 1002
+          }
+        ],
+        "controller_UID": "ff2e5a05-f5b5-45bf-96d6-760bf4b69c30",
+        "controller_image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+        "worker_count": 10
+      },
+      "semantic_checks": [
+        {
+          "name": "continuous_client_evidence_complete",
+          "passed": true
+        },
+        {
+          "name": "client_query_results_correct",
+          "passed": true
+        },
+        {
+          "name": "both_client_routes_recovered",
+          "passed": true
+        },
+        {
+          "name": "pooler_identity_replaced",
+          "passed": true
+        },
+        {
+          "name": "replacement_spec_identity_preserved",
+          "passed": true
+        },
+        {
+          "name": "replacement_owns_children",
+          "passed": true
+        },
+        {
+          "name": "replacement_deployment_converged",
+          "passed": true
+        },
+        {
+          "name": "replacement_stable_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "cluster_spec_identity_unchanged",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_sql_rows_preserved",
+          "passed": true
+        },
+        {
+          "name": "one_writable_primary",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "after-old-read",
+      "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+      "old_UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+      "new_UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+      "clients": {
+        "pooler": {
+          "attempts": 208,
+          "successes": 169,
+          "failures": 39,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [
+            {
+              "first_failed_seq": 50,
+              "failed_queries": 39,
+              "first_failure_ns": 1793421794306612240,
+              "recovered_ns": 1793421817967554760,
+              "seconds_to_next_success": 23.66094252
+            }
+          ],
+          "max_failure_burst_seconds": 23.66094252,
+          "failure_messages": {
+            "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 15,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.212.68), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 1,
+            "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.53.210), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 23
+          },
+          "first_query_ns": 1793421781660168870,
+          "last_query_ns": 1793421848699686675,
+          "replacement_to_convergence_seconds": 24.364146944,
+          "post_convergence_queries": 117
+        },
+        "direct": {
+          "attempts": 257,
+          "successes": 257,
+          "failures": 0,
+          "bad_results": 0,
+          "complete": true,
+          "post_convergence_failures": 0,
+          "failure_bursts": [],
+          "max_failure_burst_seconds": 0,
+          "failure_messages": {},
+          "first_query_ns": 1793421782093864284,
+          "last_query_ns": 1793421848817750792,
+          "replacement_to_convergence_seconds": 24.364146944,
+          "post_convergence_queries": 117
+        }
+      },
+      "stale_owner_resources": [
+        {
+          "key": "serviceaccount/default/sieve-pooler",
+          "UID": "7b5741c9-bbd7-438b-ae4a-0b159e43e062",
+          "owner_UID_chain": [
+            "7b5741c9-bbd7-438b-ae4a-0b159e43e062",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 399,
+          "API_deleted": 400,
+          "creationTimestamp": "2026-10-31T04:43:15Z"
+        },
+        {
+          "key": "role/default/sieve-pooler",
+          "UID": "576cdc9e-07aa-468c-8f6e-459d313b571d",
+          "owner_UID_chain": [
+            "576cdc9e-07aa-468c-8f6e-459d313b571d",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 401,
+          "API_deleted": 402,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "rolebinding/default/sieve-pooler",
+          "UID": "6af1b10b-6f9b-4f54-8a81-95833469e13d",
+          "owner_UID_chain": [
+            "6af1b10b-6f9b-4f54-8a81-95833469e13d",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 403,
+          "API_deleted": 405,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "deployment/default/sieve-pooler",
+          "UID": "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+          "owner_UID_chain": [
+            "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 406,
+          "API_deleted": 408,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "replicaset/default/sieve-pooler-68cd555bdd",
+          "UID": "91b27dd4-05d9-4ebd-9d5e-e7ee9d4a1637",
+          "owner_UID_chain": [
+            "91b27dd4-05d9-4ebd-9d5e-e7ee9d4a1637",
+            "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 407,
+          "API_deleted": 415,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "service/default/sieve-pooler",
+          "UID": "400b88bc-c699-40d4-8334-93ad78509448",
+          "owner_UID_chain": [
+            "400b88bc-c699-40d4-8334-93ad78509448",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 409,
+          "API_deleted": 416,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "endpointslice/default/sieve-pooler-rhp8d",
+          "UID": "eb4adcb3-ce6e-4d9d-891c-c64b8b5bc867",
+          "owner_UID_chain": [
+            "eb4adcb3-ce6e-4d9d-891c-c64b8b5bc867",
+            "400b88bc-c699-40d4-8334-93ad78509448",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 412,
+          "API_deleted": 420,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        },
+        {
+          "key": "pod/default/sieve-pooler-68cd555bdd-kqp67",
+          "UID": "15acb987-806a-4d91-915e-d85f37f76123",
+          "owner_UID_chain": [
+            "15acb987-806a-4d91-915e-d85f37f76123",
+            "91b27dd4-05d9-4ebd-9d5e-e7ee9d4a1637",
+            "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+          ],
+          "API_created": 417,
+          "API_deleted": 459,
+          "creationTimestamp": "2026-10-31T04:43:16Z"
+        }
+      ],
+      "raw_alarms": [
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+        "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run"
+      ],
+      "classifications": [
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        }
+      ],
+      "reference_RVs": {
+        "applicationSecretVersion": "739",
+        "clientCaSecretVersion": "735",
+        "replicationSecretVersion": "738",
+        "serverCaSecretVersion": "735",
+        "serverSecretVersion": "737",
+        "clientCA": "735",
+        "clientTLS": "737",
+        "serverCA": "735"
+      },
+      "physical": {
+        "verified": true,
+        "proof_kind": "independent_after_read_old_UID_held_across_replacement",
+        "held_read_UID": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+        "held_read_RV": "1323",
+        "held_read_position": 92,
+        "hold_position": 94,
+        "old_informer_delete_receipt_position": 99,
+        "new_informer_add_receipt_position": 107,
+        "new_C_informer_receipt_position": 115,
+        "release_position": 125,
+        "replacement_UID": "43913f53-bee3-493e-99a1-2ba140202d02",
+        "replacement_C_RV": "1367",
+        "actual_holds": 1,
+        "actual_releases": 1,
+        "injection_process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 0.09073316410649568,
+          "log": "commands/0024-76d6d3a4"
+        },
+        "generic_proof_unchanged": true
+      },
+      "full_prior_churn_reproduced": true,
+      "stale_data_plane_reproduced": true,
+      "churn_scope": [
+        "serviceaccount/default/sieve-pooler",
+        "role/default/sieve-pooler",
+        "rolebinding/default/sieve-pooler",
+        "deployment/default/sieve-pooler",
+        "service/default/sieve-pooler"
+      ],
+      "generic_fault_proof": {
+        "schema_version": 1,
+        "physically_verified": false,
+        "reasons": [
+          "invalid missed-state evidence: expected a cache Get pause scoped to one reconciler"
+        ],
+        "semantic_status": "passed",
+        "semantic_checks": [
+          {
+            "name": "continuous_client_evidence_complete",
+            "passed": true
+          },
+          {
+            "name": "client_query_results_correct",
+            "passed": true
+          },
+          {
+            "name": "both_client_routes_recovered",
+            "passed": true
+          },
+          {
+            "name": "pooler_identity_replaced",
+            "passed": true
+          },
+          {
+            "name": "replacement_spec_identity_preserved",
+            "passed": true
+          },
+          {
+            "name": "replacement_owns_children",
+            "passed": true
+          },
+          {
+            "name": "replacement_deployment_converged",
+            "passed": true
+          },
+          {
+            "name": "replacement_stable_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "cluster_spec_identity_unchanged",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_sql_rows_preserved",
+            "passed": true
+          },
+          {
+            "name": "one_writable_primary",
+            "passed": true
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+          "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run"
+        ],
+        "missed_state": {
+          "verified": false,
+          "reasons": [
+            "invalid missed-state evidence: expected a cache Get pause scoped to one reconciler"
+          ],
+          "resource_key": "",
+          "consumer": "",
+          "held_reads": 0,
+          "released_reads": 0,
+          "returned_versions": [],
+          "intermediate_state": null,
+          "later_state": null
+        },
+        "workload_completed": true,
+        "triggered_actions": [
+          0,
+          1
+        ],
+        "evidence_sha256": {
+          "apiserver1.log": "debfa532bd7c1b7b2a51bac528885bbecf702ef0c86c40be456e398fd096401a",
+          "sieve-server.log": "b75e1d10c6ea9fd420d2b00d935e045ef944fa7867fd013b8e421f7d59bcaf56",
+          "injection-process-outcome.json": "5ce70f0facc02723e56e59f84ea5a76477056eec855f2ef84389c8caaa4bc306",
+          "process-outcome.json": "b206212c41b169b20fdbef76a6277af563019c6095eac5c559c965e39267dc26",
+          "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+          "semantic-outcome.json": "91a8b2bf01dc890a9c5bf3aa7f7bb303de383972b1a3eef1f6c1e7dc76c3120d"
+        }
+      },
+      "container_and_source_proof": {
+        "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+        "metrics": {
+          "pooler": {
+            "attempts": 208,
+            "successes": 169,
+            "failures": 39,
+            "bad_results": 0,
+            "complete": true,
+            "post_convergence_failures": 0,
+            "failure_bursts": [
+              {
+                "first_failed_seq": 50,
+                "failed_queries": 39,
+                "first_failure_ns": 1793421794306612240,
+                "recovered_ns": 1793421817967554760,
+                "seconds_to_next_success": 23.66094252
+              }
+            ],
+            "max_failure_burst_seconds": 23.66094252,
+            "failure_messages": {
+              "psql: error: could not translate host name \"sieve-pooler.default.svc\" to address: Name or service not known": 15,
+              "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.212.68), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 1,
+              "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.53.210), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?": 23
+            },
+            "first_query_ns": 1793421781660168870,
+            "last_query_ns": 1793421848699686675,
+            "replacement_to_convergence_seconds": 24.364146944,
+            "post_convergence_queries": 117
+          },
+          "direct": {
+            "attempts": 257,
+            "successes": 257,
+            "failures": 0,
+            "bad_results": 0,
+            "complete": true,
+            "post_convergence_failures": 0,
+            "failure_bursts": [],
+            "max_failure_burst_seconds": 0,
+            "failure_messages": {},
+            "first_query_ns": 1793421782093864284,
+            "last_query_ns": 1793421848817750792,
+            "replacement_to_convergence_seconds": 24.364146944,
+            "post_convergence_queries": 117
+          }
+        },
+        "real_client_Pod_UID": "fc1f5de9-dbe5-43c5-8047-12b7de88064b",
+        "independent_Pod": true,
+        "client_source_sha256": "52e77ccfa4d72ccf80384acae84b061a3b67b77cd03c3396650f897f04ba2c50",
+        "synthetic_public_login_only": true,
+        "old_service_ip": "10.96.58.2",
+        "new_service_ip": "10.96.53.210",
+        "events": {
+          "clients_warm": {
+            "wall_ns": 1793421784034256895,
+            "monotonic_ns": 998078454264364
+          },
+          "delete_requested": {
+            "wall_ns": 1793421794177327002,
+            "monotonic_ns": 998088597335419
+          },
+          "delete_accepted": {
+            "wall_ns": 1793421794319341885,
+            "monotonic_ns": 998088739348940
+          },
+          "replacement_C_accepted": {
+            "wall_ns": 1793421795733715184,
+            "monotonic_ns": 998090153722211
+          },
+          "converged": {
+            "wall_ns": 1793421818541473946,
+            "monotonic_ns": 998112961480830
+          },
+          "observation_complete": {
+            "wall_ns": 1793421848541560964,
+            "monotonic_ns": 998142961569350
+          },
+          "stop_requested": {
+            "wall_ns": 1793421848541574332,
+            "monotonic_ns": 998142961580630
+          }
+        }
+      },
+      "independent_API": {
+        "saved_objects_equal_API": 56,
+        "API_events": 530,
+        "accepted_positions": {
+          "old_pooler": 325,
+          "armed_old_pooler": 373,
+          "new_pooler": 395,
+          "released_new_pooler": 398
+        },
+        "old_parent_deleted_position": 384,
+        "child_history": [
+          {
+            "position": 335,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 337,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 338,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "4f4a8714-29e5-41c5-b8f1-018834677683",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 344,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 346,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 363,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 388,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "4f4a8714-29e5-41c5-b8f1-018834677683",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 389,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "1716c278-eec5-4645-9c6e-ef366db7a50a",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 406,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 408,
+            "key": "deployment/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "e14f8b35-2ddf-445c-98d8-fa9134c118ac",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 409,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "400b88bc-c699-40d4-8334-93ad78509448",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 416,
+            "key": "service/default/sieve-pooler",
+            "event": "DELETED",
+            "uid": "400b88bc-c699-40d4-8334-93ad78509448",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 428,
+            "key": "deployment/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 432,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 435,
+            "key": "service/default/sieve-pooler",
+            "event": "ADDED",
+            "uid": "b0ce2b1e-21bb-48c4-ad86-fc95de0a8a8e",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 438,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 443,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 488,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          },
+          {
+            "position": 493,
+            "key": "deployment/default/sieve-pooler",
+            "event": "MODIFIED",
+            "uid": "6aa1f625-3af5-44bb-97fa-b3a4a8e07546",
+            "owners": [
+              {
+                "apiVersion": "postgresql.cnpg.io/v1",
+                "kind": "Pooler",
+                "name": "sieve-pooler",
+                "uid": "43913f53-bee3-493e-99a1-2ba140202d02",
+                "controller": true,
+                "blockOwnerDeletion": true
+              }
+            ],
+            "replicas": null
+          }
+        ]
+      },
+      "native_build_proof": {
+        "build_proofs": [
+          {
+            "mode": "vanilla",
+            "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+            "image_id": "sha256:e8726c439fcef417c6dc7b5bde2eb95d7a96f291519d1fc48f0702ce12be9d3e",
+            "binary_sha256": "7d196a9038e8ee35cbd6f99db53a1c937e3765c52df4d9b67013a259f91ff501",
+            "original_Go_files_identical": 1002
+          },
+          {
+            "mode": "test",
+            "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+            "image_id": "sha256:cfc186e0238e82269bb27ab3a8312a0cf9b49801d3a774a03111f52da75a4564",
+            "binary_sha256": "28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1",
+            "original_Go_files_identical": 1002
+          }
+        ],
+        "controller_UID": "3c64d411-1a3d-4040-bb79-f09a808dc4a9",
+        "controller_image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+        "worker_count": 10
+      },
+      "semantic_checks": [
+        {
+          "name": "continuous_client_evidence_complete",
+          "passed": true
+        },
+        {
+          "name": "client_query_results_correct",
+          "passed": true
+        },
+        {
+          "name": "both_client_routes_recovered",
+          "passed": true
+        },
+        {
+          "name": "pooler_identity_replaced",
+          "passed": true
+        },
+        {
+          "name": "replacement_spec_identity_preserved",
+          "passed": true
+        },
+        {
+          "name": "replacement_owns_children",
+          "passed": true
+        },
+        {
+          "name": "replacement_deployment_converged",
+          "passed": true
+        },
+        {
+          "name": "replacement_stable_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "cluster_spec_identity_unchanged",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_sql_rows_preserved",
+          "passed": true
+        },
+        {
+          "name": "one_writable_primary",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "actual_stale_Service_query_evidence": [
+    {
+      "query": {
+        "kind": "query",
+        "route": "pooler",
+        "host": "sieve-pooler.default.svc",
+        "seq": 60,
+        "started_ns": 1793421796723702554,
+        "ended_ns": 1793421796762468006,
+        "monotonic_started_ns": 998091143710282,
+        "monotonic_ended_ns": 998091182474795,
+        "returncode": 2,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "psql: error: connection to server at \"sieve-pooler.default.svc\" (10.96.212.68), port 5432 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?\n",
+        "ok": false
+      },
+      "Service_ADDED": {
+        "event": "ADDED",
+        "line": 721,
+        "observed_ns": 1793421796696659200,
+        "UID": "400b88bc-c699-40d4-8334-93ad78509448",
+        "owner_UIDs": [
+          "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+        ],
+        "ip": "10.96.212.68"
+      },
+      "Service_DELETED": {
+        "event": "DELETED",
+        "line": 729,
+        "observed_ns": 1793421796907085824,
+        "UID": "400b88bc-c699-40d4-8334-93ad78509448",
+        "owner_UIDs": [
+          "9e14e64d-6912-48c3-8a8f-3fd6e691b5fc"
+        ],
+        "ip": "10.96.212.68"
+      },
+      "Service_lifetime_seconds": 0.210426624,
+      "API_order": {
+        "old_Pooler_deleted": 384,
+        "new_Pooler_added": 395,
+        "stale_Service_added": 409
+      }
+    }
+  ],
+  "raw_alarms": [
+    {
+      "attempt": "no-fault",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "no-fault",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "no-fault",
+      "alarm": "End state inconsistency - fewer object fields than reference: pod/default/sieve-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is a nondeterministic value after reference run, but not seen after testing run",
+      "category": "independent_client_terminal_CPU_status_presence_already_varies_in_healthy_learning_and_control"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    }
+  ],
+  "alarm_classes": {
+    "actual_learn_test_binary_hash_difference": 4,
+    "independent_client_terminal_CPU_status_presence_already_varies_in_healthy_learning_and_control": 1,
+    "extra_deleted_owner_resource_cycle_then_garbage_collection": 14
+  },
+  "native_subject": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+  "native_operator_logic_changed": false,
+  "images_or_controller_API_rebuilt": false,
+  "source_commit": "8b8ca1d699ee9bb969d9ff2a73bbb79dd6e2d1f6",
+  "source_archive_sha256": "eadb1c582807e87629273d12b62b1a4ef026a70f4990ac42ee8d6564e5ff4df4",
+  "runtime_source_manifest_sha256": "b7dbfec5a1788d922b04d063f32ac4284ed6ea55133c632826b191e22e2a9c6b",
+  "runner_sha256": "c9761c1cc395cbad3a49046c68773ae25803f506987a03d92d553007f557543d",
+  "operator_workers": 10,
+  "new_learning": false,
+  "oracle_hashes_unchanged": {
+    "cloudnative-pg/pooler-replacement-clients/state.json": "c6ae8bd316728eda01ae1416fe79e30dca449bfd861c98a14d5dfe23d08770dc",
+    "cloudnative-pg/pooler-replacement-clients/controller_family.json": "f597285d709c2118950d2fa29427137c92f0f4fcb4eb6c9633e44c9c7898584e",
+    "cloudnative-pg/pooler-replacement-clients/mask.json": "7f67c54c53afa54e619f2585d6220108413e527a6b263eee102c3436893d1719",
+    "cloudnative-pg/pooler-replacement-clients/event.json": "32765a649f9da8a2db7764891a2171a1995b37da5db9e4b4aed47f7e8632da1a"
+  },
+  "plans_unchanged": [
+    {
+      "name": "no-fault.yaml",
+      "sha256": "e82ecd4f7d91582f681cfa23a686b55a808b2f8847ca95051e6a7c8110200238",
+      "authored": true
+    },
+    {
+      "name": "after-old-read.yaml",
+      "sha256": "7b344aef07505f6524a9cdb24f51409338430d64ac26211f98266c62cc007c25",
+      "authored": true
+    }
+  ],
+  "bounds": {
+    "status": "prepared",
+    "maximum_matched_pairs": 1,
+    "workloads": 2,
+    "phase_timeout_seconds": 900,
+    "service_limit_seconds": 1950,
+    "automatic_repeats": 0,
+    "source_commit": "8b8ca1d699ee9bb969d9ff2a73bbb79dd6e2d1f6",
+    "full_churn_required_for_confirmation": [
+      "actual old-UID read held until accepted new-C informer receipt",
+      "old Pooler API-deleted before replacement UID",
+      "stale-owned Deployment AND Service created after replacement UID exists",
+      "actual client errors and recovery recomputed from complete raw query streams"
+    ],
+    "comparison": [
+      "matched test-image actions:null control",
+      "failure-to-next-success spans and per-request errors",
+      "failed destinations mapped to actual Service owner UIDs",
+      "direct-database failures, bad results and post-convergence errors"
+    ],
+    "interpretation": "Full Service churn and stale-Service client refusals are separate from proof of an additional outage. Compare new and prior full-churn spans with their controls and observed baseline variability; a small repeated timing difference alone is insufficient for a confirmed operator defect. Any missing full churn is a coverage limit. No source, trigger, worker, image, oracle or proof changes."
+  },
+  "result_tree": {
+    "path": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-confirmation-20261030-vm",
+    "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/pooler-client-confirmation-20261030/confirmation1-result-hashes.json",
+    "manifest_sha256": "e712f3ba83f06445175e328c4794075cf240adc02a8f18cfb4475fb2093c8543",
+    "files": 11449,
+    "bytes": 410283260,
+    "entire_tree_copied_and_SHA_verified_before_inspection": true
+  },
+  "preservation": {
+    "prior_files_checked": 91,
+    "prior_client_impact_trees_reverified": [
+      {
+        "key": "control",
+        "files": 10868,
+        "bytes": 385219075,
+        "manifest_sha256": "77c7cc1d61ce381081e094ed9b3eb05bdec6f5b95471db1213da078ea8dabf17"
+      },
+      {
+        "key": "learn",
+        "files": 11583,
+        "bytes": 505029171,
+        "manifest_sha256": "04438f437edaf54d10af1d9c2882d457cb54c8ed88f81e615687a23c4055788a"
+      },
+      {
+        "key": "pair1",
+        "files": 11435,
+        "bytes": 409731059,
+        "manifest_sha256": "2080efc78178154c98ae5fc1ba22d0fa865c2e183cec0d3d1255690a0fd15dfc"
+      },
+      {
+        "key": "pair2",
+        "files": 11469,
+        "bytes": 410705678,
+        "manifest_sha256": "e529a8f5915a2a172e362d958f3b736ce07af36ba0461cf554e9cfba0441dab2"
+      }
+    ],
+    "dirty_user_file_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "all_prior_reports_and_raw_results_unchanged": true
+  },
+  "native_and_process_evidence": [
+    {
+      "name": "no-fault",
+      "directory": "no-fault/cloudnative-pg/pooler-replacement-clients/test/no-fault",
+      "controller_UID": "ff2e5a05-f5b5-45bf-96d6-760bf4b69c30",
+      "controller_restarts": 0,
+      "workers": 10,
+      "readinessProbe": {
+        "failureThreshold": 3,
+        "periodSeconds": 10,
+        "successThreshold": 1,
+        "tcpSocket": {
+          "port": 5432
+        },
+        "timeoutSeconds": 5
+      },
+      "native_reconcile_errors": [],
+      "CLI_returncode": 1,
+      "workload_process": {
+        "status": "completed",
+        "returncode": 0,
+        "duration_seconds": 172.31348852592055,
+        "log": "commands/0023-da0c3162"
+      },
+      "injection_process": {
+        "status": "completed",
+        "returncode": 0,
+        "duration_seconds": 0.08923613699153066,
+        "log": "commands/0024-835371fe"
+      }
+    },
+    {
+      "name": "after-old-read",
+      "directory": "after-old-read/cloudnative-pg/pooler-replacement-clients/test/after-old-read",
+      "controller_UID": "3c64d411-1a3d-4040-bb79-f09a808dc4a9",
+      "controller_restarts": 0,
+      "workers": 10,
+      "readinessProbe": {
+        "failureThreshold": 3,
+        "periodSeconds": 10,
+        "successThreshold": 1,
+        "tcpSocket": {
+          "port": 5432
+        },
+        "timeoutSeconds": 5
+      },
+      "native_reconcile_errors": [
+        {
+          "ts": "2026-10-31T04:43:17.794299964Z",
+          "msg": "Reconciler error",
+          "error": "services \"sieve-pooler\" not found",
+          "reconcileID": "eba351ab-dd87-4dcc-bf77-1ec3341c862e"
+        }
+      ],
+      "CLI_returncode": 1,
+      "workload_process": {
+        "status": "completed",
+        "returncode": 0,
+        "duration_seconds": 175.07870498904958,
+        "log": "commands/0023-2246ec9c"
+      },
+      "injection_process": {
+        "status": "completed",
+        "returncode": 0,
+        "duration_seconds": 0.09073316410649568,
+        "log": "commands/0024-76d6d3a4"
+      }
+    }
+  ],
+  "generic_physical_proofs_not_changed": "actions:null remains unsupported as an injected effect; generic after-read missed-state verdict remains false. Strict separate actual-UID/cache/API/informer/hold/release/process proof establishes the old-read replacement scenario.",
+  "validation": "No runtime/source fixes or new builds. Reused the exact independently validated runtime from local commit 8b8ca1d (412 Python tests +10 subtests, Ruff, strict mypy38+4, wheel). Fresh client/container, API/full-state, SQL, process and physical-action audits passed; raw Sieve verdicts and all alarms preserved.",
+  "VM_services_and_kind_containers_idle_at_end": true,
+  "pushed": false,
+  "support_artifact_hashes": {
+    "await-collect.py": "6fe02dc4f137cdf8431981175259fefc186135f347ebc8d5f333f55f5143625a",
+    "child-timing.py": "4da1af2a85c50853ded8b3872ddd32ed3d7717cdddf01e92da75e0040aab857b",
+    "classification.log": "ad566750dc3c83ce7d785e0be4cfcc4d868e2fb5f0b9fc4bfe6c4ad3c09216bc",
+    "classify-pair.py": "3c4afed42693fd90f2fe71da6057ee8d3a8cd0e2abe57ba205c86eef998c8230",
+    "client-status-cpu-alarm-evidence.json": "4b3ce65da4230c0ae8519a1815bcb5282ccc7fa0b3bf13147dbc39a45900c71b",
+    "client_evidence.py": "0bbceecad813385ed0d60c70a4dd06327aaa6dd93fc69166a6faf2db48a5ff38",
+    "confirmation-plan.json": "cf1a2e9b6fd0af3079665aa70d6713a8ac28d62e94e9f10d17a15638dbc637c5",
+    "confirmation1-collection.log": "5b86b18acc941aa63ff5278db73f6f92a26ebe1b8fbc61776bd84c97bbdccac7",
+    "confirmation1-critical-path.json": "f7c691d6fb306e3bd37df1feccd661c6aaee7f4732b2f860a9bf14d19af37ff5",
+    "confirmation1-final-review.json": "d2a9f982ad7e565256f52d44d54157b6abb0efea8e129842723a53aedda96cc0",
+    "confirmation1-job.json": "a265145ea701c74d0517d4b825ba25ea326573978c9a24913adce17a63d6c9ee",
+    "confirmation1-result-hashes.json": "e712f3ba83f06445175e328c4794075cf240adc02a8f18cfb4475fb2093c8543",
+    "confirmation1-review-api.json": "8770cd609d86dd82821686e63ea23088da6f30da7b370be910734a9252ed9099",
+    "confirmation1-service-correlation.json": "01721cf628d9f498df2eb7436e895cca62b90264b813509ed38b9c4bf3ea3bea",
+    "confirmation1-supplement.json": "de400d15c592bf1464a71b1fe335fe0d5814db1faec0184cebac932dd830672f",
+    "correlate-service.py": "1d0671543aac1b36ca27e8b43fe24885f0a05832628262fa5e914d219c1e633e",
+    "cpu-evidence.py": "49bfeb3af495ab85f9c7e050769c72e92feeb0fe5a414a15fa813c832cdbdae0",
+    "critical-path.py": "1a6698cec6b1200ab2fc17707e4b6e9e0d2a80821f49225847e362ee641dcc0d",
+    "final-audit.py": "d2ce126d91b11d02de063005aee9015d4ba7334955c8c8d733d30e12aa057665",
+    "final-supplement.json": "f12ee03619750d6ba9010918422538228af1ad9de049c4217463dc562ff6eb70",
+    "finalize.py": "86940f45f783851421dcc792e3ef8d485bf17e32ac1b80c9216a4be5d06db86d",
+    "full-churn-child-timing.json": "0e07d993ad48ad756b0a172490e81a9d6cc0fd71d3678e294323462d4b4956b3",
+    "launch.log": "e1e5e12f2e30674aab952a7d4238a11b4fdbddab532c3845ad274c824d112c14",
+    "launch.py": "123efde96523a60c354152b50a21a6ea5e6bedf58e8caed8daf5b9e946dc9501",
+    "pair1-critical-path.json": "710121d69398598ba42f4a95ef19d78706431e1bb8053abbdfe965e394ae2dcc",
+    "pair2-critical-path.json": "ce89332bcc92593488270d50e3612bd1811aec3f7e4336e7c77937e971301ed2",
+    "physical-facts.py": "1d08ae0f4bb746a30053c5b323be2a21abeed6680d48e9b2c66b24fc14e9e587",
+    "preserved-inputs.json": "2912e6e3ca7c8779f3b53b895a89a4f727817c04ddab63084487e79d81bf0ad6",
+    "review-stage.py": "c88553c0087ff67a75cb07f9a4dc9a205a3d6b2b9e25ae93f481ee5349b3cdd2",
+    "supplement.py": "7674b459717de708af41a40cc4e20b47d643272efbef4fc5c9173f790a289fc6"
+  }
+}
