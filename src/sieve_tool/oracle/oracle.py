@@ -167,7 +167,7 @@ def check(test_context: TestContext) -> TestResult:
         )
     if common.state_update_summary_check_enabled:
         # Preserve the existing exemption for schedules that intentionally miss a read.
-        first_action = plan.actions[0] if plan.actions is not None else None
+        first_action = plan.actions[0] if plan.actions else None
         if not (
             isinstance(first_action, PauseControllerAction)
             and first_action.pause_at == "beforeControllerRead"
