@@ -52,6 +52,7 @@ def test_client_records_successful_queries_and_a_bounded_terminal_record(tmp_pat
     [
         ("echo 'connection refused' >&2; exit 2", 2, False, ""),
         ("printf '31|496|31\\n'", 0, False, "31|496|31\n"),
+        ("sleep 0.3; printf '31|496|31\\n'", 0, False, "31|496|31\n"),
         ("exec sleep 3", None, True, ""),
     ],
 )
@@ -74,7 +75,7 @@ def test_client_preserves_failures_and_finishes_within_its_budget(
             "--interval",
             "0.02",
             "--query-timeout",
-            "0.2",
+            "0.2" if timed_out else "2",
         ],
         env={"PATH": str(tmp_path) + os.pathsep + os.environ["PATH"]},
         capture_output=True,
