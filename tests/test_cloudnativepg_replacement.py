@@ -20,6 +20,8 @@ def replacement_cluster(tmp_path):
         + r"""
 import json,os,sys,time
 from pathlib import Path
+if sys.argv[1:]==['version','--client']:
+ print(json.dumps({'clientVersion':{'gitVersion':'fixture'}}));raise SystemExit(0)
 path=Path(os.environ['CNPG_REPLACEMENT_CLUSTER']);s=json.loads(path.read_text());a=sys.argv[1:]
 if a[:2]==['--namespace','default']:a=a[2:]
 verb=a[0]
@@ -78,8 +80,8 @@ elif verb=='logs':
  while True:
   s=json.loads(path.read_text())
   if s.get('stopped',{}).get(route):break
-  seq+=1;n=time.time_ns();ok=not(s.get('scenario')=='client-corrupt' and s.get('deleted') and route=='pooler')
-  print(json.dumps({'kind':'query','route':route,'host':route,'seq':seq,'started_ns':n,'ended_ns':n,'monotonic_started_ns':time.monotonic_ns(),'monotonic_ended_ns':time.monotonic_ns(),'ok':ok,'returncode':0,'timed_out':False,'stdout':'32|528|32\n' if ok else '31|496|31\n','stderr':''}),flush=True);time.sleep(0.01)
+  seq+=1;n=time.time_ns()+(15_000_000_000 if s.get('scenario')=='client-wall-forward-step' and s.get('deleted') else 0);offset=15_000_000_000 if s.get('scenario')=='client-monotonic-gap' and s.get('deleted') else 0;ok=not(s.get('scenario')=='client-corrupt' and s.get('deleted') and route=='pooler')
+  print(json.dumps({'kind':'query','route':route,'host':route,'seq':seq,'started_ns':n,'ended_ns':n,'monotonic_started_ns':time.monotonic_ns()+offset,'monotonic_ended_ns':time.monotonic_ns()+offset,'ok':ok,'returncode':0,'timed_out':False,'stdout':'32|528|32\n' if ok else '31|496|31\n','stderr':''}),flush=True);time.sleep(0.01)
  if s.get('scenario')!='client-truncated':print(json.dumps({'kind':'terminal','route':route,'attempts':seq,'reason':'stop','ended_ns':time.time_ns()}),flush=True)
 elif verb=='exec':
  if a[1]=='sieve-client':
@@ -93,6 +95,15 @@ else:raise SystemExit('Unsupported operation')
 """
     )
     command.chmod(0o755)
+    # Initialize the external executable before measuring scenario deadlines.
+    subprocess.run(
+        [str(command), "version", "--client"],
+        env={"PATH": os.environ["PATH"]},
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
     return state, {
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "CNPG_REPLACEMENT_CLUSTER": str(state),
@@ -178,7 +189,9 @@ def test_replacement_checks_only_database_pods_with_the_current_cluster_owner(
     assert len(evidence["database_pods"]) == 3
 
 
-@pytest.mark.parametrize("scenario", ["healthy", "client-status-lag"])
+@pytest.mark.parametrize(
+    "scenario", ["healthy", "client-status-lag", "client-wall-forward-step"]
+)
 def test_replacement_client_measurements_cover_both_routes_and_recovery(
     tmp_path, replacement_cluster, scenario
 ):
@@ -280,3 +293,16 @@ def test_fast_probe_profile_rejects_probe_reset_after_replacement(
         c["passed"] for c in checks if c["name"] != "one_second_tcp_readiness_preserved"
     )
     assert "FINISH-SIEVE-TEST" not in (tmp_path / "workload.log").read_text()
+
+
+def test_replacement_client_evidence_rejects_real_elapsed_gap_with_stable_wall_clock(
+    tmp_path, replacement_cluster
+):
+    state, environment = replacement_cluster
+    state.write_text(json.dumps({"scenario": "client-monotonic-gap"}))
+    result = run_workload(tmp_path, environment, "pooler-replacement-clients")
+    assert result.returncode == 1, result.stdout + result.stderr
+    checks = json.loads((tmp_path / "semantic-outcome.json").read_text())["checks"]
+    assert {c["name"]: c["passed"] for c in checks}[
+        "continuous_client_evidence_complete"
+    ] is False

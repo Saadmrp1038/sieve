@@ -68,6 +68,8 @@ def kubernetes_boundary(tmp_path):
         + r"""
 import json, os, sys, time
 from pathlib import Path
+if sys.argv[1:]==['version','--client']:
+ print(json.dumps({'clientVersion':{'gitVersion':'fixture'}}));raise SystemExit(0)
 path=Path(os.environ['CNPG_TEST_CLUSTER']); s=json.loads(path.read_text())
 a=sys.argv[1:]
 if a[:2]==['--namespace','default']:a=a[2:]
@@ -171,6 +173,15 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
 """
     )
     command.chmod(0o755)
+    # Initialize the external executable before measuring scenario deadlines.
+    subprocess.run(
+        [str(command), "version", "--client"],
+        env={"PATH": os.environ["PATH"]},
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
     return state, {
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "CNPG_TEST_CLUSTER": str(state),

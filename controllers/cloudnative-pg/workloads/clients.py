@@ -176,7 +176,7 @@ class Clients:
                 and queries[-1]["ended_ns"]
                 >= self.events["observation_complete"]["wall_ns"] - 2_000_000_000
                 and all(
-                    b["started_ns"] - a["ended_ns"] < 10_000_000_000
+                    b["monotonic_started_ns"] - a["monotonic_ended_ns"] < 10_000_000_000
                     for a, b in zip(queries, queries[1:], strict=False)
                 )
             )
