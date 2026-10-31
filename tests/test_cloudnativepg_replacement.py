@@ -33,6 +33,9 @@ def child(kind):
  old=s.get(kind)
  if s.get('scenario')=='old-owner' and old:return old
  obj=resource('Deployment' if kind=='deployment' else 'Service','sieve-pooler',kind+'-'+p['metadata']['uid'],{'replicas':p['spec']['instances']} if kind=='deployment' else {})
+ if kind=='deployment':obj['spec']['template']=p['spec'].get('template',{'spec':{'containers':[{'name':'pgbouncer','readinessProbe':{'tcpSocket':{'port':5432},'periodSeconds':10,'timeoutSeconds':5,'failureThreshold':3,'successThreshold':1}}]}})
+ if kind=='deployment' and (s.get('scenario')=='ignore-probe-override' or (s.get('scenario')=='reset-probe-after-replacement' and s.get('deleted'))):
+  obj['spec']['template']=json.loads(json.dumps(obj['spec']['template']));obj['spec']['template']['spec']['containers'][0]['readinessProbe']['periodSeconds']=10
  obj['metadata']['ownerReferences']=[{'uid':p['metadata']['uid'],'kind':'Pooler','name':'sieve-pooler','controller':True}]
  obj['status']={'readyReplicas':p['spec']['instances'],'replicas':p['spec']['instances'],'observedGeneration':1}
  s[kind]=obj;return obj
@@ -219,3 +222,61 @@ def test_replacement_does_not_accept_corrupt_or_incomplete_client_measurements(
     assert {c["name"]: c["passed"] for c in checks}[failed_check] is False
     assert "FINISH-SIEVE-TEST" not in (tmp_path / "workload.log").read_text()
     assert (tmp_path / "client-pooler.jsonl").stat().st_size > 0
+
+
+def test_fast_probe_profile_preserves_tcp_health_and_configures_both_identities(
+    tmp_path, replacement_cluster
+):
+    state, environment = replacement_cluster
+    state.write_text(json.dumps({"scenario": "healthy"}))
+    result = run_workload(tmp_path, environment, "pooler-replacement-fast-probe")
+    assert result.returncode == 0, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "replacement-observations.json").read_text())
+    expected = {
+        "tcpSocket": {"port": 5432},
+        "periodSeconds": 1,
+        "timeoutSeconds": 5,
+        "failureThreshold": 3,
+        "successThreshold": 1,
+    }
+    for key in ("old_pooler", "new_pooler"):
+        assert evidence[key]["spec"]["template"]["spec"]["containers"] == [
+            {"name": "pgbouncer", "readinessProbe": expected}
+        ]
+    checks = json.loads((tmp_path / "semantic-outcome.json").read_text())["checks"]
+    assert {c["name"]: c["passed"] for c in checks}[
+        "one_second_tcp_readiness_preserved"
+    ] is True
+
+
+def test_fast_probe_profile_stops_before_fault_when_override_was_ignored(
+    tmp_path, replacement_cluster
+):
+    state, environment = replacement_cluster
+    state.write_text(json.dumps({"scenario": "ignore-probe-override"}))
+    result = run_workload(tmp_path, environment, "pooler-replacement-fast-probe")
+    assert result.returncode == 1, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "replacement-observations.json").read_text())
+    assert evidence["status"] == "harness_or_setup_failure"
+    assert "readiness probe was not applied" in evidence["error"]
+    assert not json.loads(state.read_text()).get("deleted")
+    assert "armed_old_pooler" not in evidence
+
+
+def test_fast_probe_profile_rejects_probe_reset_after_replacement(
+    tmp_path, replacement_cluster
+):
+    state, environment = replacement_cluster
+    state.write_text(json.dumps({"scenario": "reset-probe-after-replacement"}))
+    result = run_workload(tmp_path, environment, "pooler-replacement-fast-probe")
+    assert result.returncode == 1, result.stdout + result.stderr
+    evidence = json.loads((tmp_path / "replacement-observations.json").read_text())
+    assert evidence["status"] == "semantic_failure"
+    checks = json.loads((tmp_path / "semantic-outcome.json").read_text())["checks"]
+    assert {c["name"]: c["passed"] for c in checks}[
+        "one_second_tcp_readiness_preserved"
+    ] is False
+    assert all(
+        c["passed"] for c in checks if c["name"] != "one_second_tcp_readiness_preserved"
+    )
+    assert "FINISH-SIEVE-TEST" not in (tmp_path / "workload.log").read_text()

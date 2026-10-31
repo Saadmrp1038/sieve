@@ -25,7 +25,12 @@ EXPECTED_ROWS = [[i, f"ack-{i}"] for i in range(1, 33)]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "workload", choices=["pooler-replacement", "pooler-replacement-clients"]
+        "workload",
+        choices=[
+            "pooler-replacement",
+            "pooler-replacement-clients",
+            "pooler-replacement-fast-probe",
+        ],
     )
     parser.add_argument("output", type=Path)
     parser.add_argument("--ready-timeout", type=float, default=300)
@@ -137,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         ).strip()
 
     def pooler_document(instances: int, phase: str) -> Resource:
-        return {
+        document: Resource = {
             "apiVersion": "postgresql.cnpg.io/v1",
             "kind": "Pooler",
             "metadata": {"name": POOLER, "annotations": {PHASE: phase}},
@@ -154,6 +159,47 @@ def main(argv: list[str] | None = None) -> int:
                 },
             },
         }
+
+        if args.workload == "pooler-replacement-fast-probe":
+            document["spec"]["template"] = {
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "pgbouncer",
+                            "readinessProbe": {
+                                "tcpSocket": {"port": 5432},
+                                "periodSeconds": 1,
+                                "timeoutSeconds": 5,
+                                "failureThreshold": 3,
+                                "successThreshold": 1,
+                            },
+                        }
+                    ]
+                }
+            }
+        return document
+
+    def fast_probe(deployment: Resource) -> bool:
+        containers = (
+            deployment.get("spec", {})
+            .get("template", {})
+            .get("spec", {})
+            .get("containers", [])
+        )
+        matches = [c for c in containers if c.get("name") == "pgbouncer"]
+        if len(matches) != 1:
+            return False
+        probe = matches[0].get("readinessProbe", {})
+        return bool(
+            probe.get("tcpSocket", {}).get("port") == 5432
+            and not probe.get("tcpSocket", {}).get("host")
+            and probe.get("periodSeconds") == 1
+            and probe.get("timeoutSeconds") == 5
+            and probe.get("failureThreshold") == 3
+            and probe.get("successThreshold") == 1
+            and probe.get("initialDelaySeconds", 0) == 0
+            and not any(k in probe for k in ("exec", "httpGet", "grpc"))
+        )
 
     def phase_patch(uid: str, phase: str) -> Resource:
         response: Resource = json.loads(
@@ -182,7 +228,8 @@ def main(argv: list[str] | None = None) -> int:
     with execution(log_dir=directory / "workload-commands"), ExitStack() as stack:
         clients = (
             Clients(directory, stack, kubectl)
-            if args.workload == "pooler-replacement-clients"
+            if args.workload
+            in ("pooler-replacement-clients", "pooler-replacement-fast-probe")
             else None
         )
         if clients:
@@ -259,6 +306,12 @@ def main(argv: list[str] | None = None) -> int:
                 return None
 
             evidence["old_children"] = wait(initial_children, "initial owned children")
+            if args.workload == "pooler-replacement-fast-probe" and not fast_probe(
+                evidence["old_children"]["deployment"]
+            ):
+                raise RuntimeError(
+                    "Requested one-second TCP readiness probe was not applied"
+                )
             if clients:
                 clients.start()
                 wait(
@@ -474,6 +527,16 @@ def main(argv: list[str] | None = None) -> int:
                     },
                 ]
             )
+            if args.workload == "pooler-replacement-fast-probe":
+                observed = [evidence["old_children"]["deployment"]] + [
+                    s["deployment"] for s in evidence["samples"] if s["deployment"]
+                ]
+                checks.append(
+                    {
+                        "name": "one_second_tcp_readiness_preserved",
+                        "passed": all(fast_probe(d) for d in observed),
+                    }
+                )
             success = all(check["passed"] for check in checks)
             evidence["status"] = "passed" if success else "semantic_failure"
             save()

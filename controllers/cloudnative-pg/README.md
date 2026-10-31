@@ -45,6 +45,26 @@ availability; it does not establish persistent-session or transaction behavior.
 The finite experiment allows one vanilla setup control, two learning baselines,
 and at most two matched no-fault/paused-read pairs, with 900-second phase limits.
 
+## Readiness-probe timing isolation
+
+`pooler-replacement-fast-probe` repeats the continuous-client replacement experiment
+with a declarative Pooler Pod-template override: the same TCP readiness check on
+port 5432, timeout five seconds, success threshold one and failure threshold three,
+with its period reduced from the native default ten seconds to one second. Both
+old and replacement Poolers use this template, in matched no-fault and stale-read
+runs. The operator's existing template override API is used; no controller, API or
+operand image is changed or rebuilt. The profile fails before phase B/deletion if
+the effective initial Deployment does not have the requested probe and checks all
+observed replacement Deployment probes as well. Independent VM review also checks
+the actual Pooler Pod specs. Earlier profiles, plans and evidence remain separate.
+
+This reduces probe-phase timing uncertainty to a one-second cadence; it does not
+assume every difference in Pod startup or DNS resolution disappears. Actual client
+recovery and API/Service/Pod timelines still determine the result. Two fresh learning
+baselines gate at most two matched test-image pairs, each with the same original
+pause/release action definitions, ten operator workers, bounded query loops and
+900-second phase limits. No automatic retries or oracle/mask changes are allowed.
+
 ## Original calibration
 
 The initial calibration targets upstream [#11359](https://github.com/cloudnative-pg/cloudnative-pg/pull/11359).
