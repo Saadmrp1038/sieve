@@ -1,5 +1,34 @@
 # CloudNativePG benchmark profile
 
+## CA Secret bootstrap regression experiment
+
+`ca-secret-bootstrap` creates a three-instance Cluster with the default shared
+server/client CA, preserves sampled bootstrap errors even after recovery, and
+requires owned PKI Secrets, three Ready database Pods, all 32 acknowledged SQL
+rows on each instance, one writable primary, unchanged Cluster UID/spec/generation,
+and stable readiness during the observation window. A recovered bootstrap error
+is a semantic failure; it is not evidence of an indefinitely stuck cluster.
+
+The manually authored `plans/ca-secret-bootstrap/delay-ca-receipt.yaml` holds the
+leading API server's first CA Secret cache delivery. It releases on an observed
+Cluster auxiliary-object error or the controller reaching replication-certificate
+creation. There is no timer release, fabricated cache result or disabled watch.
+An independent physical review must establish actual hold/release, persistence
+of the first CA Secret, a duplicate request/rejection on the affected source,
+and the absence of that duplicate on the fixed source. Action completion alone
+does not prove the documented race occurred.
+
+The historical experiment uses separately sealed runtime configuration for
+upstream [#10989](https://github.com/cloudnative-pg/cloudnative-pg/pull/10989):
+affected `105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1` and fixed
+`96cb6b05aea5f76ddac43d21e0f178e0a8b1b331`. These differ only in that fix and
+its test. Their native dependency versions and historical installation manifest
+are retained. This profile's ordinary default subject stays unchanged. Two
+fixed learning baselines and an affected no-fault control gate two affected
+fault attempts and one fixed fault attempt: six workloads maximum, 900 seconds
+per phase, zero automatic repeats. All oracle verdicts and earlier evidence
+remain preserved. This is known-bug calibration, not a new bug claim.
+
 ## Pooler identity replacement experiment
 
 `pooler-replacement` is separate from the original calibration workload. It

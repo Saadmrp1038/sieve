@@ -29,6 +29,9 @@
     "controller_pod_label": "cloudnative-pg",
     "controller_deployment_file_path": "controllers/cloudnative-pg/deploy/operator.yaml",
     "test_setting": {
+        "ca-secret-bootstrap": {
+            "num_workers": 0
+        },
         "pooler-replacement-fast-probe": {
             "num_workers": 0
         },

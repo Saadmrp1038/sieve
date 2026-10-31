@@ -33,6 +33,10 @@ EXPECTED_ROWS = [[i, f"ack-{i}"] for i in range(1, 33)]
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    if argv and argv[0] == "ca-secret-bootstrap":
+        from bootstrap import main as bootstrap_main
+
+        return bootstrap_main(argv)
     if argv and argv[0] in (
         "pooler-replacement",
         "pooler-replacement-clients",
