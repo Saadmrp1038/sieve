@@ -202,3 +202,27 @@ accepted overwrite and a returned later accepted UID/resourceVersion/state.
 Keep uninstrumented controls and repeated attempts separate from unique coverage.
 Final review must independently reconstruct API deletions/recreations and database
 checks, preserve every raw alarm and verify complete local/VM evidence hashes.
+
+`rolling-config-update` uses three instances and required quorum synchronous
+replication (any one standby), with effective SQL checks before writes. Independent
+in-cluster read and numbered-write streams use fresh rw-service connections every
+200 ms, a five-second command deadline, and remote_apply for every write. Only a
+successful post-COMMIT receipt acknowledges an ID; all other write outcomes remain
+ambiguous. Full attempts and terminal records are retained.
+
+After ten seconds of healthy client traffic, max_connections increases from 100
+to 120, then to 140 four seconds later without waiting for the first rollout.
+The pinned operator treats pending_restart as eligible for an in-place restart;
+Pod deletion is not a trigger requirement. Final SQL verifies 140, no pending
+restart, changed postmaster start time on every instance, roles and synchronous
+replication, and every acknowledged payload on all instances after clients stop.
+A thirty-second observation follows convergence. Disconnections are retained for
+comparison with matched controls and do not by themselves fail an invariant.
+
+The rolling plans delay ClusterReconciler after an actual cache Get until the
+latest input reaches the informer, or restart the controller after the latest
+update is accepted. Prove the returned older value and actual hold/release, or
+the old controller deletion and distinct Ready replacement, from raw events.
+Generic missed-state proof does not support after-read pauses; retain that verdict
+and use a separate physical audit. Use fresh baselines and a test-image no-fault
+control before faults, with at most four fault attempts including confirmations.

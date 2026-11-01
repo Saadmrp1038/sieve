@@ -1,0 +1,16 @@
+workload: rolling-config-update
+actions:
+- actionType: restartController
+  controllerLabel: cloudnative-pg
+  trigger:
+    definitions:
+    - triggerName: accepted_C
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: cluster/default/sieve-rolling
+        occurrence: 1
+        stateMatch: '{"metadata":{"annotations":{"sieve.testing/rolling-phase":"C"}}}'
+      observationPoint:
+        when: afterAPIServerRecv
+        by: kind-control-plane
+    expression: accepted_C

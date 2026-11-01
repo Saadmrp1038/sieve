@@ -45,6 +45,9 @@
             "num_workers": 0,
             "independent_updates": true,
             "write_trigger": "occurrence"
+        },
+        "rolling-config-update": {
+            "num_workers": 0
         }
     },
     "container_name": "manager"

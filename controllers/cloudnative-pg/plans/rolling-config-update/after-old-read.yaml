@@ -1,0 +1,33 @@
+workload: rolling-config-update
+actions:
+- actionType: pauseController
+  pauseAt: afterControllerRead
+  pauseScope: cluster/default/sieve-rolling
+  pauseBy: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile
+  trigger:
+    definitions:
+    - triggerName: accepted_B
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: cluster/default/sieve-rolling
+        occurrence: 1
+        stateMatch: '{"metadata":{"annotations":{"sieve.testing/rolling-phase":"B"}}}'
+      observationPoint:
+        when: beforeAPIServerRecv
+        by: kind-control-plane
+    expression: accepted_B
+- actionType: resumeController
+  pauseAt: afterControllerRead
+  pauseScope: cluster/default/sieve-rolling
+  trigger:
+    definitions:
+    - triggerName: accepted_C
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: cluster/default/sieve-rolling
+        occurrence: 1
+        stateMatch: '{"metadata":{"annotations":{"sieve.testing/rolling-phase":"C"}}}'
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    expression: accepted_C
