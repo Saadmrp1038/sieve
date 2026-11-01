@@ -2,12 +2,25 @@
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "controllers/cloudnative-pg/workloads/rolling_client.py"
+
+
+def test_client_cli_supports_operand_python_runtime():
+    runtime = shutil.which("python3", path="/usr/bin:/bin")
+    if runtime is None:
+        pytest.skip("system Python unavailable; verify against the operand image")
+    result = subprocess.run(
+        [runtime, str(CLIENT), "--help"], capture_output=True, text=True, timeout=10
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_writer_only_acknowledges_successful_commit_receipts(tmp_path):

@@ -85,7 +85,7 @@ def main() -> int:
             try:
                 row = json.loads(str(record["stdout"]))
                 ok = ok and row["bad"] == 0 and isinstance(row["count"], int)
-            except ValueError, KeyError, TypeError:
+            except (ValueError, KeyError, TypeError):
                 ok = False
         record.update(
             ended_ns=time.time_ns(),

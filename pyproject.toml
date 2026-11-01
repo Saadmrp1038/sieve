@@ -54,6 +54,9 @@ extend-exclude = [
 [tool.ruff.lint]
 select = ["E9", "F", "B", "I"]
 
+[tool.ruff.per-file-target-version]
+"controllers/cloudnative-pg/workloads/rolling_client.py" = "py39"
+
 [tool.mypy]
 files = [
     "src/sieve_tool/plans.py",
