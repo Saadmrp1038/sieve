@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_profile_pins_native_graph_and_unchanged_default_concurrency():
     config = load_controller_config(ROOT / "controllers/cloudnative-pg")
-    assert config.commit == "9bb80d2292f5845ac6c2d60dc691b222a5ac4655"
-    assert config.client_go_version == "v0.37.0"
+    assert config.commit == "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331"
+    assert config.client_go_version == "v0.36.2"
     assert (
         config.test_setting["pooler-finalizer-updates"]["independent_updates"] is True
     )

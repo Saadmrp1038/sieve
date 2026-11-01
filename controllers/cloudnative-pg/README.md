@@ -1,5 +1,24 @@
 # CloudNativePG benchmark profile
 
+## Current default subject
+
+The default profile now pins `96cb6b05aea5f76ddac43d21e0f178e0a8b1b331`, the
+CA Secret fix verified by the [bounded affected/fixed replay](../../docs/rfe/managed-child-repair/cloudnativepg-ca-cache-replay-validation.md).
+Builds use that revision's native Go 1.26.4, client-go 0.36.2,
+controller-runtime 0.24.1 and unchanged upstream Dockerfile. Installation uses
+`releases/cnpg-1.30.0-rc1.yaml` from the same exact commit, checked against SHA256
+`ff1aca776fccf6ae921c8e12648e6c415fb9a411530da3213eb89592aeaa10a9`.
+This includes all eleven native CRDs and the `DatabaseRole` watch permissions.
+The operator retains ten reconciliation workers. Build its `vanilla` image
+before learning or testing so instance managers use that same fixed subject.
+
+Pinned commits that are absent from the normal clone are fetched explicitly
+from the configured upstream before checkout. A failed fetch stops the build.
+The original Pooler calibration pair in `benchmark.json`, previous runtime
+snapshots, images, learned references and reports remain historical evidence.
+Future experiments must record their selected source and matching reference;
+changing the default does not transfer earlier plan coverage to this revision.
+
 ## CA Secret bootstrap regression experiment
 
 `ca-secret-bootstrap` creates a three-instance Cluster with the default shared
@@ -10,9 +29,10 @@ and stable readiness during the observation window. A recovered bootstrap error
 is a semantic failure; it is not evidence of an indefinitely stuck cluster.
 
 The manually authored `plans/ca-secret-bootstrap/delay-ca-receipt.yaml` holds the
-leading API server's first CA Secret cache delivery. It releases on an observed
-Cluster auxiliary-object error or the controller reaching replication-certificate
-creation. There is no timer release, fabricated cache result or disabled watch.
+leading API server's first CA Secret cache delivery. It releases after both a
+duplicate CA request and an observed Cluster auxiliary-object error, or after the
+controller reaches replication-certificate creation. There is no timer release,
+fabricated cache result or disabled watch.
 An independent physical review must establish actual hold/release, persistence
 of the first CA Secret, a duplicate request/rejection on the affected source,
 and the absence of that duplicate on the fixed source. Action completion alone
@@ -23,7 +43,7 @@ upstream [#10989](https://github.com/cloudnative-pg/cloudnative-pg/pull/10989):
 affected `105265f5b702b7dcfaa41f7d8e1a45123f1c8ee1` and fixed
 `96cb6b05aea5f76ddac43d21e0f178e0a8b1b331`. These differ only in that fix and
 its test. Their native dependency versions and historical installation manifest
-are retained. This profile's ordinary default subject stays unchanged. Two
+are retained. The fixed member is now this profile's default subject. Two
 fixed learning baselines and an affected no-fault control gate two affected
 fault attempts and one fixed fault attempt: six workloads maximum, 900 seconds
 per phase, zero automatic repeats. All oracle verdicts and earlier evidence
@@ -103,7 +123,8 @@ revision is `9bb80d2292f5845ac6c2d60dc691b222a5ac4655`. These are a source-level
 bug/fix pair, not claims about newly discovered bugs or complete release equivalence.
 `benchmark.json` freezes the pair and native build dependencies.
 
-Build with native Go 1.27.1, client-go 0.37.0 and controller-runtime 0.25.0.
+The original calibration used native Go 1.27.1, client-go 0.37.0 and
+controller-runtime 0.25.0; these are preserved with its sealed runtime snapshots.
 The original upstream Dockerfile, pinned base images and licenses are retained.
 The benchmark runner supplies `SIEVE_SUBJECT_COMMIT` for the source provenance
 banner. Learning adds observation calls to the Cluster and Pooler reconciliations;
@@ -117,9 +138,10 @@ without masking image fields in the oracle. The main controller alone uses the
 selected instrumented mode; all instance-manager API events remain API-captured.
 
 The main controller, service account, bindings and webhook routing are adapted to
-`default` for Sieve. The upstream v1.30.1 installation YAML is checked against its
-frozen SHA256 before server-side apply. Image selection and the Sieve plan are
-deployment configuration; operator reconciliation logic is unchanged.
+`default` for Sieve. The original calibration checked the upstream v1.30.1
+installation YAML against its frozen SHA256 before server-side apply. The current
+default uses the commit-matched installation described above. Image selection and
+the Sieve plan are deployment configuration; operator reconciliation logic is unchanged.
 
 `pooler-finalizer-updates` creates three PostgreSQL instances and verifies 32
 acknowledged SQL rows. It first deletes a Deployment under an active Pooler and

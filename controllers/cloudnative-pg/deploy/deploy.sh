@@ -21,7 +21,7 @@ with execution(log_dir=Path.cwd() / "image-load-commands"):
     Path("node-operand-images.json").write_text(json.dumps(resolved, indent=2) + "\n")
 PY
 curl --fail --location --max-time 120 --retry 2 \
-  https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.30.1/cnpg-1.30.1.yaml \
+  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/96cb6b05aea5f76ddac43d21e0f178e0a8b1b331/releases/cnpg-1.30.0-rc1.yaml \
   --output release.yaml
 python3 - <<'PY'
 import hashlib
@@ -29,7 +29,7 @@ from pathlib import Path
 import yaml
 
 source = Path("release.yaml")
-if hashlib.sha256(source.read_bytes()).hexdigest() != "37237f145d8138256ea25ae830f87759255665ff08f8d552fdd8224a5ec032fb":
+if hashlib.sha256(source.read_bytes()).hexdigest() != "ff1aca776fccf6ae921c8e12648e6c415fb9a411530da3213eb89592aeaa10a9":
     raise SystemExit("CloudNativePG release manifest checksum mismatch")
 objects = []
 for obj in yaml.safe_load_all(source.read_text()):
