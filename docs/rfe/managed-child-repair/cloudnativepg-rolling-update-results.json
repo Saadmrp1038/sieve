@@ -1,0 +1,2171 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "completed_UTC": "2026-11-01T06:14:06.634749+00:00",
+  "objective": "Three-instance CloudNativePG rolling restart configuration update with continuous numbered synchronous writes and reads; compare no fault, delayed old read and controller replacement.",
+  "outcome": {
+    "verified_new_operator_defect": false,
+    "lost_acknowledged_writes": 0,
+    "wrong_final_configuration": false,
+    "failure_to_converge": false,
+    "continuous_read_consistency_violations": 0,
+    "additional_outage_episode": false,
+    "timing_limit": "Delayed-read single-run success gaps exceeded the matched control by 0.523 s (read) and 0.356 s (write). This small unconfirmed timing difference during the normal primary restart is not a demonstrated reproducible additional outage or operator defect.",
+    "confirmation_decision": "Stop after two physical fault attempts. No data/configuration/convergence failure or extra interruption episode warranted using the two reserved attempts; no claim that a small timing difference is reproducible."
+  },
+  "execution_bounds": {
+    "fault_limit_including_confirmations": 4,
+    "fault_attempts": 2,
+    "confirmation_attempts": 0,
+    "unused_fault_capacity": 2,
+    "successful_learning_workloads": 2,
+    "matched_no_fault_workloads": 1,
+    "failed_initial_learning_workloads": 1,
+    "actual_workload_attempts_total": 6,
+    "standalone_operand_runtime_probes": 2,
+    "automatic_repeats": 0,
+    "per_test_CLI_seconds": 900,
+    "two_baseline_learning_CLI_seconds": 1800,
+    "control_service_seconds": 3000,
+    "fault_service_seconds": 1200
+  },
+  "provenance": {
+    "branch": "cloudnativepg-remaining-plans",
+    "initial_HEAD": "ce75a8f7bc0624eff3add4f907ad19958dc27c0b",
+    "workload_commit": "143192566d72e1b084ed8b59657d7256f05fc517",
+    "implementation_commits": [
+      "c7460822a652023716ad6f6905a55a194a6eabba",
+      "143192566d72e1b084ed8b59657d7256f05fc517"
+    ],
+    "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+    "native_Go": "1.26.4",
+    "client_go": "0.36.2",
+    "controller_runtime": "0.24.1",
+    "installation": "commit-pinned 1.30.0-rc1",
+    "native_images_rebuilt": 0,
+    "controller_images": [
+      {
+        "variant": "fixed",
+        "mode": "vanilla",
+        "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+        "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:vanilla",
+        "image_id": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+        "binary_sha256": "a1c0b23cce979cbd20b9900f544f594aa0a96a6ceb0accb0e869d2d0b5905956",
+        "original_Go_files_verified": 964,
+        "changed_Go_files": [],
+        "native_versions_verified": 115,
+        "native_compiler": "go1.26.4"
+      },
+      {
+        "variant": "fixed",
+        "mode": "learn",
+        "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+        "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn",
+        "image_id": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+        "binary_sha256": "25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8",
+        "original_Go_files_verified": 964,
+        "changed_Go_files": [
+          "internal/controller/cluster_controller.go",
+          "internal/controller/pooler_controller.go"
+        ],
+        "native_versions_verified": 115,
+        "native_compiler": "go1.26.4"
+      },
+      {
+        "variant": "fixed",
+        "mode": "test",
+        "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+        "image": "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test",
+        "image_id": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+        "binary_sha256": "dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1",
+        "original_Go_files_verified": 964,
+        "changed_Go_files": [],
+        "native_versions_verified": 115,
+        "native_compiler": "go1.26.4"
+      }
+    ],
+    "operand_images": {
+      "SIEVE_CNPG_POSTGRES_IMAGE": {
+        "tag": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "pinned": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+        "image_id": "sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+        "architecture": "amd64"
+      },
+      "SIEVE_CNPG_PGBOUNCER_IMAGE": {
+        "tag": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1",
+        "pinned": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+        "image_id": "sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+        "architecture": "amd64"
+      }
+    },
+    "API_node_images": {
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-learn": "sha256:efe50af72929e2602f7e6da5210dadb4f000000e2e9db96a4921fb77cd2b6949",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-test": "sha256:e2edfd6407de5ed4d9d63a1f9458674ce89dd561e48d94ccf5cb4938f0c76f0e"
+    },
+    "plan_SHA256": {
+      "no-fault.yaml": "b32cd269d84dc3b3b3bace31c6012a08512fda7c8c766638237180a280b89e25",
+      "after-old-read.yaml": "86e1b521192d5e9914f2aa4967e3b5ae4c05e3b2bfd0ba182d3431e8f325b975",
+      "restart-during-update.yaml": "692df2b78176a554a412c63c5c207ed5c4df0548b5d213ec09fdfe3a5471dacd"
+    },
+    "oracle_SHA256": {
+      "cloudnative-pg/rolling-config-update/state.json": "c4d6f00d9c586623d792dffc8ebee88663d85bc5535213f92d42dc2a98a48ec1",
+      "cloudnative-pg/rolling-config-update/controller_family.json": "10c4faaa41dad2db293dc0fcd5ea3bf0b77521780e092f39bf57f886f3efc772",
+      "cloudnative-pg/rolling-config-update/mask.json": "63c3cae1e4980a00025830cf0cf581a9281e82d6574e2780b01282213eb60ae1",
+      "cloudnative-pg/rolling-config-update/event.json": "e35c29921ef6c8095bc881473f93119edfc5328d394278ec4d420f33d307bbd3"
+    },
+    "runtime_manifest_SHA256": "e54fd93b7c5c1391f0ac863458e9e7fd8bc95600d2203eadd363713cafdd667c",
+    "operator_workers": 10,
+    "push_or_PR": false,
+    "credential_access_or_generative_evaluation": false,
+    "image_pruning_or_local_Docker": false
+  },
+  "design": {
+    "revision": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+    "files": {
+      "internal/controller/cluster_upgrade.go": "ea87d5002e1c5361cd6ec53e29bda901a1802211b49d1fda4fe4f744c2dd9e12",
+      "api/v1/cluster_types.go": "679e073f764ff82ad798525766e956f97ef06dbf1b1608e8cde899a92daf5bc6",
+      "pkg/postgres/configuration.go": "c149be634833f846c30bc0c771962fcaaf43c6fdf105a04c2d84d6cd7392ec88",
+      "go.mod": "45a55fbc7c7539820d7384fc93498f58fbdbd5ea7ff8f16c4d49a7646f20d048",
+      "Dockerfile": "d58ea379ac42eb692134066f30021f8f7073ce4258b88ab7a4064fafb5ca3cb3"
+    },
+    "parameter_sequence": [
+      "100",
+      "120",
+      "140"
+    ],
+    "restart_mechanism": "Pinned API defaults primaryUpdateMethod to restart. PendingRestart rolls out replicas by deleting their Pods; a restart eligible for in-place primary restart keeps the primary Pod UID. Controls independently show changed postmaster times on all three instances, changed replica Pod UIDs, and unchanged primary Pod UID. Plans use Cluster/informer events, independent of Pod deletion.",
+    "synchronous": {
+      "method": "any",
+      "number": 1,
+      "dataDurability": "required"
+    },
+    "write_synchronous_commit": "remote_apply",
+    "client_receipt": "Successful psql exit and exact post-COMMIT ACK:<seq>; all other write outcomes remain ambiguous",
+    "client_interval_seconds": 0.2,
+    "client_deadline_seconds": 5,
+    "configuration_update_interval_seconds": 4,
+    "healthy_warmup_seconds": 10,
+    "stable_observation_seconds": 30,
+    "fault_limit_including_confirmations": 4,
+    "no_forced_triggers": true,
+    "ten_workers": true,
+    "description_correction": "Saved earlier descriptions incorrectly described upgradePod as a remote call, then incorrectly assumed a switchover default. Actual pinned API default and accepted control responses specify restart. Both erroneous descriptions remain preserved; workload/plans/native images unchanged."
+  },
+  "cases": [
+    {
+      "stage": "controls",
+      "name": "fresh-learning",
+      "mode": "learn",
+      "directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-controls-retry1-vm/fresh-learning/cloudnative-pg/rolling-config-update/learn_prev",
+      "application_status": "passed",
+      "observations_sha256": "1ba7f76148bd732a7ee7446025180799792ac9ad8a957d9f44c7efdf74a2b362",
+      "API_timeline_sha256": "e7947d5d6e3cb7372f5c4db52370483a496b533d91ccbbd93e0d8ec7a409b1ea",
+      "all_saved_objects_reconstructed": 44,
+      "API_events": 518,
+      "semantic_checks": [
+        {
+          "name": "required_synchronous_replication_effective_before_writes",
+          "passed": true
+        },
+        {
+          "name": "read_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "read_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "write_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "write_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "no_successful_reads_with_bad_data",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_writes_preserved_on_all_instances",
+          "passed": true
+        },
+        {
+          "name": "latest_effective_configuration_and_roles",
+          "passed": true
+        },
+        {
+          "name": "all_instances_restarted",
+          "passed": true
+        },
+        {
+          "name": "cluster_matches_latest_accepted_spec",
+          "passed": true
+        },
+        {
+          "name": "stable_after_convergence",
+          "passed": true
+        }
+      ],
+      "SQL": {
+        "initial": {
+          "sieve-rolling-1": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:35:07.155474+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 0
+          },
+          "sieve-rolling-2": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:35:41.188616+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          },
+          "sieve-rolling-3": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:36:14.745371+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          }
+        },
+        "final": {
+          "sieve-rolling-1": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:37:13.724665+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 240
+          },
+          "sieve-rolling-2": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:37:03.666872+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 240
+          },
+          "sieve-rolling-3": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:36:48.06856+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 240
+          }
+        }
+      },
+      "acknowledged_writes": 240,
+      "ambiguous_ids": [
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150
+      ],
+      "ambiguous_present": {
+        "sieve-rolling-1": [],
+        "sieve-rolling-2": [],
+        "sieve-rolling-3": []
+      },
+      "missing_acknowledged_ids": [],
+      "clients": {
+        "read": {
+          "attempts": 334,
+          "successes": 320,
+          "failures": 14,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793511430395136813,
+              "last_success_before_ns": 1793511430194929821,
+              "next_success_ns": 1793511434031092749,
+              "failure_to_success_seconds": 3.635955936,
+              "success_gap_seconds": 3.836162928
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 3.836162928,
+          "max_success_gap_seconds": 3.836162928,
+          "max_success_latency_seconds": 0.0704532
+        },
+        "write": {
+          "attempts": 254,
+          "successes": 240,
+          "failures": 14,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793511430550713467,
+              "last_success_before_ns": 1793511430350504503,
+              "next_success_ns": 1793511438800532526,
+              "failure_to_success_seconds": 8.249819059,
+              "success_gap_seconds": 8.450028023
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 8.450028023,
+          "max_success_gap_seconds": 8.450028023,
+          "max_success_latency_seconds": 4.786012698
+        }
+      },
+      "events": {
+        "first_update_requested": {
+          "wall_ns": 1793511394848592089,
+          "monotonic_ns": 1087689268599919
+        },
+        "latest_update_accepted": {
+          "wall_ns": 1793511401334746978,
+          "monotonic_ns": 1087695754754209
+        },
+        "converged": {
+          "wall_ns": 1793511440359123583,
+          "monotonic_ns": 1087734779130884
+        },
+        "observation_complete": {
+          "wall_ns": 1793511470489220375,
+          "monotonic_ns": 1087764909227531
+        }
+      },
+      "accepted_configurations": [
+        {
+          "setting": "100",
+          "UID": "49f8f87e-231e-4a81-b716-faabee401658",
+          "generation": 1,
+          "RV": "724"
+        },
+        {
+          "setting": "120",
+          "UID": "49f8f87e-231e-4a81-b716-faabee401658",
+          "generation": 2,
+          "RV": "1316"
+        },
+        {
+          "setting": "140",
+          "UID": "49f8f87e-231e-4a81-b716-faabee401658",
+          "generation": 3,
+          "RV": "1359"
+        }
+      ],
+      "pod_UIDs": {
+        "initial_pods": {
+          "sieve-rolling-1": "9a0c4b47-fef0-4ed7-9368-a36429629953",
+          "sieve-rolling-2": "0551115b-3be1-44e0-a6c7-540902a27735",
+          "sieve-rolling-3": "e06cda68-d4db-49bc-9159-274e1e26cdd1"
+        },
+        "final_pods": {
+          "sieve-rolling-1": "9a0c4b47-fef0-4ed7-9368-a36429629953",
+          "sieve-rolling-2": "d4b8a36b-8f86-4065-ada9-32e5fec38676",
+          "sieve-rolling-3": "9a40e843-945f-4370-82cb-a10efae3e11c"
+        }
+      },
+      "controller_UIDs": [
+        "72501a4a-2b9b-45a7-89c9-550b0f378e02"
+      ],
+      "operator_workers": 10,
+      "physical": {
+        "required": false
+      },
+      "generic_physical_verdict": null,
+      "generic_physical_reasons": [],
+      "native_error_entries": [],
+      "raw_Sieve_result": null
+    },
+    {
+      "stage": "controls",
+      "name": "fresh-learning",
+      "mode": "learn",
+      "directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-controls-retry1-vm/fresh-learning/cloudnative-pg/rolling-config-update/learn",
+      "application_status": "passed",
+      "observations_sha256": "bcc5ee2320ff7ee5e394936374de821298d4b82596be21093ae6d009cd82a4fa",
+      "API_timeline_sha256": "d6e84b5e5304734afc5cbad700e4369c39935ea7b0a2f89714cd7672845e1634",
+      "all_saved_objects_reconstructed": 44,
+      "API_events": 525,
+      "semantic_checks": [
+        {
+          "name": "required_synchronous_replication_effective_before_writes",
+          "passed": true
+        },
+        {
+          "name": "read_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "read_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "write_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "write_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "no_successful_reads_with_bad_data",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_writes_preserved_on_all_instances",
+          "passed": true
+        },
+        {
+          "name": "latest_effective_configuration_and_roles",
+          "passed": true
+        },
+        {
+          "name": "all_instances_restarted",
+          "passed": true
+        },
+        {
+          "name": "cluster_matches_latest_accepted_spec",
+          "passed": true
+        },
+        {
+          "name": "stable_after_convergence",
+          "passed": true
+        }
+      ],
+      "SQL": {
+        "initial": {
+          "sieve-rolling-1": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:41:14.145868+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 0
+          },
+          "sieve-rolling-2": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:41:49.325178+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          },
+          "sieve-rolling-3": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:42:22.46222+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          }
+        },
+        "final": {
+          "sieve-rolling-1": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:43:22.438856+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 249
+          },
+          "sieve-rolling-2": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:43:12.402569+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 249
+          },
+          "sieve-rolling-3": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:42:56.4158+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 249
+          }
+        }
+      },
+      "acknowledged_writes": 249,
+      "ambiguous_ids": [
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152
+      ],
+      "ambiguous_present": {
+        "sieve-rolling-1": [],
+        "sieve-rolling-2": [],
+        "sieve-rolling-3": []
+      },
+      "missing_acknowledged_ids": [],
+      "clients": {
+        "read": {
+          "attempts": 333,
+          "successes": 319,
+          "failures": 14,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793511799216464257,
+              "last_success_before_ns": 1793511799016246153,
+              "next_success_ns": 1793511802764586243,
+              "failure_to_success_seconds": 3.548121986,
+              "success_gap_seconds": 3.74834009
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 3.74834009,
+          "max_success_gap_seconds": 3.74834009,
+          "max_success_latency_seconds": 0.068800018
+        },
+        "write": {
+          "attempts": 263,
+          "successes": 249,
+          "failures": 14,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793511799225604081,
+              "last_success_before_ns": 1793511799025438239,
+              "next_success_ns": 1793511807512249292,
+              "failure_to_success_seconds": 8.286645211,
+              "success_gap_seconds": 8.486811053
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 8.486811053,
+          "max_success_gap_seconds": 8.486811053,
+          "max_success_latency_seconds": 4.820191129
+        }
+      },
+      "events": {
+        "first_update_requested": {
+          "wall_ns": 1793511763849398908,
+          "monotonic_ns": 1088058269407939
+        },
+        "latest_update_accepted": {
+          "wall_ns": 1793511770117471787,
+          "monotonic_ns": 1088064537478915
+        },
+        "converged": {
+          "wall_ns": 1793511809291664997,
+          "monotonic_ns": 1088103711671927
+        },
+        "observation_complete": {
+          "wall_ns": 1793511839450552042,
+          "monotonic_ns": 1088133870559065
+        }
+      },
+      "accepted_configurations": [
+        {
+          "setting": "100",
+          "UID": "493e555f-47e3-4fd3-8073-e8b6527958ff",
+          "generation": 1,
+          "RV": "726"
+        },
+        {
+          "setting": "120",
+          "UID": "493e555f-47e3-4fd3-8073-e8b6527958ff",
+          "generation": 2,
+          "RV": "1332"
+        },
+        {
+          "setting": "140",
+          "UID": "493e555f-47e3-4fd3-8073-e8b6527958ff",
+          "generation": 3,
+          "RV": "1374"
+        }
+      ],
+      "pod_UIDs": {
+        "initial_pods": {
+          "sieve-rolling-1": "e10438a9-5700-42eb-8a28-327cbfce8aee",
+          "sieve-rolling-2": "57ef8d3d-c630-405d-928b-656fb0034367",
+          "sieve-rolling-3": "614ac024-0e17-430c-b3c0-876264994334"
+        },
+        "final_pods": {
+          "sieve-rolling-1": "e10438a9-5700-42eb-8a28-327cbfce8aee",
+          "sieve-rolling-2": "1aacbff0-6d2c-4893-8c17-983d07a079e9",
+          "sieve-rolling-3": "285fb054-eaa9-4692-beac-4d069dcf578d"
+        }
+      },
+      "controller_UIDs": [
+        "22c23778-a2c2-428b-af4a-58b4c5474e05"
+      ],
+      "operator_workers": 10,
+      "physical": {
+        "required": false
+      },
+      "generic_physical_verdict": null,
+      "generic_physical_reasons": [],
+      "native_error_entries": [],
+      "raw_Sieve_result": null
+    },
+    {
+      "stage": "controls",
+      "name": "matched-no-fault",
+      "mode": "test",
+      "directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-controls-retry1-vm/matched-no-fault/cloudnative-pg/rolling-config-update/test/no-fault",
+      "application_status": "passed",
+      "observations_sha256": "8f2fa145f80b07278dc5b6710223372ec49eaccb60e25ee34323410082ec084b",
+      "API_timeline_sha256": "deeb0bd79948ab75ff986c1a37f203f186a177080061bbac670d4a70f8ba794e",
+      "all_saved_objects_reconstructed": 44,
+      "API_events": 515,
+      "semantic_checks": [
+        {
+          "name": "required_synchronous_replication_effective_before_writes",
+          "passed": true
+        },
+        {
+          "name": "read_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "read_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "write_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "write_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "no_successful_reads_with_bad_data",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_writes_preserved_on_all_instances",
+          "passed": true
+        },
+        {
+          "name": "latest_effective_configuration_and_roles",
+          "passed": true
+        },
+        {
+          "name": "all_instances_restarted",
+          "passed": true
+        },
+        {
+          "name": "cluster_matches_latest_accepted_spec",
+          "passed": true
+        },
+        {
+          "name": "stable_after_convergence",
+          "passed": true
+        }
+      ],
+      "SQL": {
+        "initial": {
+          "sieve-rolling-1": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:47:36.837621+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 0
+          },
+          "sieve-rolling-2": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:48:09.293448+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          },
+          "sieve-rolling-3": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:48:41.112284+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          }
+        },
+        "final": {
+          "sieve-rolling-1": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:49:39.849368+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 240
+          },
+          "sieve-rolling-2": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:49:29.349278+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 240
+          },
+          "sieve-rolling-3": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:49:14.349105+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 240
+          }
+        }
+      },
+      "acknowledged_writes": 240,
+      "ambiguous_ids": [
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146
+      ],
+      "ambiguous_present": {
+        "sieve-rolling-1": [],
+        "sieve-rolling-2": [],
+        "sieve-rolling-3": []
+      },
+      "missing_acknowledged_ids": [],
+      "clients": {
+        "read": {
+          "attempts": 328,
+          "successes": 315,
+          "failures": 13,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793512176716325535,
+              "last_success_before_ns": 1793512176516115820,
+              "next_success_ns": 1793512180227000008,
+              "failure_to_success_seconds": 3.510674473,
+              "success_gap_seconds": 3.710884188
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 3.710884188,
+          "max_success_gap_seconds": 3.710884188,
+          "max_success_latency_seconds": 0.080169303
+        },
+        "write": {
+          "attempts": 253,
+          "successes": 240,
+          "failures": 13,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793512176788954302,
+              "last_success_before_ns": 1793512176588740401,
+              "next_success_ns": 1793512185051536731,
+              "failure_to_success_seconds": 8.262582429,
+              "success_gap_seconds": 8.46279633
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 8.46279633,
+          "max_success_gap_seconds": 8.46279633,
+          "max_success_latency_seconds": 4.906182376
+        }
+      },
+      "events": {
+        "first_update_requested": {
+          "wall_ns": 1793512142205867621,
+          "monotonic_ns": 1088436625876051
+        },
+        "latest_update_accepted": {
+          "wall_ns": 1793512148614692940,
+          "monotonic_ns": 1088443034699903
+        },
+        "converged": {
+          "wall_ns": 1793512185990118657,
+          "monotonic_ns": 1088480410125549
+        },
+        "observation_complete": {
+          "wall_ns": 1793512216494538531,
+          "monotonic_ns": 1088510914545474
+        }
+      },
+      "accepted_configurations": [
+        {
+          "setting": "100",
+          "UID": "e38405c6-6115-4aee-b628-f5cd5299b3ba",
+          "generation": 1,
+          "RV": "724"
+        },
+        {
+          "setting": "120",
+          "UID": "e38405c6-6115-4aee-b628-f5cd5299b3ba",
+          "generation": 2,
+          "RV": "1315"
+        },
+        {
+          "setting": "140",
+          "UID": "e38405c6-6115-4aee-b628-f5cd5299b3ba",
+          "generation": 3,
+          "RV": "1355"
+        }
+      ],
+      "pod_UIDs": {
+        "initial_pods": {
+          "sieve-rolling-1": "ba13b4cc-e06d-4dc4-908d-416ababbb6c4",
+          "sieve-rolling-2": "696d5809-9f48-45be-be7e-b49877fca468",
+          "sieve-rolling-3": "8ab44473-0181-411a-af9c-2924c59b556f"
+        },
+        "final_pods": {
+          "sieve-rolling-1": "ba13b4cc-e06d-4dc4-908d-416ababbb6c4",
+          "sieve-rolling-2": "cf229c84-bb12-4b52-b2bb-d8c307c1e527",
+          "sieve-rolling-3": "7d73363b-54c5-4758-bc93-b3ebf7866ebb"
+        }
+      },
+      "controller_UIDs": [
+        "1e506839-b0ab-4d10-9e46-57b2143172b0"
+      ],
+      "operator_workers": 10,
+      "physical": {
+        "required": false
+      },
+      "generic_physical_verdict": false,
+      "generic_physical_reasons": [
+        "physical proof for this action sequence is unavailable"
+      ],
+      "native_error_entries": [],
+      "raw_Sieve_result": {
+        "duration": 363.86833214759827,
+        "injection_completed": true,
+        "workload_completed": true,
+        "number_errors": 3,
+        "detected_errors": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - fewer object fields than reference: pod/default/sieve-rolling-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is 28m after reference run, but not seen after testing run"
+        ],
+        "no_exception": true,
+        "exception_message": "",
+        "test_plan_content": "workload: rolling-config-update\nactions: []\n",
+        "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+        "execution": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 198.3017778499052,
+          "log": "commands/0023-5d571dc9"
+        }
+      }
+    },
+    {
+      "stage": "delay-1",
+      "name": "fault-delay-1",
+      "mode": "test",
+      "directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-delay-1-retry1-vm/fault-delay-1/cloudnative-pg/rolling-config-update/test/after-old-read",
+      "application_status": "passed",
+      "observations_sha256": "3ec2162f353cde11344cf6f5dddb2ea31caf9379d32ef938a6fbfd832fdc6c2a",
+      "API_timeline_sha256": "63fe294b164a4be2b7136b684f34f424e14a10bc86b48b6600a1d9dd2839fd1e",
+      "all_saved_objects_reconstructed": 44,
+      "API_events": 530,
+      "semantic_checks": [
+        {
+          "name": "required_synchronous_replication_effective_before_writes",
+          "passed": true
+        },
+        {
+          "name": "read_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "read_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "write_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "write_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "no_successful_reads_with_bad_data",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_writes_preserved_on_all_instances",
+          "passed": true
+        },
+        {
+          "name": "latest_effective_configuration_and_roles",
+          "passed": true
+        },
+        {
+          "name": "all_instances_restarted",
+          "passed": true
+        },
+        {
+          "name": "cluster_matches_latest_accepted_spec",
+          "passed": true
+        },
+        {
+          "name": "stable_after_convergence",
+          "passed": true
+        }
+      ],
+      "SQL": {
+        "initial": {
+          "sieve-rolling-1": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:56:41.622625+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 0
+          },
+          "sieve-rolling-2": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:57:16.750426+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          },
+          "sieve-rolling-3": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:57:51.046506+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          }
+        },
+        "final": {
+          "sieve-rolling-1": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T05:58:56.013506+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 267
+          },
+          "sieve-rolling-2": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:58:45.000332+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 267
+          },
+          "sieve-rolling-3": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T05:58:27.909369+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 267
+          }
+        }
+      },
+      "acknowledged_writes": 267,
+      "ambiguous_ids": [
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171
+      ],
+      "ambiguous_present": {
+        "sieve-rolling-1": [],
+        "sieve-rolling-2": [],
+        "sieve-rolling-3": []
+      },
+      "missing_acknowledged_ids": [],
+      "clients": {
+        "read": {
+          "attempts": 359,
+          "successes": 343,
+          "failures": 16,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793512732352182606,
+              "last_success_before_ns": 1793512732151972195,
+              "next_success_ns": 1793512736385666294,
+              "failure_to_success_seconds": 4.033483688,
+              "success_gap_seconds": 4.233694099
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 4.233694099,
+          "max_success_gap_seconds": 4.233694099,
+          "max_success_latency_seconds": 0.067834252
+        },
+        "write": {
+          "attempts": 283,
+          "successes": 267,
+          "failures": 16,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793512732342943120,
+              "last_success_before_ns": 1793512732142727471,
+              "next_success_ns": 1793512740961547189,
+              "failure_to_success_seconds": 8.618604069,
+              "success_gap_seconds": 8.818819718
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 8.818819718,
+          "max_success_gap_seconds": 8.818819718,
+          "max_success_latency_seconds": 4.644075814
+        }
+      },
+      "events": {
+        "first_update_requested": {
+          "wall_ns": 1793512691247429819,
+          "monotonic_ns": 1088985667437846
+        },
+        "latest_update_accepted": {
+          "wall_ns": 1793512697259927948,
+          "monotonic_ns": 1088991679934946
+        },
+        "converged": {
+          "wall_ns": 1793512743069577538,
+          "monotonic_ns": 1089037489584391
+        },
+        "observation_complete": {
+          "wall_ns": 1793512773460015610,
+          "monotonic_ns": 1089067880022547
+        }
+      },
+      "accepted_configurations": [
+        {
+          "setting": "100",
+          "UID": "4e5442a4-d50d-41cb-a899-591cccca615d",
+          "generation": 1,
+          "RV": "708"
+        },
+        {
+          "setting": "120",
+          "UID": "4e5442a4-d50d-41cb-a899-591cccca615d",
+          "generation": 2,
+          "RV": "1307"
+        },
+        {
+          "setting": "140",
+          "UID": "4e5442a4-d50d-41cb-a899-591cccca615d",
+          "generation": 3,
+          "RV": "1321"
+        }
+      ],
+      "pod_UIDs": {
+        "initial_pods": {
+          "sieve-rolling-1": "3189cd53-1675-4eb8-b997-34b3631cecbb",
+          "sieve-rolling-2": "9bac6fb1-c5a4-42fb-b874-562f19bdcb92",
+          "sieve-rolling-3": "89bfc218-5f7d-4164-b565-1d112e937608"
+        },
+        "final_pods": {
+          "sieve-rolling-1": "3189cd53-1675-4eb8-b997-34b3631cecbb",
+          "sieve-rolling-2": "f27ac812-bcce-402e-8123-71e3561657e2",
+          "sieve-rolling-3": "7b1bcd18-4ae7-413c-923b-a3511c58217d"
+        }
+      },
+      "controller_UIDs": [
+        "ab7c3588-d5f0-4f02-94d0-ca2424e6b117"
+      ],
+      "operator_workers": 10,
+      "physical": {
+        "verified": true,
+        "held_setting": "120",
+        "held_RV": "1307",
+        "hold_line": 566,
+        "release_line": 589,
+        "hold_seconds": 5.431570053100586,
+        "latest_receipt_lines": [
+          579
+        ]
+      },
+      "generic_physical_verdict": false,
+      "generic_physical_reasons": [
+        "invalid missed-state evidence: expected a cache Get pause scoped to one reconciler"
+      ],
+      "native_error_entries": [],
+      "raw_Sieve_result": {
+        "duration": 374.42405915260315,
+        "injection_completed": true,
+        "workload_completed": true,
+        "number_errors": 2,
+        "detected_errors": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run"
+        ],
+        "no_exception": true,
+        "exception_message": "",
+        "test_plan_content": "workload: rolling-config-update\nactions:\n- actionType: pauseController\n  pauseAt: afterControllerRead\n  pauseScope: cluster/default/sieve-rolling\n  pauseBy: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile\n  trigger:\n    definitions:\n    - triggerName: accepted_B\n      condition:\n        conditionType: onObjectUpdateTo\n        resourceKey: cluster/default/sieve-rolling\n        occurrence: 1\n        stateMatch: '{\"metadata\":{\"annotations\":{\"sieve.testing/rolling-phase\":\"B\"}}}'\n      observationPoint:\n        when: beforeAPIServerRecv\n        by: kind-control-plane\n    expression: accepted_B\n- actionType: resumeController\n  pauseAt: afterControllerRead\n  pauseScope: cluster/default/sieve-rolling\n  trigger:\n    definitions:\n    - triggerName: accepted_C\n      condition:\n        conditionType: onObjectUpdateTo\n        resourceKey: cluster/default/sieve-rolling\n        occurrence: 1\n        stateMatch: '{\"metadata\":{\"annotations\":{\"sieve.testing/rolling-phase\":\"C\"}}}'\n      observationPoint:\n        when: afterControllerRecv\n        by: informer\n    expression: accepted_C\n",
+        "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+        "execution": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 212.17800582991913,
+          "log": "commands/0023-3a2ab7f0"
+        }
+      }
+    },
+    {
+      "stage": "restart-1",
+      "name": "fault-restart-1",
+      "mode": "test",
+      "directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-restart-1-retry1-vm/fault-restart-1/cloudnative-pg/rolling-config-update/test/restart-during-update",
+      "application_status": "passed",
+      "observations_sha256": "1390ea26f05b8efe324d253ad7af380c2ada547bcf9aa8750bf07d963b829282",
+      "API_timeline_sha256": "625daef034379e0b9028db7801d06bf6c6991995dbdf108467812ad8f4c2d680",
+      "all_saved_objects_reconstructed": 44,
+      "API_events": 560,
+      "semantic_checks": [
+        {
+          "name": "required_synchronous_replication_effective_before_writes",
+          "passed": true
+        },
+        {
+          "name": "read_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "read_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "write_stream_complete",
+          "passed": true
+        },
+        {
+          "name": "write_recovered_after_convergence",
+          "passed": true
+        },
+        {
+          "name": "no_successful_reads_with_bad_data",
+          "passed": true
+        },
+        {
+          "name": "acknowledged_writes_preserved_on_all_instances",
+          "passed": true
+        },
+        {
+          "name": "latest_effective_configuration_and_roles",
+          "passed": true
+        },
+        {
+          "name": "all_instances_restarted",
+          "passed": true
+        },
+        {
+          "name": "cluster_matches_latest_accepted_spec",
+          "passed": true
+        },
+        {
+          "name": "stable_after_convergence",
+          "passed": true
+        }
+      ],
+      "SQL": {
+        "initial": {
+          "sieve-rolling-1": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T06:05:49.896452+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 0
+          },
+          "sieve-rolling-2": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T06:06:21.101345+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          },
+          "sieve-rolling-3": {
+            "max_connections": "100",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T06:06:54.090484+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 0
+          }
+        },
+        "final": {
+          "sieve-rolling-1": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": false,
+            "postmaster_start": "2026-11-01T06:08:03.086779+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 2,
+            "row_count": 283
+          },
+          "sieve-rolling-2": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T06:07:52.569173+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 283
+          },
+          "sieve-rolling-3": {
+            "max_connections": "140",
+            "pending_restart": false,
+            "recovery": true,
+            "postmaster_start": "2026-11-01T06:07:35.50377+00:00",
+            "synchronous_commit": "remote_apply",
+            "synchronous_standby_names": "ANY 1 (\"sieve-rolling-2\",\"sieve-rolling-3\",\"sieve-rolling-1\")",
+            "sync_standbys": 0,
+            "row_count": 283
+          }
+        }
+      },
+      "acknowledged_writes": 283,
+      "ambiguous_ids": [
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184
+      ],
+      "ambiguous_present": {
+        "sieve-rolling-1": [],
+        "sieve-rolling-2": [],
+        "sieve-rolling-3": []
+      },
+      "missing_acknowledged_ids": [],
+      "clients": {
+        "read": {
+          "attempts": 373,
+          "successes": 360,
+          "failures": 13,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793513280054470874,
+              "last_success_before_ns": 1793513279854267905,
+              "next_success_ns": 1793513283416789421,
+              "failure_to_success_seconds": 3.362318547,
+              "success_gap_seconds": 3.562521516
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 3.562521516,
+          "max_success_gap_seconds": 3.562521516,
+          "max_success_latency_seconds": 0.084885789
+        },
+        "write": {
+          "attempts": 296,
+          "successes": 283,
+          "failures": 13,
+          "timeouts": 0,
+          "outages": [
+            {
+              "first_failure_ns": 1793513280034416226,
+              "last_success_before_ns": 1793513279834190753,
+              "next_success_ns": 1793513287859936839,
+              "failure_to_success_seconds": 7.825520613,
+              "success_gap_seconds": 8.025746086
+            }
+          ],
+          "max_failure_associated_success_gap_seconds": 8.025746086,
+          "max_success_gap_seconds": 8.025746086,
+          "max_success_latency_seconds": 4.528165147
+        }
+      },
+      "events": {
+        "first_update_requested": {
+          "wall_ns": 1793513235026769294,
+          "monotonic_ns": 1089529446777010
+        },
+        "latest_update_accepted": {
+          "wall_ns": 1793513240848588289,
+          "monotonic_ns": 1089535268595591
+        },
+        "converged": {
+          "wall_ns": 1793513290375809734,
+          "monotonic_ns": 1089584795816740
+        },
+        "observation_complete": {
+          "wall_ns": 1793513320902441144,
+          "monotonic_ns": 1089615322447938
+        }
+      },
+      "accepted_configurations": [
+        {
+          "setting": "100",
+          "UID": "9a0d5a4c-5c99-45fa-9f6f-54e36a845aff",
+          "generation": 1,
+          "RV": "726"
+        },
+        {
+          "setting": "120",
+          "UID": "9a0d5a4c-5c99-45fa-9f6f-54e36a845aff",
+          "generation": 2,
+          "RV": "1317"
+        },
+        {
+          "setting": "140",
+          "UID": "9a0d5a4c-5c99-45fa-9f6f-54e36a845aff",
+          "generation": 3,
+          "RV": "1354"
+        }
+      ],
+      "pod_UIDs": {
+        "initial_pods": {
+          "sieve-rolling-1": "ffff9c58-1e33-419d-94d6-ca6564b4cec6",
+          "sieve-rolling-2": "dc4f48f1-3b12-46ae-8d9e-a70fc9c58850",
+          "sieve-rolling-3": "4243585b-95e0-4385-a0cb-2f3ad139410a"
+        },
+        "final_pods": {
+          "sieve-rolling-1": "ffff9c58-1e33-419d-94d6-ca6564b4cec6",
+          "sieve-rolling-2": "f9fcda3a-455a-4ff6-8fed-66263151de71",
+          "sieve-rolling-3": "8c8bd38d-af97-47a1-b83a-5267f37e7c3a"
+        }
+      },
+      "controller_UIDs": [
+        "5f00e41a-5dd1-4f30-b892-40863eed76d7",
+        "3de8307f-ef47-4b1a-ace6-922722952167"
+      ],
+      "operator_workers": 10,
+      "physical": {
+        "required": true,
+        "verified": true,
+        "old_UID": "5f00e41a-5dd1-4f30-b892-40863eed76d7",
+        "replacement_UID": "3de8307f-ef47-4b1a-ace6-922722952167",
+        "old_deleted_API_position": 392,
+        "replacement_ready_API_position": 417
+      },
+      "generic_physical_verdict": true,
+      "generic_physical_reasons": [],
+      "native_error_entries": [
+        {
+          "ts": "2026-11-01T06:07:21.57797888Z",
+          "msg": "Unable to create the ServiceAccount",
+          "error": "Post \"https://kind-control-plane:6443/apis/rbac.authorization.k8s.io/v1/namespaces/default/rolebindings\": context canceled"
+        },
+        {
+          "ts": "2026-11-01T06:07:21.578094993Z",
+          "msg": "while reconciling postgres cluster objects",
+          "error": "Post \"https://kind-control-plane:6443/apis/rbac.authorization.k8s.io/v1/namespaces/default/rolebindings\": context canceled"
+        },
+        {
+          "ts": "2026-11-01T06:07:21.581394224Z",
+          "msg": "Reconciler error",
+          "error": "cannot create Cluster auxiliary objects: Post \"https://kind-control-plane:6443/apis/rbac.authorization.k8s.io/v1/namespaces/default/rolebindings\": context canceled"
+        }
+      ],
+      "raw_Sieve_result": {
+        "duration": 375.623663187027,
+        "injection_completed": true,
+        "workload_completed": true,
+        "number_errors": 3,
+        "detected_errors": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+          "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run"
+        ],
+        "no_exception": true,
+        "exception_message": "",
+        "test_plan_content": "workload: rolling-config-update\nactions:\n- actionType: restartController\n  controllerLabel: cloudnative-pg\n  trigger:\n    definitions:\n    - triggerName: accepted_C\n      condition:\n        conditionType: onObjectUpdateTo\n        resourceKey: cluster/default/sieve-rolling\n        occurrence: 1\n        stateMatch: '{\"metadata\":{\"annotations\":{\"sieve.testing/rolling-phase\":\"C\"}}}'\n      observationPoint:\n        when: afterAPIServerRecv\n        by: kind-control-plane\n    expression: accepted_C\n",
+        "host": "node0.exp-980749.aiopslab-pg0.clemson.cloudlab.us",
+        "execution": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 207.1640047240071,
+          "log": "commands/0023-5ec74e20"
+        }
+      }
+    }
+  ],
+  "continuous_reads": {
+    "status": "passed",
+    "cases": [
+      {
+        "stage": "controls",
+        "directory": "fresh-learning/cloudnative-pg/rolling-config-update/learn_prev",
+        "successful_reads_checked": 320,
+        "acknowledged_write_receipts": 240,
+        "violations": []
+      },
+      {
+        "stage": "controls",
+        "directory": "fresh-learning/cloudnative-pg/rolling-config-update/learn",
+        "successful_reads_checked": 319,
+        "acknowledged_write_receipts": 249,
+        "violations": []
+      },
+      {
+        "stage": "controls",
+        "directory": "matched-no-fault/cloudnative-pg/rolling-config-update/test/no-fault",
+        "successful_reads_checked": 315,
+        "acknowledged_write_receipts": 240,
+        "violations": []
+      },
+      {
+        "stage": "delay-1",
+        "directory": "fault-delay-1/cloudnative-pg/rolling-config-update/test/after-old-read",
+        "successful_reads_checked": 343,
+        "acknowledged_write_receipts": 267,
+        "violations": []
+      },
+      {
+        "stage": "restart-1",
+        "directory": "fault-restart-1/cloudnative-pg/rolling-config-update/test/restart-during-update",
+        "successful_reads_checked": 360,
+        "acknowledged_write_receipts": 283,
+        "violations": []
+      }
+    ]
+  },
+  "alarm_count": 8,
+  "alarm_classification_counts": {
+    "native_binary_provenance": 6,
+    "completed_client_Pod_resource_status_variation": 1,
+    "expected_controller_leadership_transition": 1
+  },
+  "all_raw_alarms": [
+    {
+      "stage": "controls",
+      "index": 0,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance",
+      "evidence": "Recorded fixed native learn/test image IDs and binary SHA256 values; actual API operator hash matches the selected mode."
+    },
+    {
+      "stage": "controls",
+      "index": 1,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance",
+      "evidence": "Recorded fixed native learn/test image IDs and binary SHA256 values; actual API operator hash matches the selected mode."
+    },
+    {
+      "stage": "controls",
+      "index": 2,
+      "alarm": "End state inconsistency - fewer object fields than reference: pod/default/sieve-rolling-client[\"status\"][\"resources\"][\"requests\"][\"cpu\"] is 28m after reference run, but not seen after testing run",
+      "classification": "completed_client_Pod_resource_status_variation",
+      "evidence": "All saved objects match full API. Client final saved state is Succeeded; its status requests omit CPU in test and include 28m in reference. Declared resources remain 20m CPU/32Mi memory per container. Both streams have complete terminal ledgers and exit 0; SQL and configuration invariants pass. Raw alarm retained."
+    },
+    {
+      "stage": "delay-1",
+      "index": 0,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance"
+    },
+    {
+      "stage": "delay-1",
+      "index": 1,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance"
+    },
+    {
+      "stage": "restart-1",
+      "index": 0,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance"
+    },
+    {
+      "stage": "restart-1",
+      "index": 1,
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-rolling[\"status\"][\"cloudNativePGOperatorHash\"] is 25664d244f35fdb20250ced96913f6db0f542a2dfe38b6b05d79d0492aa829f8 after reference run, but dd626b5b40dc7950864fbdba029677e17c545e74b79d04b6eb06336937e71cb1 after testing run",
+      "classification": "native_binary_provenance"
+    },
+    {
+      "stage": "restart-1",
+      "index": 2,
+      "alarm": "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run",
+      "classification": "expected_controller_leadership_transition"
+    }
+  ],
+  "raw_alarms_and_verdicts_unchanged": true,
+  "oracle_masks_changed": false,
+  "independent_reviews": {
+    "controls": {
+      "path": ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-review.json",
+      "sha256": "cf801a715db25da6f970ffa08823cd136abbd8f3af8424b99240978771766b66"
+    },
+    "delay-1": {
+      "path": ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-review.json",
+      "sha256": "27e74349c4693f429191aeeb34fcfcdd687f097a20cb1d3a7f9919f03ce530fd"
+    },
+    "restart-1": {
+      "path": ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-review.json",
+      "sha256": "3fb4b807b0e513cb429aa9648e1b0235153cabca43a881864cae58a65b3cef41"
+    }
+  },
+  "delayed_read": {
+    "returned_read": {
+      "read_operation": "Get",
+      "resource": "cluster/default/sieve-rolling",
+      "reconciler": "github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile",
+      "error": "NoError",
+      "UID": "4e5442a4-d50d-41cb-a899-591cccca615d",
+      "generation": 2,
+      "resourceVersion": "1307",
+      "max_connections": "120",
+      "record_sha256": "4ace07168204b2247a98478d02388bcf763c36f927d8ef60784a054074531be3",
+      "source_log_sha256": "ffea530421e99e41b1cd6b16363272d4b67bd23b7c3dc4ab101b0cb6936b1c34"
+    },
+    "physical": {
+      "verified": true,
+      "held_setting": "120",
+      "held_RV": "1307",
+      "hold_line": 566,
+      "release_line": 589,
+      "hold_seconds": 5.431570053100586,
+      "latest_receipt_lines": [
+        579
+      ]
+    },
+    "four_mutated_evidence_negative_controls_rejected": [
+      "missing_hold",
+      "missing_release",
+      "missing_latest_receipt",
+      "wrong_expected_UID"
+    ],
+    "client_correlation": {
+      "hold_start_ns": 1793512691684748032,
+      "release_ns": 1793512697116317952,
+      "streams": {
+        "read": {
+          "attempts_overlapping_hold": 21,
+          "failures_overlapping_hold": 0,
+          "outage_start_after_release_seconds": [
+            35.235864654
+          ]
+        },
+        "write": {
+          "attempts_overlapping_hold": 17,
+          "failures_overlapping_hold": 0,
+          "outage_start_after_release_seconds": [
+            35.226625168
+          ]
+        }
+      }
+    },
+    "generic_unsupported_after_read_physical_false_unchanged": true
+  },
+  "controller_restart": {
+    "physical": {
+      "required": true,
+      "verified": true,
+      "old_UID": "5f00e41a-5dd1-4f30-b892-40863eed76d7",
+      "replacement_UID": "3de8307f-ef47-4b1a-ace6-922722952167",
+      "old_deleted_API_position": 392,
+      "replacement_ready_API_position": 417
+    },
+    "lease_transitions": [
+      {
+        "position": 28,
+        "value": [
+          "cnpg-controller-manager-6f7655cfc-tmzpk_3b01240b-d824-44fb-96e6-7a13f873bad0",
+          0
+        ]
+      },
+      {
+        "position": 382,
+        "value": [
+          "",
+          0
+        ]
+      },
+      {
+        "position": 424,
+        "value": [
+          "cnpg-controller-manager-6f7655cfc-z5dj9_9e936bd9-799a-4823-a480-ccb5a96d6408",
+          1
+        ]
+      }
+    ],
+    "shutdown_entries": {
+      "count": 3,
+      "distinct_reconciliations": 1,
+      "shutdown_ts": "2026-11-01T06:07:21.577620386Z",
+      "classification": "Context cancellation of the deleted controller during its recorded shutdown; all entries retained, replacement converged."
+    },
+    "client_correlation": {
+      "interval": "Coordinator restart trigger through recorded replacement Ready confirmation; includes the entire action, not only the Pod deletionTimestamp grace deadline.",
+      "start_line": "2026/11/01 06:07:20.740247 state_machine.go:87: all triggers are satisfied for action 0",
+      "end_line": "2026/11/01 06:07:34.051868 controller_actions.go:78: controller pod 0 ready now",
+      "duration_seconds": 13.311620864,
+      "streams": {
+        "read": {
+          "attempts_overlapping_full_action": 51,
+          "failures_overlapping_full_action": 0,
+          "first_outage_after_ready_seconds": 26.00260297
+        },
+        "write": {
+          "attempts_overlapping_full_action": 39,
+          "failures_overlapping_full_action": 0,
+          "first_outage_after_ready_seconds": 25.982548322
+        }
+      }
+    }
+  },
+  "preserved_failures": {
+    "initial_control": {
+      "classification": "harness_failure_before_configuration_updates",
+      "actual_learning_attempts": 1,
+      "actual_no_fault_attempts": 0,
+      "actual_fault_attempts": 0,
+      "three_ready_synchronous_instances_verified": true,
+      "accepted_config_generations": [
+        1
+      ],
+      "client_containers_exit_codes": [
+        1,
+        1
+      ],
+      "cause": "Ruff py314 formatting emitted unparenthesized multiple-exception syntax unsupported by operand Python",
+      "public_cli_red_green": true,
+      "unchanged_operand_probe_before_fix": "SyntaxError",
+      "unchanged_operand_probe_after_fix_returncode": 0,
+      "no_operator_defect_inferred": true,
+      "failed_tree_manifest_sha256": "793dadd414e1528dd4d370ac11cefc008292cef2c7b06f7f2651c22be36d62b1"
+    },
+    "initial_upload_and_preflight_failed_before_workloads": true,
+    "original_operator_and_client_images_unchanged": true,
+    "failed_independent_reviews": [
+      "controls-review-initial.json",
+      "retry1/controls-review-initial.json",
+      "retry1/delay-1-review-v2.json"
+    ],
+    "review_repairs": "Added explicit admitted failoverQuorum=false default and exact four native Go omitempty zero/default fields for cache serialization; UID/generation/RV and all other spec fields remain exact. Only independent reporting changed; no raw evidence, workload, schedule, oracle mask or generic verdict edited.",
+    "incorrect_intermediate_restart_descriptions_retained": [
+      "design-initial-restart-description-error.json",
+      "design-second-default-description-error.json"
+    ],
+    "partial_upload_copied_and_VM_SHA256_verified": {
+      "VM_SHA256": "ac2508ed66270b6abac27b32dd13a078f784dc1ab686f1cff0af34e3e8c62f46",
+      "local": ".cache/cloudnativepg/rolling-update-20261101/runtime-transfer-failed.tar.gz",
+      "bytes": 261120,
+      "verified": true
+    }
+  },
+  "validation": {
+    "Python_tests": 409,
+    "subtests": 10,
+    "protected_test_excluded": true,
+    "public_boundary_tests": 5,
+    "TDD_RED_GREEN": true,
+    "same_operand_runtime_RED_GREEN": true,
+    "Ruff": "passed",
+    "format": "163 files passed",
+    "strict_mypy_configured_sources": 38,
+    "strict_mypy_new_workloads": 2,
+    "wheel": "passed",
+    "three_plans_schema_validated": true
+  },
+  "preservation": {
+    "prior_trees": {
+      "status": "unchanged",
+      "result_trees": 41,
+      "files": 280220,
+      "bytes": 11740278591,
+      "manifests": [
+        {
+          "path": ".cache/cloudnativepg/go-result-hashes.json",
+          "sha256": "ec5c087e4ce5817ea4ab2c2b76ff1eccf07bf570342ce5dbbcdb2554e9189923",
+          "root": "/Users/pial/Projects/sieve/runs/sieve-improvements-verification-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/calibration-result-hashes.json",
+          "sha256": "1281c0d25984c1def6329cd0351743154036fd0dda53ae314a72757df5bebf97",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-calibration-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/controls-retry3-result-hashes.json",
+          "sha256": "86527f3b01e170801a736f747838e07de0e92e6bde174b161932e2b3ba4b61fe",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry3-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/build-result-hashes.json",
+          "sha256": "a926ad6ddc0d85b57c67008bf8bb5a09d0ee4c9365698dc8f4d5bd9e70557c7d",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-build-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/module-proof-result-hashes.json",
+          "sha256": "565a155e3c2426c97b396d27fc2051470ef0ec9d0acf1745c74203505f7e9886",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-module-proof-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/api-build-retry1-result-hashes.json",
+          "sha256": "a2ed029d44ff9ff80cdbcf55b274b5da77241d0ce7686f86568c575a9df2f23a",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-api-build-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/controls-retry1-result-hashes.json",
+          "sha256": "067a23d46670d7febfaf72eb447ff69e244112ef54eb3e94dd430d293915d2c9",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/controls-retry2-result-hashes.json",
+          "sha256": "3bceac24be97915bece5a09a120a63aeb5e8138443a748d0b885277c26100d21",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry2-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/controls-result-hashes.json",
+          "sha256": "61648a9bf0cc04a262a635411a49a63a5e0120848c60841b026c6545141e20eb",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/controls-retry4-result-hashes.json",
+          "sha256": "cdc64b0588a3a8d92727cf7636b4e1857b3a8d032ab3be61df920a52759fffac",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-controls-retry4-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/api-build-result-hashes.json",
+          "sha256": "94ee7ec63d04200aaad2bd58cd8884827ed161a6f240c5b766016153db09a3c7",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-api-build-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-probe-isolation-20261030/learn-result-hashes.json",
+          "sha256": "b97fa6a77950948adcb1e688305074b0d9c02094ddc6d4bcb840d87fe1c705c8",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-learn-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-probe-isolation-20261030/pair1-result-hashes.json",
+          "sha256": "43114c205b6c517eee11915fc5daf48d471201f4e1d309e18d5130c79d7ae25f",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-pair1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-probe-isolation-20261030/pair2-result-hashes.json",
+          "sha256": "b514afe011e4be31905b6d4d20f844d1b73cd6ea39ad484f26a86c1ef3debce6",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-probe-isolation-pair2-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/ca-cache-replay-20261031/build-retry1-result-hashes.json",
+          "sha256": "a8dbcb80eb865ade3a6fb97c4ff9dbd37c9d286e243a50a364ca612f447e87c8",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/ca-cache-replay-20261031/build-result-hashes.json",
+          "sha256": "2bc74c49a3af8524a181e10c8542968077b89d2e7487f5641a860e3771c946f0",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-build-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-retry1-result-hashes.json",
+          "sha256": "12b02154ce03fa760aa15e6691bf151f7386aa54b1aa4ea63fe304ba378d640d",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/ca-cache-replay-20261031/controls-result-hashes.json",
+          "sha256": "6b1fab2cd3c79afd343a464e66775f03fbfd6909e2eb87ba47a7d46869e0c166",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-controls-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/ca-cache-replay-20261031/faults-reporting-fix-result-hashes.json",
+          "sha256": "c1efaf1623f4edb997670d3131f9b1f306332d5c2e797d64535a1c1130ad8e6c",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-ca-cache-faults-reporting-fix-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/plan54-followup-20261029/result-hashes.json",
+          "sha256": "f679dc6a58174103c23d427f15d5ed7a69085651e49ab714a0a9d9b98a6c26b8",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-plan54-bounded-20261029-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-client-confirmation-20261030/confirmation1-result-hashes.json",
+          "sha256": "e712f3ba83f06445175e328c4794075cf240adc02a8f18cfb4475fb2093c8543",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-confirmation-20261030-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-result-hashes.json",
+          "sha256": "ba4da692137af9c2244d8d491c8070bdc83a44fa6c906f9486bf33643a6c06e0",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-test-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-replacement-20261029/control-result-hashes.json",
+          "sha256": "cb949d00fa9e2730e12e8b865dd7308812c9bb636a7e44d781c0cb5a5725eb25",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-control-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-replacement-20261029/learn-result-hashes.json",
+          "sha256": "f915bd001255f6da4496af64e2ddc38c6a3ec16343b2657f5c4ad2dad8eeae21",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-learn-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-repeat1-result-hashes.json",
+          "sha256": "c63c909862f08f2a9e1a9bd2ddd84655185b5d487ad1f0b905260b6ddd134b44",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-test-repeat1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-replacement-20261029/control-retry1-result-hashes.json",
+          "sha256": "9f308cfcf59f79d1b7e837b6875fa89447b052f79b09149599cb266e7bf83aa2",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-control-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-00-retry1-result-hashes.json",
+          "sha256": "d2c95a544cdc21fd11f93fabf0dc40bc70c359939f1a1820301776ca064737ee",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-00-retry1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-04-result-hashes.json",
+          "sha256": "05beef2dd85c15df1f657ac252c26297eb4c7bf70db8dcb80cc27d1238401530",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-04-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-07-result-hashes.json",
+          "sha256": "3a42ca6ba26fc5960fdbb5483cd9aff8fa5105009caf6ee674b8427ba3529dcb",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-07-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/diagnostic-69-40d9999-result-hashes.json",
+          "sha256": "82fd19928e186b632aa153cac0759b3550ea861b4345486838f815927e7f802e",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-diagnostic-69-40d9999-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/diagnostic-54-59-94f5a0e-result-hashes.json",
+          "sha256": "30d7542d204af7c1a3fd876a513b4466c869e369512be1835aca61f392070824",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-diagnostic-54-59-94f5a0e-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-01-result-hashes.json",
+          "sha256": "231b9c23cc2e8db6547dd0afcfd955b6fcc4a234c16ae60d77d06e69f0330bad",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-01-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-02-result-hashes.json",
+          "sha256": "7dcae78fea08be033e71084c579d1977898e07cb4df9c8554c032365041c75b8",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-02-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-03-result-hashes.json",
+          "sha256": "9b1a87ce8fe202a8d03b5e3de18699d1a1e9a48ae5e548260bebf4c11d60420f",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-03-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-00-result-hashes.json",
+          "sha256": "fe3843862209f62f20bddcb66ee278d3838f45be19a857099ca969618b083071",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-00-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-06-result-hashes.json",
+          "sha256": "11ec41f6397d1796a3092ebb027c094c9f9720825818b10b22ca7c12afa9c0ed",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-06-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/remaining/batch-05-result-hashes.json",
+          "sha256": "d0752b546bb884cfb0a39e82db8944b4bc585da50dfc9ad4b9b3945ba94af84b",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-remaining-batch-05-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-client-impact-20261029/control-result-hashes.json",
+          "sha256": "77c7cc1d61ce381081e094ed9b3eb05bdec6f5b95471db1213da078ea8dabf17",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-control-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-client-impact-20261029/learn-result-hashes.json",
+          "sha256": "04438f437edaf54d10af1d9c2882d457cb54c8ed88f81e615687a23c4055788a",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-learn-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-client-impact-20261029/pair1-result-hashes.json",
+          "sha256": "2080efc78178154c98ae5fc1ba22d0fa865c2e183cec0d3d1255690a0fd15dfc",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-pair1-vm"
+        },
+        {
+          "path": ".cache/cloudnativepg/pooler-client-impact-20261029/pair2-result-hashes.json",
+          "sha256": "e529a8f5915a2a172e362d958f3b736ce07af36ba0461cf554e9cfba0441dab2",
+          "root": "/Users/pial/Projects/sieve/runs/cloudnativepg-client-impact-pair2-vm"
+        }
+      ],
+      "preserved_input_count": 80
+    },
+    "new_trees": {
+      "status": "all_new_result_trees_unchanged",
+      "trees": 6,
+      "files": 4291,
+      "bytes": 376511752,
+      "collections": [
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed-result-hashes.json",
+          "manifest_sha256": "347eaa10ec08217e98a400dbda78bd150cdb2da6263f8dda2f19005a141bf6ed",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-client-runtime-probe-fixed-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-client-runtime-probe-fixed-20261101",
+          "files": 5,
+          "bytes": 5417,
+          "verified_before_inspection_UTC": "2026-11-01T05:31:11.298193+00:00"
+        },
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-result-hashes.json",
+          "manifest_sha256": "4c4d2a7426436ba9939249d4033793bb682b31ad1e18a920b1eabf437a54d825",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-client-runtime-probe-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-client-runtime-probe-20261101",
+          "files": 5,
+          "bytes": 4941,
+          "verified_before_inspection_UTC": "2026-11-01T05:30:18.250956+00:00"
+        },
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/controls-result-hashes.json",
+          "manifest_sha256": "793dadd414e1528dd4d370ac11cefc008292cef2c7b06f7f2651c22be36d62b1",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-controls-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-controls-20261101",
+          "files": 431,
+          "bytes": 48932387,
+          "verified_before_inspection_UTC": "2026-11-01T05:28:55.345353+00:00"
+        },
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-result-hashes.json",
+          "manifest_sha256": "4665529f4419f346783228034cb5b1abe1c90d43e91efce88fe7aeb368c79e3d",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-controls-retry1-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-controls-retry1-20261101",
+          "files": 2342,
+          "bytes": 227762862,
+          "verified_before_inspection_UTC": "2026-11-01T05:51:41.881534+00:00"
+        },
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-result-hashes.json",
+          "manifest_sha256": "3ebe0e85729e55994bede57ea2e833fd807a52a19a7e89499f09b371dbfdbdab",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-delay-1-retry1-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-delay-1-retry1-20261101",
+          "files": 760,
+          "bytes": 51014105,
+          "verified_before_inspection_UTC": "2026-11-01T06:00:57.111872+00:00"
+        },
+        {
+          "manifest": ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-result-hashes.json",
+          "manifest_sha256": "16bdc6c5624b636cee875fbf974dfbd6f7750176e523cea64d140466ec193c3d",
+          "local_directory": "/Users/pial/Projects/sieve/runs/cloudnativepg-rolling-restart-1-retry1-vm",
+          "VM_directory": "/users/Pial/sieve-ci-20261026/runs/cloudnativepg-rolling-restart-1-retry1-20261101",
+          "files": 748,
+          "bytes": 48792040,
+          "verified_before_inspection_UTC": "2026-11-01T06:09:47.728986+00:00"
+        }
+      ]
+    },
+    "protected_test_SHA256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "prepared_older_campaign_unlaunched_and_unchanged": true,
+    "all_existing_reports_images_snapshots_and_failed_attempts_preserved": true
+  },
+  "final_VM": {
+    "status": "idle",
+    "running_sieve_services": [],
+    "running_containers": [],
+    "images_unchanged": {
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:vanilla": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+      "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce": "sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+      "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8": "sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-learn": "sha256:efe50af72929e2602f7e6da5210dadb4f000000e2e9db96a4921fb77cd2b6949",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-test": "sha256:e2edfd6407de5ed4d9d63a1f9458674ce89dd561e48d94ccf5cb4938f0c76f0e"
+    },
+    "free_bytes": 178009497600
+  },
+  "artifact_SHA256": {
+    ".cache/cloudnativepg/rolling-update-20261101/all-tests.log": "9431887d0f0ad21b4b47d21b9916a187b8bb7021c0697a1dbbd8a29e06643b69",
+    ".cache/cloudnativepg/rolling-update-20261101/bad-read-red.log": "d0dbcc05d926f46487188343ddf16de70318ea987a3097e6382e9d86801791d7",
+    ".cache/cloudnativepg/rolling-update-20261101/boundary-green.log": "96217c7bf6f8f490e210c07f9a7cd73cdcfb84b43b6bb0779abe6a76fda646fe",
+    ".cache/cloudnativepg/rolling-update-20261101/client-green.log": "71cecd4a03d26fc192e472bf26020cdc2172e564ac64a719b16960d8dffd73a1",
+    ".cache/cloudnativepg/rolling-update-20261101/client-red.log": "ebfc1da9e2324d606617e4df808e30d43232bab307e6351cc9584dc904279299",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-collection.log": "3ef4d6d9e62549675c0de8c7597f17d3c99bd1894503208e1d1f1b86dfbdb9e7",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed-collection.log": "257ad5a095dd20605bb4492f53c3d05b24c78fc218f7c06e7f52ab8cee5b7d6c",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed-job.json": "3a8ae27da57e18a920941bbb4d633bb7d42436dfb367a2f2b7a84e92e99a68c2",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed-result-hashes.json": "347eaa10ec08217e98a400dbda78bd150cdb2da6263f8dda2f19005a141bf6ed",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-fixed.py": "aa08b5c1e14eba7ef486ebbb1274d5bde3e29b1ccd403e30d405eee7304e4df4",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-job.json": "73244f4d06b54ac9be557afb377816f50d669b1316b7cd05592c0f7092ce8748",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe-result-hashes.json": "4c4d2a7426436ba9939249d4033793bb682b31ad1e18a920b1eabf437a54d825",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".cache/cloudnativepg/rolling-update-20261101/client-runtime-probe.py": "579f8ceb41ddaf488622c5ccb4006ddf42e1f484be1032fa1ddc83ea14cda6c2",
+    ".cache/cloudnativepg/rolling-update-20261101/continuous-read-consistency-controls-delay-1-restart-1.json": "30ac2085af291b9ae261e05385f67ee280463b89f8cda4deffb214195a92e3fa",
+    ".cache/cloudnativepg/rolling-update-20261101/continuous-read-consistency-controls-delay-1.json": "f51c329bc4d83c07b20b8fb29c6e4a7bb1ca80f38c5386d5cfaa9461878e41b6",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-collection.log": "f9372e49082f3424bdc5102dbcc24f216c9aa48833f067170ca71291d14039b2",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-failure-classification.json": "53ca1304c8a4efb712490b1f1f097ca76970ca3ec997398dbeececff84fc8208",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-job.json": "6421445b8b95e4196b04e826f73482ceef0cc9f770148dfaaaf8e1f605344443",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-launch-retry1.log": "be07b1448e6e4db02f373b549d19743c70af875d0f778df561d782298fa10d5c",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-launch.log": "cc9b747c3018979b2ecb88607455073992aa463865952c4dec1c95aca0aae6cc",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-preflight-failure.json": "269eacb7c7a8468a5794e5dcd24a494a10b79ee70d6dfb0f9e67c2b11b49404d",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-result-hashes.json": "793dadd414e1528dd4d370ac11cefc008292cef2c7b06f7f2651c22be36d62b1",
+    ".cache/cloudnativepg/rolling-update-20261101/controls-review-initial.json": "074d0a3838cc4f39c12106c5adfadd23ce85733348ee82fb8829982133adc078",
+    ".cache/cloudnativepg/rolling-update-20261101/design-initial-restart-description-error.json": "7afe63108ad7217552e300cab92ff33b2f48883f2a43916f32b50b5b8c2e0a59",
+    ".cache/cloudnativepg/rolling-update-20261101/design-second-default-description-error.json": "24ae96de0ce1eb4065985c51b77a12b360f79aef69c231d58c6cc3279443d627",
+    ".cache/cloudnativepg/rolling-update-20261101/design.json": "70329aa75f2c839cb4420dcad0059c27907f022b97095bc75f6d7b4cc6b50fd0",
+    ".cache/cloudnativepg/rolling-update-20261101/failed-transfer-hash.json": "4062fd93db77fe2c5da100e7c94415310867622ac191a4a244677a9e504361ad",
+    ".cache/cloudnativepg/rolling-update-20261101/final-vm-check.log": "f12c94ea067e86a9038fe644641ec7fd0295123cec28af983ef40e1878628322",
+    ".cache/cloudnativepg/rolling-update-20261101/final-vm-check.py": "af1d0bf098cb58ea8c3766102452e9fff8193fa0409ba8608ec4590148f7e462",
+    ".cache/cloudnativepg/rolling-update-20261101/final-vm-state.json": "5dec978eadb06029d76f5d00a7e73c0716f7900d9f7746d32c2d9ea445a18f35",
+    ".cache/cloudnativepg/rolling-update-20261101/format-final.log": "f114d83b30c5c657ee43a847a45bafccaea255d82673feb87c26d252c61e29c1",
+    ".cache/cloudnativepg/rolling-update-20261101/launch-initial.py": "d0a6f0ddfe470d100742ea246e6d751287ee26500a840358cfb488a872df405e",
+    ".cache/cloudnativepg/rolling-update-20261101/launch.py": "68441179206244ab01fd6a11740ed9ea61590e0c56c1ef7dc5e779243bb526af",
+    ".cache/cloudnativepg/rolling-update-20261101/lint-final.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    ".cache/cloudnativepg/rolling-update-20261101/lint.log": "1b91554f4e1ea311ba865a74d6bfb8279caad31a10918a0158cbca15f1a55717",
+    ".cache/cloudnativepg/rolling-update-20261101/lost-ack-green.log": "b9addc7b4daae6055afe36e49e3776d4ac996a7abd97a75c5beaaa0eba609a21",
+    ".cache/cloudnativepg/rolling-update-20261101/mypy-configured.log": "5b8ce7baba93409ab8ce52693c77459567344e2c2f77fe3cf14b888e34f7e451",
+    ".cache/cloudnativepg/rolling-update-20261101/new-trees-final-v2.json": "79cf87df25499b50ff567de4837eb53593c94f366192010853eeddc037fdf186",
+    ".cache/cloudnativepg/rolling-update-20261101/new-trees-final.json": "79cf87df25499b50ff567de4837eb53593c94f366192010853eeddc037fdf186",
+    ".cache/cloudnativepg/rolling-update-20261101/operand-cli-test-red.log": "843a35d4d97b4d23c6005f99f3ca436cbda653e49c7f1cc68e91ad21e013de8e",
+    ".cache/cloudnativepg/rolling-update-20261101/operand-client-green.log": "cbe351ab64347b2b9be8ea535706e4c31da5cecd7bbbc9f7d9a186735764c7ce",
+    ".cache/cloudnativepg/rolling-update-20261101/operand-python-cli-red.log": "b87d9aece710d239bc743a0fb1c57f303777d34f4f224cfb5fccb3d84391cdc8",
+    ".cache/cloudnativepg/rolling-update-20261101/prepare.log": "e472cf614781249f0bd86c6baf4de24983d734748b2cb693ae2ced80300ae97d",
+    ".cache/cloudnativepg/rolling-update-20261101/prepare.py": "b99c151fb3111684285e029d7ffbdacd38b7baa456a07a40f685f9a5a897ddd1",
+    ".cache/cloudnativepg/rolling-update-20261101/preservation.py": "1adc4a73ad23c53fb7810a7aa5b402bbb6c6f8ecfa524d94f319538f87ea8494",
+    ".cache/cloudnativepg/rolling-update-20261101/preserved-inputs.json": "a23424509930f4534c6f1d76d572b25fa69f7163384fcf7eb15046f109605170",
+    ".cache/cloudnativepg/rolling-update-20261101/prior-trees-final.json": "2a7f06c26886e5fb09980f9690214276ffcffe67fb8bfd603230ec3bd4408886",
+    ".cache/cloudnativepg/rolling-update-20261101/prior-trees-final.log": "44460223b8e6e10878919bcaf162d85f80aff5349a5d1706d21cb3a43495baa2",
+    ".cache/cloudnativepg/rolling-update-20261101/prior-trees-initial.json": "2a7f06c26886e5fb09980f9690214276ffcffe67fb8bfd603230ec3bd4408886",
+    ".cache/cloudnativepg/rolling-update-20261101/prior-trees-initial.log": "44460223b8e6e10878919bcaf162d85f80aff5349a5d1706d21cb3a43495baa2",
+    ".cache/cloudnativepg/rolling-update-20261101/read-consistency.py": "6f277ff67264e751274e34be4eb68aa5aea9e478a4bd78eb014351660df39caf",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/all-tests.log": "6cbd5e0ce25d2692f368d29d69f2f48eaf44e88e9751bea732a0b253dc550976",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-collection.log": "2df6147c3704b390a3402fbd04da24a5843433340d24af9c308de37d5526c884",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-job.json": "67ccf74c0e4c2dadbdea7648f29fcd216e6fe9232ddf31dd474e0f52196fd2ea",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-launch.log": "867ca61501733173c580176a8ad8404f0ce5766edc592bb69c18545324c5d6d9",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-result-hashes.json": "4665529f4419f346783228034cb5b1abe1c90d43e91efce88fe7aeb368c79e3d",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-review-initial.json": "1feb512c69e82197a9a464f4c9d34f7c937007f21d4f97b730abdfcbd4cc1bb1",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-review-v2.json": "199ca6b9b4ead4df0583ccd13e3505108026595d9f5b5898fed48e44767171b4",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/controls-review.json": "cf801a715db25da6f970ffa08823cd136abbd8f3af8424b99240978771766b66",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-client-correlation.json": "b20db9de3b7fb07e541836fd9033132395e50d0f4e50b4a090a55a949571ecf9",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-collection.log": "839e2bc4429f2203bfbd1d4cae2d449178fe36d1858b40f0b8a0f8b402c2fc83",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-job.json": "37aae214381d5cdaa7b50cdbb1f57189e5fde182f59ec39b1ce2800c956432c7",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-launch.log": "4532e0c45a5e7c9a1725954339695ff1ec5002868e5ef54a3c2d7814081a5666",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-result-hashes.json": "3ebe0e85729e55994bede57ea2e833fd807a52a19a7e89499f09b371dbfdbdab",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-returned-read-audit.json": "7d89229be8180bcf32cc66dfd7c3c1b25acebdf723573859336918f0fd5ab546",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-review-v2.json": "c5a7471be9e89d3210439c6b972f6a599b4e6befa5711a82540a9e16c3a7fd7a",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-review-v3.json": "504c536a308181c4565cc4e55615c42716bd1e3eac886679d5d96ab9e7fc8e3e",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/delay-1-review.json": "27e74349c4693f429191aeeb34fcfcdd687f097a20cb1d3a7f9919f03ce530fd",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/finalize-restart.py": "4ef3d5ce712453c819cf704ca3d95db1e4454f353df035d57d511df4fa098c95",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/format.log": "27b0eb549ee60b2db607fc774f8030ac1994dcb38c3fd6db8e5ef09861482a03",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/launch.py": "7d008d06bc297076d4d83b9f5fd99a0718a60b3c72e5218cff2dd9a1432a3ae5",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/prepare.log": "45367c5eb4bb8a41d4577a55259605174e6e450ab628f5b126396a406ca44fbf",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/prepare.py": "03295bd205365ff72fed80882be62055e150b5ce3a44a4e1ccd7f1d2e8e3ea46",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/preserved-inputs.json": "b33e868d58505db213e39e9b225d402cc6224a1a7067459741a95229a926d9f2",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-client-correlation-deletion-timestamp-only.json": "f53e04a2045920297283d47f334acf555a30d0d8233c6b7f0f9b2849ab813edc",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-client-correlation.json": "90807e53a09a91701bd353f15c9018e0dfc275b425ac09fb6826e37c297c08d6",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-collection.log": "e98a710998d6982d01e84135aa9680cc077db97af22f381aeae496ef8d913870",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-job.json": "0f66e6f0d91e6786988273220470943cfa9339fffacbc542b48d1565617f30b6",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-launch.log": "cc24bf195a7755fad6f11b0449b0211c1ec03b04d24d4b2f5e265babae183477",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-result-hashes.json": "16bdc6c5624b636cee875fbf974dfbd6f7750176e523cea64d140466ec193c3d",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-review-v3.json": "639035fac9c0e256c25323e53c67425c1e01dc9dc9e701b86793f0e5efc30292",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/restart-1-review.json": "3fb4b807b0e513cb429aa9648e1b0235153cabca43a881864cae58a65b3cef41",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/review-v2.py": "ef5686fff5fa2a5554cb95e07500756be330db3710740d3008b9255036a08a9c",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/review-v3.py": "17bca2e9d99208101590317c6718a6bbc60ff0cb80e0d155b02982ae5e110693",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/review.py": "5b52bc2c2201830a159ad44c001cb68bda81e810df8a65c626a688005d77c07a",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/run.py": "b98554d2f0588defe5ab8917404e7a40c5c3dd2997caa615b861c5629cd93ddb",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/runtime-change-audit.json": "83f0da796c80f0bdac86589e27f554a70e8bebce5ca67c63e00cc797c15e04b0",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/runtime-source.json": "e54fd93b7c5c1391f0ac863458e9e7fd8bc95600d2203eadd363713cafdd667c",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/runtime.json": "c333a5378101e2c991c2f82cdbfd8a9aa58150ea348ec7acec4653427e51771f",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/runtime.tar.gz": "b46be1e216437e10bcae566976649c24a091c984347aa0a07ee993e44e5326ce",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/source.tar.gz": "de6124b08758991cd0f7130a4984f657e17151dce6ce98b2619888983fddcfe8",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/wheel.log": "449160cfa51c8a1d9cd0b5459aa5fadfa51ff15b1dafd678c09dc24596818241",
+    ".cache/cloudnativepg/rolling-update-20261101/retry1/workload-mypy.log": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8",
+    ".cache/cloudnativepg/rolling-update-20261101/review.py": "e49a628f1914ed1d901d9dc7e12f0a2fe573b558cf49daa6616e7b1f3083b64e",
+    ".cache/cloudnativepg/rolling-update-20261101/rolling-results-initial-seal-loghash-failure.json": "76249f020a5bf39bd8586987d79e2bac895415d7cf56d0df714a0e1850d5c53b",
+    ".cache/cloudnativepg/rolling-update-20261101/run.py": "b98554d2f0588defe5ab8917404e7a40c5c3dd2997caa615b861c5629cd93ddb",
+    ".cache/cloudnativepg/rolling-update-20261101/runtime-source.json": "f5f3bca94114ad3503d2fc32981f53542adf37f4198f3f2ec3d3dcb9f1ecd703",
+    ".cache/cloudnativepg/rolling-update-20261101/runtime-transfer-failed.tar.gz": "ac2508ed66270b6abac27b32dd13a078f784dc1ab686f1cff0af34e3e8c62f46",
+    ".cache/cloudnativepg/rolling-update-20261101/runtime.json": "9692fe4a4fb4beb602e8fa70befbeaef050d90b2d9ae514af7023a5d1331eef5",
+    ".cache/cloudnativepg/rolling-update-20261101/runtime.tar.gz": "4948d2add5cbebe6c893d5d400588bd96b80a31ff9013c68ea8f733dc944c5a8",
+    ".cache/cloudnativepg/rolling-update-20261101/seal-report-initial-hash-failure.json": "40ed3aa7b732da40fad2b7da7370de64d6e3dfe4b09e7c15f7c608dc9e98bbf0",
+    ".cache/cloudnativepg/rolling-update-20261101/seal-report-v2.py": "1f1ee21c432a3525dc44c525b5061abdc96068b8c0a86c268d2613068f902582",
+    ".cache/cloudnativepg/rolling-update-20261101/seal-report.py": "a511c1e6e29d0cbd5637d6a33766517726008febb2ab7ce727dec9bedbfb8f00",
+    ".cache/cloudnativepg/rolling-update-20261101/source.tar.gz": "03b6710738e7120de95098b050ebc86cad0009b732d8b05f63ae30660c8a495c",
+    ".cache/cloudnativepg/rolling-update-20261101/subject-source/Dockerfile": "d58ea379ac42eb692134066f30021f8f7073ce4258b88ab7a4064fafb5ca3cb3",
+    ".cache/cloudnativepg/rolling-update-20261101/subject-source/api/v1/cluster_types.go": "679e073f764ff82ad798525766e956f97ef06dbf1b1608e8cde899a92daf5bc6",
+    ".cache/cloudnativepg/rolling-update-20261101/subject-source/go.mod": "45a55fbc7c7539820d7384fc93498f58fbdbd5ea7ff8f16c4d49a7646f20d048",
+    ".cache/cloudnativepg/rolling-update-20261101/subject-source/internal/controller/cluster_upgrade.go": "ea87d5002e1c5361cd6ec53e29bda901a1802211b49d1fda4fe4f744c2dd9e12",
+    ".cache/cloudnativepg/rolling-update-20261101/subject-source/pkg/postgres/configuration.go": "c149be634833f846c30bc0c771962fcaaf43c6fdf105a04c2d84d6cd7392ec88",
+    ".cache/cloudnativepg/rolling-update-20261101/transfer-retry1.log": "01f6a6d5b43608580e5e94cde047b6e5784eac953e9c08cbbe7fef2782b44987",
+    ".cache/cloudnativepg/rolling-update-20261101/transfer-retry1.py": "6bb4db902c8edab9ffd122067dcc4d9cd249de25bbfcb499b00493cfc262acbd",
+    ".cache/cloudnativepg/rolling-update-20261101/wheel.log": "449160cfa51c8a1d9cd0b5459aa5fadfa51ff15b1dafd678c09dc24596818241",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-green-fixture.log": "8ff85f0ad03bc8765b9fe804616c7b6dabb8209ee926d5578f983134ce6203fe",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-green-initial.log": "93f7da9dd71634da8e9a2284b7ba3ff61e9aadd697b2506b76eade494623d9bb",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-green.log": "087d4b1ffc75b89ba3fccafc1ad4fa2a49a2e1114ff61f7d97f0016c51d16735",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-mypy-correct-path.log": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-mypy.log": "29499bc4b99c004f64df3ac57849df077d080a8cae94fdc8882bafb4a15bd728",
+    ".cache/cloudnativepg/rolling-update-20261101/workload-red.log": "67e94067d30f1ecba60acf5caf3aa98c20531578131f753306b0cd58742a232e"
+  }
+}

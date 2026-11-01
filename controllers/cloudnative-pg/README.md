@@ -212,8 +212,9 @@ ambiguous. Full attempts and terminal records are retained.
 
 After ten seconds of healthy client traffic, max_connections increases from 100
 to 120, then to 140 four seconds later without waiting for the first rollout.
-The pinned operator treats pending_restart as eligible for an in-place restart;
-Pod deletion is not a trigger requirement. Final SQL verifies 140, no pending
+The pinned API defaults primaryUpdateMethod to restart. Replicas roll out by Pod
+replacement, while a configuration-only primary restart can happen in-place.
+These plans use Cluster events and do not require Pod deletion. Final SQL verifies 140, no pending
 restart, changed postmaster start time on every instance, roles and synchronous
 replication, and every acknowledged payload on all instances after clients stop.
 A thirty-second observation follows convergence. Disconnections are retained for
