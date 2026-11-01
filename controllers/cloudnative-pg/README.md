@@ -19,6 +19,41 @@ snapshots, images, learned references and reports remain historical evidence.
 Future experiments must record their selected source and matching reference;
 changing the default does not transfer earlier plan coverage to this revision.
 
+## Failover quorum configuration experiment
+
+`failover-quorum-update` uses three dedicated Kind workers, one PostgreSQL
+instance per worker, and keeps clients on the control plane. Operator concurrency
+remains ten. The public workload CLI and its external Kubernetes/Docker command
+boundary are the test seams; tests do not mock native or private reconcilers.
+
+The workload enables quorum checking after bootstrap to initialize its lazy
+informer through normal reconciliation. It verifies required `ANY 2` replication
+and starts the existing numbered-write/read client. It disconnects worker A,
+changes to required `ANY 1`, verifies effective SQL and authoritative quorum
+metadata, commits an explicit `remote_apply` witness and verifies it on B.
+It then disconnects the primary and B before reconnecting A at its original
+network address. A must lack the witness. During a 120-second observation,
+automatic failover must be denied; lack of write availability is expected.
+
+The fault plan delays only this Cluster's FailoverQuorum API-cache delivery
+after the accepted reduction, retaining previously delivered `W=2` metadata.
+It releases on the workload's recorded end-of-observation phase. Actual hold,
+release, stale successful read, current candidate set, lease and SQL promotion
+must be independently verified. No quorum status is edited or promotion forced.
+The plan also records the object creation and prior informer delivery needed to
+establish that the native cache was initialized before the delay.
+
+All disconnected workers are reconnected in a finally block, including ambiguous
+command failures, before recovery and final acknowledged-data checks. The primary
+and B isolation stage is capped at 210 seconds plus bounded restoration. Every
+client attempt, accepted mutation, SQL receipt, network inspection and restoration
+is retained. An unsafe promotion or lost witness remains a failure after recovery.
+Two fresh learning baselines and an independently verified matched test-image
+control gate the first fault. A second matched control/fault pair is reserved for
+confirming a meaningful failure. The campaign permits at most two faults, six
+workloads, 900 seconds per workload and 1200 seconds per single-run service, with
+zero automatic repeats. Images are reused only after recorded identity checks.
+
 ## CA Secret bootstrap regression experiment
 
 `ca-secret-bootstrap` creates a three-instance Cluster with the default shared

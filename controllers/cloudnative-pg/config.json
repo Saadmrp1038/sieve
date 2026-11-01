@@ -24,7 +24,8 @@
         "publication",
         "subscription",
         "imagecatalog",
-        "clusterimagecatalog"
+        "clusterimagecatalog",
+        "failoverquorum"
     ],
     "controller_pod_label": "cloudnative-pg",
     "controller_deployment_file_path": "controllers/cloudnative-pg/deploy/operator.yaml",
@@ -48,6 +49,9 @@
         },
         "rolling-config-update": {
             "num_workers": 0
+        },
+        "failover-quorum-update": {
+            "num_workers": 3
         }
     },
     "container_name": "manager"

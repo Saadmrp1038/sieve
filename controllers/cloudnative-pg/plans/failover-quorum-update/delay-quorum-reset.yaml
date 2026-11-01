@@ -1,0 +1,49 @@
+workload: failover-quorum-update
+actions:
+- actionType: pauseAPIServer
+  apiServerName: kind-control-plane
+  pauseScope: failoverquorum/default/sieve-quorum
+  trigger:
+    definitions:
+    - triggerName: quorum_created
+      condition:
+        conditionType: onObjectCreate
+        resourceKey: failoverquorum/default/sieve-quorum
+        occurrence: 1
+      observationPoint:
+        when: afterControllerWrite
+        by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile
+    - triggerName: old_metadata_delivered
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: failoverquorum/default/sieve-quorum
+        occurrence: 1
+        stateMatch: '{"status":{"standbyNumber":2}}'
+      observationPoint:
+        when: afterControllerRecv
+        by: informer
+    - triggerName: lower_sync_accepted
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: cluster/default/sieve-quorum
+        occurrence: 1
+        stateMatch: '{"metadata":{"annotations":{"sieve.testing/quorum-phase":"LOWER_SYNC"}},"spec":{"postgresql":{"synchronous":{"number":1}}}}'
+      observationPoint:
+        when: beforeAPIServerRecv
+        by: kind-control-plane
+    expression: quorum_created&old_metadata_delivered&lower_sync_accepted
+- actionType: resumeAPIServer
+  apiServerName: kind-control-plane
+  pauseScope: failoverquorum/default/sieve-quorum
+  trigger:
+    definitions:
+    - triggerName: observation_finished
+      condition:
+        conditionType: onObjectUpdateTo
+        resourceKey: cluster/default/sieve-quorum
+        occurrence: 1
+        stateMatch: '{"metadata":{"annotations":{"sieve.testing/quorum-phase":"OBSERVATION_FINISHED"}}}'
+      observationPoint:
+        when: beforeAPIServerRecv
+        by: kind-control-plane
+    expression: observation_finished
