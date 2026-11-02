@@ -6,6 +6,13 @@ type Response struct {
 	Number  int
 }
 
+// Coverage observations never request a fault or change controller state.
+type NotifyTestCoverageRequest struct {
+	Kind, Frame, InvocationID, InstanceID    string
+	ResourceKey, Object, Operation, Observer string
+	ReceiptID                                int
+}
+
 type EchoRequest struct {
 	Text string
 }

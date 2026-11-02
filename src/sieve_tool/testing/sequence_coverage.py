@@ -25,6 +25,8 @@ class OverlapCoverage:
     verified: bool
     reasons: tuple[str, ...]
     witnesses: tuple[dict[str, Any], ...]
+    observed_inputs: tuple[int, ...] = ()
+    delivered_inputs: tuple[int, ...] = ()
 
 
 def _same_input(
@@ -93,6 +95,8 @@ def delivery_overlap(path: Path, *, accepted: list[Resource]) -> OverlapCoverage
     seen: set[tuple[str, str]] = set()
     hears: dict[int, tuple[int, int]] = {}
     witnesses = []
+    observed_inputs: set[int] = set()
+    delivered_inputs: set[int] = set()
     invalid = False
     for record in read_trace(path).records:
         event, position = record.event, record.position
@@ -124,6 +128,7 @@ def delivery_overlap(path: Path, *, accepted: list[Resource]) -> OverlapCoverage
                         event.key_to_obj.get(resource_key), response, exact_rv=False
                     ):
                         scope["reads"].append((position, index))
+                        observed_inputs.add(index)
         elif (
             isinstance(event, ControllerHear)
             and event.observed_by == "informer"
@@ -145,6 +150,7 @@ def delivery_overlap(path: Path, *, accepted: list[Resource]) -> OverlapCoverage
             and event.id in hears
         ):
             start, index = hears.pop(event.id)
+            delivered_inputs.add(index)
             for scope in active.values():
                 for read, previous in scope["reads"]:
                     if read < start and previous < index:
@@ -174,6 +180,8 @@ def delivery_overlap(path: Path, *, accepted: list[Resource]) -> OverlapCoverage
         bool(witnesses),
         () if witnesses else ("delivery_overlap_unproven",),
         tuple(witnesses),
+        tuple(sorted(observed_inputs)),
+        tuple(sorted(delivered_inputs)),
     )
 
 

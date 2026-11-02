@@ -179,7 +179,13 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     )
     if args.plan_only:
         write_plan(
-            FaultPlan(workload=args.workload, actions=[]),
+            FaultPlan(
+                workload=args.workload,
+                actions=[],
+                coverage_resources=[
+                    target.parent_kind + "/default/sieve-metadata-subject"
+                ],
+            ),
             args.output.with_name("metadata-no-fault.yaml"),
         )
         return 0

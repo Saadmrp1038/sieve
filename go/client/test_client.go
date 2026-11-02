@@ -18,8 +18,12 @@ func NotifyTestBeforeControllerRecv(operationType string, object interface{}) in
 	resourceType := getResourceTypeFromObj(object)
 	name, namespace := extractNameNamespaceFromObj(object)
 	resourceKey := generateResourceKey(resourceType, namespace, name)
+	coverageID := -1
+	if request, enabled := testReceipt("receipt-begin", 0, operationType, resourceKey, object); enabled {
+		coverageID = notifyTestCoverage(request)
+	}
 	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "beforeControllerRecv", false) {
-		return -1
+		return coverageID
 	}
 	jsonObject, err := json.Marshal(object)
 	if err != nil {
@@ -40,6 +44,9 @@ func NotifyTestBeforeControllerRecv(operationType string, object interface{}) in
 		return -1
 	}
 	checkResponse(response)
+	if coverageID > 0 {
+		return coverageID
+	}
 	return 1
 }
 
@@ -53,6 +60,11 @@ func NotifyTestAfterControllerRecv(recvID int, operationType string, object inte
 	resourceType := getResourceTypeFromObj(object)
 	name, namespace := extractNameNamespaceFromObj(object)
 	resourceKey := generateResourceKey(resourceType, namespace, name)
+	if recvID > 0 {
+		if request, enabled := testReceipt("receipt-end", recvID, operationType, resourceKey, object); enabled {
+			defer notifyTestCoverage(request)
+		}
+	}
 	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "afterControllerRecv", false) {
 		return
 	}
@@ -183,6 +195,14 @@ func NotifyTestAfterCacheGet(key string, item interface{}, exists bool, beforeRe
 	if err != nil {
 		printSerializationError(err)
 		return
+	}
+	if testCoverageResources[resourceKey] {
+		scope := currentLearnInvocation()
+		if scope.id == "" || scope.frame != reconcileFun {
+			log.Printf("[SIEVE-TRACE-ERROR] test cache read outside invocation %s", reconcileFun)
+		} else {
+			notifyTestCoverage(NotifyTestCoverageRequest{Kind: "read", Frame: scope.frame, InvocationID: scope.id, InstanceID: scope.instance, ResourceKey: resourceKey, Object: string(serializedObj)})
+		}
 	}
 	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "afterControllerWrite", false) {
 		return

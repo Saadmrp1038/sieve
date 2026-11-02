@@ -69,7 +69,12 @@ def test_metadata_plan_freezes_operations_monitors_and_schedule_without_cluster_
         "metadata_cleanup",
         "history_equivalence",
     ]
-    assert load_plan(output.with_name("metadata-no-fault.yaml")).actions == []
+    control = load_plan(output.with_name("metadata-no-fault.yaml"))
+    assert control.actions == []
+    assert control.to_dict()["coverageResources"] == [
+        ("externalsecret" if operator == "external-secrets" else "certificate")
+        + "/default/sieve-metadata-subject"
+    ]
     assert not output.exists()
 
 

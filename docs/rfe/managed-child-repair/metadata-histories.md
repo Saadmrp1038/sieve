@@ -124,11 +124,18 @@ Pod, success marker or ten configured workers is insufficient.
 This proves **input delivery during an invocation that read an older input**.
 It does not prove the API acknowledgement happened after invocation start,
 simultaneous execution of one workqueue key, or overlap between two parent keys.
-The existing learning images emit the required invocation-bearing trace.
-Current test images do not; matched test-image controls still check semantics,
-but their overlap remains unproven. Missing proof is a coverage limit, never a
-passing overlap result. The runner records `not_reviewed` for overlap until the
-separate reviewer runs; it does not silently promote semantic success to coverage.
+Learning images emit the required invocation-bearing trace. Test-mode tracing
+is now available through the opt-in `coverageResources` plan field. It accepts
+up to sixteen unique exact resource/namespace/name keys. Newly generated metadata
+control plans select their subject parent. Rebuild the test operator image to
+include the new reconciliation wrappers and client hooks; older test images do
+not provide this evidence. Existing plans omit the field and retain their
+observation behavior. Receipt pairing and invocation identities are independently
+checked by the coordinator, without changing the fault triggers or releasing a
+paused read. See [test-mode coverage](test-mode-sequence-coverage.md).
+
+Missing proof remains a coverage limit. The runner records `not_reviewed` for
+overlap until the separate reviewer runs; semantic success is not overlap proof.
 
 No stronger crash, partition, lifecycle deletion or multi-key scheduling was
 added here. Fresh native controls and any subsequent faults need a separately

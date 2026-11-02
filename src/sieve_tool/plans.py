@@ -299,6 +299,21 @@ class FaultPlan(PlanModel):
     actions: list[FaultAction] | None
     sieve_server_addr: Nonempty | None = None
     annotated_reconcile_stack_frame: list[str] | None = None
+    coverage_resources: list[Nonempty] = Field(default_factory=list, max_length=16)
+
+    @field_validator("coverage_resources")
+    @classmethod
+    def exact_coverage_scopes(cls, values: list[str]) -> list[str]:
+        if len(set(values)) != len(values) or any(
+            not re.fullmatch(
+                r"[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*", value
+            )
+            for value in values
+        ):
+            raise ValueError(
+                "coverageResources requires unique exact resource/namespace/name scopes"
+            )
+        return values
 
     def to_dict(self) -> dict[str, object]:
         return self.model_dump(by_alias=True, exclude_unset=True)

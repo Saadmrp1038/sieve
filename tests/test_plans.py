@@ -151,3 +151,21 @@ def test_supported_client_endpoint_override_is_preserved():
     value = yaml.safe_load((ROOT / "fixtures/plans/restart.yaml").read_text())
     value["sieveServerAddr"] = "127.0.0.1:12345"
     assert parse_plan(value).to_dict() == value
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        ["all"],
+        ["secret/default/*"],
+        ["secret/default/a", "secret/default/a"],
+        ["secret//a"],
+        ["/default/a"],
+        ["secret/default/a/extra"],
+        [False],
+        [f"secret/default/name-{i}" for i in range(17)],
+    ],
+)
+def test_coverage_observation_requires_small_unique_exact_resource_scopes(scope):
+    with pytest.raises(ValueError):
+        parse_plan({"workload": "example", "actions": [], "coverageResources": scope})

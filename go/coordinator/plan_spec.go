@@ -55,6 +55,7 @@ type PlanSpec struct {
 	Workload                     planText     `yaml:"workload"`
 	Actions                      []ActionSpec `yaml:"actions"`
 	AnnotatedReconcileStackFrame []planText   `yaml:"annotatedReconcileStackFrame"`
+	CoverageResources            []planText   `yaml:"coverageResources"`
 }
 
 type ActionSpec struct {
@@ -140,6 +141,16 @@ func decodePlan(data []byte) (*PlanSpec, error) {
 	}
 	if spec.SieveServerAddr != nil && *spec.SieveServerAddr == "" {
 		return nil, fmt.Errorf("sieveServerAddr: must not be empty")
+	}
+	if len(spec.CoverageResources) > 16 {
+		return nil, fmt.Errorf("coverageResources: at most 16 exact scopes")
+	}
+	coverageSeen := map[planText]bool{}
+	for _, scope := range spec.CoverageResources {
+		if coverageSeen[scope] || !regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*$`).MatchString(string(scope)) {
+			return nil, fmt.Errorf("coverageResources: requires unique exact resource/namespace/name scopes")
+		}
+		coverageSeen[scope] = true
 	}
 	for i := range spec.Actions {
 		if err := spec.Actions[i].validate(); err != nil {

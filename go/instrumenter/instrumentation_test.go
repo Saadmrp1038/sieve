@@ -28,7 +28,7 @@ func TestInstrumentedSourcesCompileAndPreserveBehavior(t *testing.T) {
 	}
 	cases := []instrumentationCase{
 		{"reconcile", "Learn", func(input, output, mode string) {
-			instrumentAnnotatedReconcile(input, output, "example", "Reconcile", "*Reconciler", "example.(*Reconciler).Reconcile")
+			instrumentAnnotatedReconcile(input, output, "example", "Reconcile", "*Reconciler", "example.(*Reconciler).Reconcile", "Learn")
 		}},
 	}
 	for _, mode := range []string{"Learn", "Test"} {
@@ -115,7 +115,7 @@ func TestMissingTargetDoesNotOverwriteTheSource(t *testing.T) {
 			t.Fatal("failed instrumentation changed the source")
 		}
 	}()
-	instrumentAnnotatedReconcile(path, path, "example", "Reconcile", "*Reconciler", "example.(*Reconciler).Reconcile")
+	instrumentAnnotatedReconcile(path, path, "example", "Reconcile", "*Reconciler", "example.(*Reconciler).Reconcile", "Learn")
 }
 
 func TestRenderingFailureKeepsOriginalSource(t *testing.T) {
