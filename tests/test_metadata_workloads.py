@@ -157,7 +157,10 @@ elif args[0]=='patch':
         field=cluster['bad_update_response'];result['metadata'][field]={'generation':2.5,'resourceVersion':before['metadata']['resourceVersion'],'name':'other','namespace':'other'}[field]
 else:raise SystemExit('unsupported kubectl command '+repr(args))
 path.write_text(json.dumps(cluster))
-if result is not None:print(json.dumps(result))
+if result is not None:
+    if args[0]=='create' and not ('-o' in args and args[args.index('-o')+1]=='json'):
+        print(result['kind'].lower()+'/'+result['metadata']['name']+' created')
+    else:print(json.dumps(result))
 """
     )
     executable.chmod(0o755)
@@ -229,6 +232,15 @@ def test_metadata_history_removes_only_managed_entry_and_matches_fresh_final_sta
         evidence["accepted"][0]["response"]["metadata"]["uid"]
         != evidence["accepted"][-1]["response"]["metadata"]["uid"]
     )
+    resources = json.loads(Path(metadata_cluster["METADATA_TEST_CLUSTER"]).read_text())[
+        "resources"
+    ]
+    for accepted in (evidence["accepted"][0], evidence["accepted"][-1]):
+        response = accepted["response"]
+        stored = resources[
+            response["kind"].lower() + "/" + response["metadata"]["name"]
+        ]
+        assert response["metadata"]["uid"] == stored["metadata"]["uid"]
     final = evidence["samples"][-1]
     assert final["history_equivalence"]["status"] == "satisfied"
     assert (
