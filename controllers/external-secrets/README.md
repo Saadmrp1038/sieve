@@ -144,3 +144,13 @@ matched test-image controls must pass before replaying the fault.
 The bounded catalog is candidate coverage; running one selected history does not
 execute the other candidates. This slice does not infer arbitrary CRD semantics
 or claim an operator defect from a raw differential alarm.
+
+## Metadata lifetime histories
+
+The `metadata-{labels,annotations}-{settled,overlap}` workloads exercise managed
+Secret template entry add/change/remove, check cleanup, and compare with a fresh
+parent declaring the same final state. They preserve ten workers and retain raw
+accepted inputs, snapshots and command journals. Overlap requires independent
+invocation/delivery trace proof; update timing alone is insufficient. See the
+[shared workload and verifier guide](../../docs/rfe/managed-child-repair/metadata-histories.md)
+for plan-only preparation, monitors, artifacts and current coverage limits.

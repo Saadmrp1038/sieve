@@ -154,3 +154,82 @@ def test_a_replacement_controller_starts_a_fresh_stability_interval():
         healthy, now_ns=2_100_000_000, epoch="replacement-controller"
     )
     assert window.observe(healthy, now_ns=3_900_000_000, epoch="replacement-controller")
+
+
+@pytest.mark.parametrize("channel", ["labels", "annotations"])
+def test_cleanup_waits_for_removed_managed_entry_and_preserves_unrelated_entries(
+    channel,
+):
+    from sieve_tool.testing.semantic import MetadataCleanupMonitor
+
+    monitor = MetadataCleanupMonitor(
+        expected={channel: {"sieve.testing/keep": "retained"}},
+        removed={channel: ("sieve.testing/history",)},
+    )
+    stale = {
+        "metadata": {
+            channel: {
+                "sieve.testing/history": "two",
+                "sieve.testing/keep": "retained",
+                "other.example/key": "untouched",
+            }
+        }
+    }
+    assert monitor.observe(child=stale).status == "pending"
+    expired = monitor.observe(child=stale, expired=True)
+    assert expired.status == "violation"
+    assert expired.reasons == ("metadata_cleanup",)
+    del stale["metadata"][channel]["sieve.testing/history"]
+    assert monitor.observe(child=stale).status == "satisfied"
+    del stale["metadata"][channel]["sieve.testing/keep"]
+    assert monitor.observe(child=stale, expired=True).reasons == ("metadata_value",)
+
+
+def test_history_equivalence_compares_managed_semantics_across_fresh_identities(latest):
+    from sieve_tool.testing.semantic import HistoryEquivalenceMonitor
+
+    reference_parent, reference_child = latest
+    reference_child["metadata"]["labels"] = {"keep": "retained", "unmanaged": "a"}
+    reference_child["data"] = {"tls.crt": "random-reference-bytes"}
+    monitor = HistoryEquivalenceMonitor(
+        reference_parent=reference_parent,
+        reference_child=reference_child,
+        reference_value="valid.example.test",
+        metadata_keys={"labels": ("keep", "removed")},
+    )
+    parent, child = copy.deepcopy(reference_parent), copy.deepcopy(reference_child)
+    parent["metadata"]["uid"] = "fresh-parent"
+    child["metadata"]["uid"] = "fresh-child"
+    child["metadata"]["ownerReferences"][0]["uid"] = "fresh-parent"
+    child["metadata"]["labels"]["unmanaged"] = "b"
+    child["data"] = {"tls.crt": "random-other-valid-certificate"}
+    assert (
+        monitor.observe(
+            parent=parent, child=child, effective_value="valid.example.test"
+        ).status
+        == "satisfied"
+    )
+    child["metadata"]["labels"]["removed"] = "sticky"
+    assert monitor.observe(
+        parent=parent, child=child, effective_value="valid.example.test"
+    ).reasons == ("history_equivalence",)
+    del child["metadata"]["labels"]["removed"]
+    assert (
+        monitor.observe(
+            parent=parent, child=child, effective_value="old.example.test"
+        ).status
+        == "violation"
+    )
+    child["metadata"]["ownerReferences"][0]["uid"] = "wrong-parent"
+    assert monitor.observe(
+        parent=parent, child=child, effective_value="valid.example.test"
+    ).reasons == ("child_ownership",)
+
+
+def test_cleanup_monitor_rejects_conflicting_presence_and_absence_obligations():
+    from sieve_tool.testing.semantic import MetadataCleanupMonitor
+
+    with pytest.raises(ValueError, match="conflicting"):
+        MetadataCleanupMonitor(
+            expected={"labels": {"key": "one"}}, removed={"labels": ("key",)}
+        )

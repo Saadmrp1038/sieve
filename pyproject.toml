@@ -78,6 +78,8 @@ files = [
     "src/sieve_tool/testing/sequences.py",
     "src/sieve_tool/testing/semantic.py",
     "src/sieve_tool/testing/sequence_workload.py",
+    "src/sieve_tool/testing/metadata_workload.py",
+    "src/sieve_tool/testing/sequence_coverage.py",
 ]
 strict = true
 follow_imports = "silent"

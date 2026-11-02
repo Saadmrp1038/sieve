@@ -43,6 +43,22 @@
         "bounded-sequences": {
             "num_workers": 0,
             "write_trigger": "occurrence"
+        },
+        "metadata-labels-settled": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-labels-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-settled": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
         }
     }
 }

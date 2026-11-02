@@ -335,6 +335,10 @@ class IndependentTarget(CertManagerTarget):
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0].startswith("metadata-"):
+        from metadata_workload import main as run_metadata
+
+        return run_metadata(arguments, CertManagerTarget())
     if arguments and arguments[0] == "bounded-sequences":
         from sequence_workload import main as run_sequences
 

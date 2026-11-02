@@ -331,6 +331,10 @@ def test_report_distinguishes_generated_attempted_and_triggered(tmp_path, capsys
         "sequence-observations.json",
         "sequence-restart.yaml",
         "sequence-no-fault.yaml",
+        "metadata-plan.json",
+        "metadata-observations.json",
+        "metadata-coverage.json",
+        "metadata-no-fault.yaml",
     ],
 )
 def test_saved_proof_binds_generated_sequence_and_semantic_observations(

@@ -1,6 +1,8 @@
 """Generate short operation histories, including returning to prior states."""
 
 import json
+from dataclasses import dataclass
+from typing import Literal
 
 from sieve_tool.plans import (
     FaultPlan,
@@ -10,6 +12,35 @@ from sieve_tool.plans import (
 )
 
 PHASE_LABEL = "sieve.testing/state"
+HISTORY_KEY = "sieve.testing/history"
+KEEP_KEY = "sieve.testing/keep"
+
+
+@dataclass(frozen=True)
+class MetadataStep:
+    operation: Literal["add", "change", "remove"]
+    value: str | None
+
+
+@dataclass(frozen=True)
+class MetadataHistory:
+    channel: Literal["labels", "annotations"]
+    steps: tuple[MetadataStep, ...]
+
+
+def metadata_histories(*, max_histories: int = 8) -> list[MetadataHistory]:
+    """Legal, bounded entry lifetimes; unrelated entries remain in both maps."""
+    if type(max_histories) is not int or not 1 <= max_histories <= 8:
+        raise ValueError("metadata history limit requires 1–8 histories")
+    add = MetadataStep("add", "one")
+    change = MetadataStep("change", "two")
+    remove = MetadataStep("remove", None)
+    channels: tuple[Literal["labels", "annotations"], ...] = ("labels", "annotations")
+    return [
+        MetadataHistory(channel, steps)
+        for channel in channels
+        for steps in ((add,), (add, change), (add, remove), (add, change, remove))
+    ][:max_histories]
 
 
 def bounded_sequences(
