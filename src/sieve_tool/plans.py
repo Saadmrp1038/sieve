@@ -337,6 +337,35 @@ class FaultPlan(PlanModel):
             raise ValueError(
                 "deliveryOverlap requires a covered exact resource and no other actions"
             )
+        if (
+            self.delivery_overlap is not None
+            and self.workload.startswith("metadata-")
+            and "-at-" in self.workload
+        ):
+            from sieve_tool.testing.metadata_cases import SCOPES, case_for_workload
+
+            operator = {
+                "externalsecret": "external-secrets",
+                "certificate": "cert-manager",
+            }.get(self.delivery_overlap.resource_key.split("/")[0], "")
+            case = case_for_workload(operator, self.workload)
+            kind, frame = SCOPES[operator]
+            held, released = (
+                case.history.steps[case.hold_after_step - 1],
+                case.history.steps[case.release_after_step - 1],
+            )
+            if (
+                self.delivery_overlap.resource_key
+                != kind + "/default/sieve-metadata-subject"
+                or self.delivery_overlap.reconciler != frame
+                or self.delivery_overlap.hold_phase
+                != f"metadata-{case.hold_after_step}-{held.operation}"
+                or self.delivery_overlap.release_phase
+                != f"metadata-{case.release_after_step}-{released.operation}"
+            ):
+                raise ValueError(
+                    "named metadata case placement does not match deliveryOverlap"
+                )
         return self
 
     @field_validator("coverage_resources")

@@ -13,6 +13,8 @@ from pydantic import TypeAdapter
 from sieve_tool.fault_proofs import SemanticOutcome
 from sieve_tool.oracle.artifacts import read_artifact, read_outcome
 from sieve_tool.testing.child_repair import Resource
+from sieve_tool.testing.metadata_cases import validate_case_plan
+from sieve_tool.testing.overlap_schedule import verify_scheduled_overlap
 from sieve_tool.testing.sequence_coverage import delivery_overlap
 from sieve_tool.testing.sequences import (
     HISTORY_KEY,
@@ -26,6 +28,9 @@ def _plan(path: Path) -> Resource:
     plan: Resource = json.loads(path.read_text())
     if not isinstance(plan, dict):
         raise ValueError("metadata plan must be an object")
+    if type(plan.get("schema_version")) is int and plan["schema_version"] == 2:
+        validate_case_plan(plan)
+        return plan
     catalog = json.loads(json.dumps([asdict(h) for h in metadata_histories()]))
     if (
         type(plan.get("schema_version")) is not int
@@ -110,6 +115,13 @@ def _execution(directory: Path, plan: Resource, row: Resource) -> None:
     if not row["attempted"]:
         return
     observations = json.loads((directory / "metadata-observations.json").read_text())
+    if plan["schema_version"] == 2:
+        gate = observations.get("delivery_overlap", {})
+        initial = gate.get("initial", {}) if isinstance(gate, dict) else {}
+        mode = (
+            initial.get("mode", "unforced") if isinstance(initial, dict) else "unforced"
+        )
+        row.update(mode=mode, requires_overlap=mode != "observe")
     responses = _accepted(plan, observations)
     row["accepted"] = True
     process_path = directory / "process-outcome.json"
@@ -148,6 +160,30 @@ def _execution(directory: Path, plan: Resource, row: Resource) -> None:
     row["reasons"].extend(coverage.reasons)
     if any(reason != "delivery_overlap_unproven" for reason in coverage.reasons):
         row["valid_evidence"] = False
+    if plan["schema_version"] == 2:
+        case = validate_case_plan(plan)
+        mode = row["mode"]
+        row.update(
+            mode=mode, requires_overlap=mode != "observe", overlap_verified=False
+        )
+        if mode == "observe" and "[SIEVE-DELIVERY-OVERLAP]" in trace.read_text():
+            row["valid_evidence"] = False
+            row["reasons"].append("unexpected_overlap_in_control")
+        if mode == "hold":
+            schedule = case.plan("hold").delivery_overlap
+            assert schedule is not None
+            physical = verify_scheduled_overlap(directory, schedule)
+            row["overlap_verified"] = physical["verified"]
+            row["reasons"].extend(physical["reasons"])
+        injection_path = directory / "injection-process-outcome.json"
+        injection = read_outcome(injection_path) if injection_path.is_file() else None
+        if (
+            injection is None
+            or injection.status != "completed"
+            or injection.returncode != 0
+        ):
+            row["valid_evidence"] = False
+            row["reasons"].append("incomplete_injection_process")
     for name in ("controller.log", "streamed-controller.log"):
         path = directory / name
         if path.is_file() and any(
@@ -198,7 +234,9 @@ def summarize(directories: Sequence[Path]) -> Resource:
                 (
                     plan["operator"],
                     plan["schedule"],
-                    json.dumps(plan["selected"], sort_keys=True),
+                    json.dumps(
+                        [plan["selected"], plan.get("placement")], sort_keys=True
+                    ),
                 )
             )
             row.update(
@@ -206,6 +244,14 @@ def summarize(directories: Sequence[Path]) -> Resource:
                 schedule=plan["schedule"],
                 selected=plan["selected"],
             )
+            if plan["schema_version"] == 2:
+                row.update(
+                    case_id=plan["case_id"],
+                    placement=plan["placement"],
+                    plan_fingerprint=hashlib.sha256(
+                        json.dumps(plan, sort_keys=True).encode()
+                    ).hexdigest(),
+                )
             _execution(directory, plan, row)
         except (ValueError, KeyError, TypeError, OSError) as error:
             row.update(valid_evidence=False, error=str(error))
@@ -214,6 +260,7 @@ def summarize(directories: Sequence[Path]) -> Resource:
             "metadata-plan.json",
             "metadata-observations.json",
             "process-outcome.json",
+            "injection-process-outcome.json",
             "semantic-outcome.json",
             "workload.log",
             "sieve-server.log",
@@ -231,11 +278,18 @@ def summarize(directories: Sequence[Path]) -> Resource:
         r["valid_evidence"]
         and r["accepted"]
         and r["reported_semantics"] == "passed"
-        and (r["schedule"] != "overlap" or r["overlap_verified"])
+        and (
+            not r.get("requires_overlap", r["schedule"] == "overlap")
+            or r["overlap_verified"]
+        )
         for r in attempted
     )
     executed_cases = {
-        (r["operator"], r["schedule"], json.dumps(r["selected"], sort_keys=True))
+        (
+            r["operator"],
+            r["schedule"],
+            json.dumps([r["selected"], r.get("placement")], sort_keys=True),
+        )
         for r in attempted
     }
     satisfied = (
@@ -262,10 +316,12 @@ def summarize(directories: Sequence[Path]) -> Resource:
                 bool(r["overlap_verified"]) for r in attempted
             ),
             "required_overlap_executions": sum(
-                r["schedule"] == "overlap" for r in attempted
+                r.get("requires_overlap", r["schedule"] == "overlap") for r in attempted
             ),
             "required_overlap_verified": sum(
-                r["schedule"] == "overlap" and r["overlap_verified"] for r in attempted
+                r.get("requires_overlap", r["schedule"] == "overlap")
+                and r["overlap_verified"]
+                for r in attempted
             ),
             "reported_semantic_passes": sum(
                 r["reported_semantics"] == "passed" for r in attempted

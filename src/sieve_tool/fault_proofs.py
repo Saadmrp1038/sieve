@@ -1,6 +1,7 @@
 """Independent physical fault evidence, alongside unmodified oracle alarms."""
 
 import hashlib
+import json
 import re
 from dataclasses import asdict
 from pathlib import Path
@@ -74,6 +75,21 @@ def audit_fault(
     missed = None
     overlap = None
     if plan.delivery_overlap is not None:
+        if plan.workload.startswith("metadata-") and "-at-" in plan.workload:
+            from sieve_tool.testing.metadata_cases import validate_case_plan
+
+            try:
+                case = validate_case_plan(
+                    json.loads((directory / "metadata-plan.json").read_text())
+                )
+                if (
+                    case.workload != plan.workload
+                    or case.plan(plan.delivery_overlap.mode).delivery_overlap
+                    != plan.delivery_overlap
+                ):
+                    raise ValueError("frozen case differs from injected plan")
+            except (ValueError, KeyError, TypeError, OSError) as error:
+                reasons.append("invalid frozen history/placement: " + str(error))
         overlap = verify_scheduled_overlap(directory, plan.delivery_overlap)
         reasons.extend(overlap["reasons"])
     elif any(isinstance(a, PauseControllerAction) for a in actions):

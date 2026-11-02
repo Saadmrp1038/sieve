@@ -59,6 +59,38 @@
         "metadata-annotations-overlap": {
             "num_workers": 0,
             "write_trigger": "occurrence"
+        },
+        "metadata-labels-remove-readd-at-2-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-remove-readd-at-2-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-labels-restore-value-at-2-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-restore-value-at-2-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-labels-remove-readd-at-1-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-remove-readd-at-1-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-labels-restore-value-at-1-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "metadata-annotations-restore-value-at-1-overlap": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
         }
     }
 }
