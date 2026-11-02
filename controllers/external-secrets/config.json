@@ -39,6 +39,10 @@
         "miss-child-updates": {
             "num_workers": 0,
             "independent_updates": true
+        },
+        "bounded-sequences": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
         }
     }
 }

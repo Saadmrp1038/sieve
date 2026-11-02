@@ -151,6 +151,10 @@ def audit_fault(
         "workload.log",
         "workload-updates.json",
         "semantic-outcome.json",
+        "sequence-plan.json",
+        "sequence-observations.json",
+        "sequence-no-fault.yaml",
+        "sequence-restart.yaml",
     )
     return {
         "schema_version": 1,

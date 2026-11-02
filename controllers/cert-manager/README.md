@@ -17,10 +17,8 @@ in this first profile: multiple issuer instances share those methods. They
 remain enabled, and their API changes remain visible in API-server evidence.
 This limits generated scheduling coverage of their internal reads/writes.
 
-All default controllers and the default five workers per controller remain
-enabled. Each workload creates one Certificate, so this is not a concurrent
-multi-Certificate evaluation. Sieve's existing one-active-worker-per-annotated-
-reconciler trace limitation remains; an overlapping trace is a harness failure.
+All default controllers remain enabled, with an explicit ten workers per controller. Each workload creates one Certificate, so this is not a concurrent
+multi-Certificate evaluation. Invocation identities distinguish overlapping annotated reconciliations; missing or inconsistent invocation evidence remains a harness failure.
 No reconciliation rule, provider registration or workqueue policy is changed.
 
 The main controller runs in `default` for Sieve's pod/action support. Its service
@@ -105,3 +103,40 @@ show a real hold/release, no intermediate Get by that reader, and a returned lat
 accepted value for the same UID. A pause or a coordinator completion alone does
 not establish a missed state. Generated candidates lacking this proof remain
 incomplete; never add a timeout release to make them pass.
+
+## Bounded sequence workload
+
+`bounded-sequences` uses the shared bounded history generator and semantic monitors.
+The default catalog has 14 histories of up to three updates over states a/b/c;
+index 8 selects a → b → c → a, including a return to an earlier value.
+External Secrets changes the Fake-provider version; cert-manager changes the
+Certificate DNS name and checks actual TLS material, hostname, SAN and matching key.
+The parent keeps its UID. Each accepted spec/generation, command and observation
+is retained, including rejected inputs and transient semantic violations.
+
+The first update is awaited; the remaining updates are submitted 0.25 seconds
+apart without convergence waits. Current-generation Ready must agree with the
+effective child value and exact controller ownership. The final value must stay
+healthy for 15 seconds after a Ready main-controller Pod is observed; a Pod UID
+change restarts that interval. This is sampled evidence, not continuous observation.
+Every observed main-controller Pod must declare ten workers. Kubernetes topology
+`num_workers: 0` is a separate node-count setting.
+
+Generate reviewable artifacts without Kubernetes access:
+
+```sh
+uv run python controllers/OPERATOR/workloads/workload.py bounded-sequences /tmp/fresh-sequence/workload.log --plan-only
+```
+
+Use this profile's name in place of OPERATOR. The CLI writes `sequence-plan.json`,
+`sequence-no-fault.yaml` and `sequence-restart.yaml` and refuses existing artifacts.
+Normal execution additionally writes raw command journals, full accepted objects,
+`sequence-observations.json` and `semantic-outcome.json`. The fault is one
+asynchronous controller restart after informer receipt of the first labeled
+update. Its completion requires separate API deletion/replacement verification;
+a trigger, semantic success or generated catalog alone is insufficient. Fresh
+matched test-image controls must pass before replaying the fault.
+
+The bounded catalog is candidate coverage; running one selected history does not
+execute the other candidates. This slice does not infer arbitrary CRD semantics
+or claim an operator defect from a raw differential alarm.

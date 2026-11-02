@@ -75,6 +75,9 @@ files = [
     "src/sieve_tool/acceptance",
     "src/sieve_tool/testing/child_repair.py",
     "src/sieve_tool/testing/updates.py",
+    "src/sieve_tool/testing/sequences.py",
+    "src/sieve_tool/testing/semantic.py",
+    "src/sieve_tool/testing/sequence_workload.py",
 ]
 strict = true
 follow_imports = "silent"

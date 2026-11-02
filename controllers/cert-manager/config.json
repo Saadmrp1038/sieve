@@ -91,6 +91,10 @@
             "generated_name_prefixes": [
                 "secret/default/sieve-certificate-*"
             ]
+        },
+        "bounded-sequences": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
         }
     },
     "container_name": "cert-manager-controller"

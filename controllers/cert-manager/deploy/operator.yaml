@@ -41,6 +41,7 @@ spec:
         image: ${SIEVE-DR}/cert-manager:${SIEVE-DT}
         imagePullPolicy: IfNotPresent
         args:
+        - --concurrent-workers=10
         - --v=2
         - --cluster-resource-namespace=cert-manager
         - --leader-election-namespace=kube-system
