@@ -1,0 +1,463 @@
+{
+  "schema_version": 1,
+  "conclusion": "harness_failure_hypothesis_not_exercised_no_verified_operator_defect",
+  "sealed_at": "2026-11-01T18:38:39.421891+00:00",
+  "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+  "source_commit": "5672f43a59c921f9e15c9ce4be28cf824dee9714",
+  "branch": "cloudnativepg-remaining-plans",
+  "bounds": {
+    "status": "complete_harness_failure",
+    "closed_at": "2026-11-01T18:37:36.842758+00:00",
+    "faults_launched": 1,
+    "fault_limit": 2,
+    "workloads_executed": 4,
+    "reserved_workloads": 4,
+    "workload_limit": 6,
+    "controls_independently_verified": true,
+    "hypothesis_exercised": false,
+    "second_pair_launched": false,
+    "automatic_repeats": 0,
+    "stop_reason": "The first fault did not physically hold quorum delivery. Confirmation was reserved for a meaningful physically verified failure, which is absent.",
+    "VM_idle": true,
+    "report": "/Users/pial/Projects/sieve/docs/rfe/managed-child-repair/cloudnativepg-failover-quorum-validation.md"
+  },
+  "provenance": {
+    "runtime_sha256": "868d991c60c5d4ef667a75e91cb9520f0cf07d7ea46653a62477bd6df3f1855e",
+    "protocol_sha256": "92eef54adc307d710bb91907fc3356cb2169df1202c4903f0fad64edfb2c588e",
+    "plan_SHA256": {
+      "no-fault.yaml": "75f62d80b47582589ff08016345fafb918b7cbca37e8bf33b37ccbae2125561d",
+      "delay-quorum-reset.yaml": "72bf94c09d824092992c7a2cc9d2753c976f539921418abf5cdd3c384d12e236"
+    },
+    "evidence_index": ".cache/cloudnativepg/failover-quorum-20261101/evidence-index.json",
+    "evidence_index_sha256": "cfd347f37c25ef73113d0a83f8bf08213272b53d585d6c4a9740981626f46b78",
+    "seal_notes": "The first draft and initial index are archived. The final index was recomputed after the first sealing output log closed; the index excludes itself."
+  },
+  "collected_experiment_trees": [
+    {
+      "stage": "controls",
+      "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/controls-result-hashes.json",
+      "manifest_sha256": "df6161e0023049480e4d1a54132d7bd5b9d19b1a532ad59ecb0384be74529f89",
+      "file_count": 4246,
+      "bytes": 373299472
+    },
+    {
+      "stage": "fault-1",
+      "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/fault-1-result-hashes.json",
+      "manifest_sha256": "b022265e1bc909603665ba4e40a84f7f5a097f06abe8483e47540c1c858e8d79",
+      "file_count": 1817,
+      "bytes": 75449595
+    }
+  ],
+  "cleanup_tree": {
+    "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/cleanup-result-hashes.json",
+    "manifest_sha256": "994d3dc62a117890c0c8169ed4518a7b01e4dddb2809ed453905fb577100cc21",
+    "file_count": 7,
+    "bytes": 4291
+  },
+  "controls": {
+    "status": "independently_verified",
+    "metrics": [
+      {
+        "directory": "fresh-learning/cloudnative-pg/failover-quorum-update/learn_prev",
+        "acknowledged_count_including_witness": 132,
+        "ambiguous_write_count": 135,
+        "observation_seconds": 121.294297151,
+        "read": {
+          "attempts": 314,
+          "successes": 174,
+          "failures": 140,
+          "timeouts": 0,
+          "max_success_gap_seconds": 206.730353362
+        },
+        "write": {
+          "attempts": 266,
+          "successes": 131,
+          "failures": 135,
+          "timeouts": 0,
+          "max_success_gap_seconds": 208.851949237
+        }
+      },
+      {
+        "directory": "fresh-learning/cloudnative-pg/failover-quorum-update/learn",
+        "acknowledged_count_including_witness": 199,
+        "ambiguous_write_count": 142,
+        "observation_seconds": 120.151774504,
+        "read": {
+          "attempts": 406,
+          "successes": 267,
+          "failures": 139,
+          "timeouts": 0,
+          "max_success_gap_seconds": 211.540282201
+        },
+        "write": {
+          "attempts": 340,
+          "successes": 198,
+          "failures": 142,
+          "timeouts": 1,
+          "max_success_gap_seconds": 216.250157431
+        }
+      },
+      {
+        "directory": "matched-no-fault/cloudnative-pg/failover-quorum-update/test/no-fault",
+        "acknowledged_count_including_witness": 160,
+        "ambiguous_write_count": 121,
+        "observation_seconds": 120.689004791,
+        "read": {
+          "attempts": 326,
+          "successes": 205,
+          "failures": 121,
+          "timeouts": 0,
+          "max_success_gap_seconds": 180.037426527
+        },
+        "write": {
+          "attempts": 280,
+          "successes": 159,
+          "failures": 121,
+          "timeouts": 0,
+          "max_success_gap_seconds": 181.235108909
+        }
+      }
+    ],
+    "review_sha256": "5d3135bbb6af46e2ba8aa5ad269f674dd6c09225376bead15852b58b8aa1d89d",
+    "alarm_review_sha256": "74b3306e5ca6146f9cba301765cfbb34b19ab0af6a5fecb03684455ccf2870ca",
+    "physical_supplement_sha256": "6023b48fd417ab4567e7611cccfdfaae9296943ab02d6e5618bf0ba1fdd9fe96",
+    "receipt_coverage_sha256": "ea78d78193c294083238a6a3c95e8f8ec0c244343fb9401e63b12ff04873c487",
+    "instance_images_sha256": "d8f6dd754250ccfe903e929bb6fa47f38860721f230760b43a9197e06f22a9b5",
+    "raw_Sieve_alarms": 2,
+    "native_operator_error_incidents": 1,
+    "retained_native_error_log_copies": 2,
+    "all_acknowledged_rows_present_on_all_three_final_instances": 491,
+    "successful_reads_causally_audited": 646
+  },
+  "fault": {
+    "review": {
+      "status": "independently_verified_harness_failure",
+      "stage": "fault-1",
+      "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/fault-1-result-hashes.json",
+      "manifest_sha256": "b022265e1bc909603665ba4e40a84f7f5a097f06abe8483e47540c1c858e8d79",
+      "file_count": 1817,
+      "bytes": 75449595,
+      "VM_summary_sha256": "77b0b1e786fee1e63ed212960b053eb5bbd0aff242d5293b3bf2decb964bdbd6",
+      "diagnosis_sha256": "e5616f95450869936447ba3e6f2cb4bbeacc9174409c2a6ce957ee8d5e276230",
+      "physical_review_sha256": "35a9614138ffa8c2fdc6af19a436ba80db86bb9f08eb5b326be98dfdff4ae937",
+      "fault_effect_verified": false,
+      "meaningful_failure": false,
+      "hypothesis_exercised": false,
+      "raw_Sieve_verdict_emitted": false,
+      "generic_fault_proof_emitted": false,
+      "available_native_error_records": 0,
+      "terminal_command_classifications": [
+        {
+          "journal": "commands/commands.jsonl",
+          "raw": {
+            "operation": "quorum experiment fault-1",
+            "status": "timed_out",
+            "pid": 1678156,
+            "elapsed_seconds": 900.9843037789688,
+            "stdout_log": "../fault-1.log",
+            "stderr_log": "0008-36cd583c.stderr.log",
+            "returncode": 143
+          },
+          "classification": "parent_900_second_deadline",
+          "stderr": "sieve: Cancelled by signal 15\n",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "execute workload",
+            "status": "cancelled",
+            "pid": 1688129,
+            "elapsed_seconds": 682.1544536110014,
+            "stdout_log": "../workload-process.log",
+            "stderr_log": "0024-ec288fc8.stderr.log",
+            "returncode": -15
+          },
+          "classification": "workload_cancelled_by_parent_SIGTERM",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "collect resource status",
+            "status": "failed",
+            "pid": 1725807,
+            "elapsed_seconds": 0.14188606711104512,
+            "stdout_log": "../resources-snapshot.json",
+            "stderr_log": "0026-3b1341d4.stderr.log",
+            "returncode": -15
+          },
+          "classification": "diagnostic_collection_cancelled_by_parent_SIGTERM",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "collect namespace events",
+            "status": "failed",
+            "pid": 1725842,
+            "elapsed_seconds": 0.13977018208242953,
+            "stdout_log": "../events-snapshot.json",
+            "stderr_log": "0027-8bac0e2e.stderr.log",
+            "returncode": -15
+          },
+          "classification": "diagnostic_collection_cancelled_by_parent_SIGTERM",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "collect controller log",
+            "status": "failed",
+            "pid": 1725869,
+            "elapsed_seconds": 0.1415243127848953,
+            "stdout_log": "../controller.log",
+            "stderr_log": "0028-6ec6b355.stderr.log",
+            "returncode": -15
+          },
+          "classification": "diagnostic_collection_cancelled_by_parent_SIGTERM",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "follow API-server log",
+            "status": "stopped",
+            "pid": 1688128,
+            "elapsed_seconds": 682.6631914409809,
+            "stdout_log": "../apiserver1.log",
+            "stderr_log": "0023-97cbfd2b.stderr.log",
+            "returncode": 1
+          },
+          "classification": "log_follower_stopped_during_cancellation",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "follow controller log",
+            "status": "stopped",
+            "pid": 1688127,
+            "elapsed_seconds": 682.6862825050484,
+            "stdout_log": "../streamed-controller.log",
+            "stderr_log": "0022-3642aaa9.stderr.log",
+            "returncode": 1
+          },
+          "classification": "log_follower_stopped_during_cancellation",
+          "stderr": "",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        },
+        {
+          "journal": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset/commands/commands.jsonl",
+          "raw": {
+            "operation": "delete owned cluster",
+            "status": "failed",
+            "pid": 1725935,
+            "elapsed_seconds": 0.055886575020849705,
+            "stdout_log": "0030-f68b3966.stdout.log",
+            "stderr_log": "0030-f68b3966.stderr.log",
+            "returncode": -15
+          },
+          "classification": "automatic_cluster_cleanup_cancelled_by_parent_SIGTERM",
+          "stderr": "Deleting cluster \"kind\" ...\n",
+          "evidence": "fault-1-schedule-diagnosis.json; process-outcome.json; complete command journals; separately verified cleanup tree"
+        }
+      ],
+      "complete_final_client_ledgers": false,
+      "final_all_instance_acknowledgement_audit_complete": false,
+      "confirmation_allowed": false,
+      "all_raw_evidence_retained": true
+    },
+    "diagnosis": {
+      "status": "independently_verified_harness_failure",
+      "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/fault-1-result-hashes.json",
+      "manifest_sha256": "b022265e1bc909603665ba4e40a84f7f5a097f06abe8483e47540c1c858e8d79",
+      "file_count": 1817,
+      "bytes": 75449595,
+      "directory": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset",
+      "physical_facts": {
+        "markers": {
+          "arm": [
+            204
+          ],
+          "hold": [],
+          "resume_attempt": [
+            249
+          ],
+          "resume_done": [],
+          "actions_finished": []
+        },
+        "old_UID": "57c1b984-d2b6-4b09-a8d4-0382da86ef47",
+        "old_RV": "1782",
+        "current_RV": "1836",
+        "normal_W2_receipt_lines": [
+          193
+        ],
+        "new_W1_receipt_lines_after_arming": [
+          212
+        ],
+        "successful_native_current_Get_lines": [
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          250,
+          251,
+          252,
+          253,
+          254,
+          255,
+          256,
+          257,
+          258,
+          259,
+          260,
+          261,
+          262,
+          263,
+          264,
+          265,
+          266,
+          267,
+          268
+        ],
+        "native_R1_W1_N2_denials_during_observation": 16,
+        "observation_seconds": 121.449227881,
+        "SQL_samples_without_promotion": 57,
+        "networks_restored_at_original_IPs": true
+      },
+      "fault_effect_verified": false,
+      "meaningful_failure": false,
+      "operator_defect_verified": false,
+      "hypothesis_exercised": false,
+      "diagnosis": "The plan arms a quorum API pause but enables beforeAPIServerRecv callbacks only for Cluster. No quorum callback reaches the coordinator, W1 is delivered and read natively, and no physical hold occurs. Resume attempts an unbuffered send with no paused receiver and never completes. The parent cancels at its 900-second deadline.",
+      "inference": "The blocking channel-send cause is inferred from exact frozen source plus arm/resume-attempt/no-hold/no-resume-done markers; it is not a goroutine stack dump.",
+      "negative_controls": [
+        {
+          "mutation": "missing_arm",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_resume_attempt",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "wrong_quorum_UID",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_current_W1_API_receipt",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_native_R1_candidate_proof",
+          "rejected": true,
+          "reason": "Actual R1/current-W1 denial proof missing"
+        },
+        {
+          "mutation": "missing_current_cache_Get",
+          "rejected": true,
+          "reason": "All observed native Gets must return exact current W1 UID/RV"
+        }
+      ],
+      "source_sha256": {
+        "go/client/test_client.go": "20bfa1bc5a8197d534853462e8b538045da847d5ea4580302f27b6d78f2149fb",
+        "go/coordinator/test_plan.go": "461d10c9a5d53ddf241058f65aea6be766eb3200dfc0d41fd00d4e5cff4d4edd"
+      },
+      "limits": [
+        "No final client ledgers or all-instance SQL checks completed for this fault attempt.",
+        "No generic fault-proof or final raw Sieve verdict was emitted before cancellation; absence is not a passing verdict.",
+        "The full positive physical auditor rejects this run because its real hold/release proof is absent. Positive fault negative-controls cannot validate a nonexistent hold."
+      ]
+    }
+  },
+  "preservation": {
+    "status": "unchanged",
+    "verified_at": "2026-11-01T18:32:09.337521+00:00",
+    "prior_result_trees": 51,
+    "prior_files": 287491,
+    "prior_bytes": 12307713855,
+    "preserved_inputs": 274,
+    "frozen_source_files_checked": 695,
+    "runtime_overlay": [
+      "controllers/cloudnative-pg/deploy/operator.yaml"
+    ],
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "new_result_trees": [
+      {
+        "stage": "controls",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/controls-result-hashes.json",
+        "manifest_sha256": "df6161e0023049480e4d1a54132d7bd5b9d19b1a532ad59ecb0384be74529f89",
+        "file_count": 4246,
+        "bytes": 373299472
+      },
+      {
+        "stage": "fault-1",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-20261101/fault-1-result-hashes.json",
+        "manifest_sha256": "b022265e1bc909603665ba4e40a84f7f5a097f06abe8483e47540c1c858e8d79",
+        "file_count": 1817,
+        "bytes": 75449595
+      }
+    ],
+    "source_commit": "5672f43a59c921f9e15c9ce4be28cf824dee9714",
+    "runtime_sha256": "868d991c60c5d4ef667a75e91cb9520f0cf07d7ea46653a62477bd6df3f1855e",
+    "protocol_sha256": "92eef54adc307d710bb91907fc3356cb2169df1202c4903f0fad64edfb2c588e"
+  },
+  "final_VM_state": {
+    "status": "idle",
+    "running_sieve_services": [],
+    "running_containers": [],
+    "owned_kind_network_attachments": {},
+    "images_unchanged": {
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:vanilla": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+      "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce": "sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+      "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8": "sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-learn": "sha256:efe50af72929e2602f7e6da5210dadb4f000000e2e9db96a4921fb77cd2b6949",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-test": "sha256:e2edfd6407de5ed4d9d63a1f9458674ce89dd561e48d94ccf5cb4938f0c76f0e"
+    },
+    "service_states": {
+      "controls": "Result=success\nActiveState=inactive\nSubState=dead",
+      "fault-1": "Result=success\nActiveState=inactive\nSubState=dead"
+    },
+    "free_bytes": 177185878016
+  },
+  "validation": {
+    "prior_implementation_validation": {
+      "tests": 413,
+      "subtests": 10,
+      "protected_test_excluded": true,
+      "lint_format": "passed",
+      "strict_mypy_configured_files": 38,
+      "strict_mypy_workload_files": 2,
+      "wheel": "passed"
+    },
+    "new_review_validation": "Whole-tree rehashing, API/command/SQL/client reconstruction, six mutated-evidence negative controls for the failed-schedule diagnosis, strict positive physical auditor rejection, and final VM/image/network checks.",
+    "protected_test_modified_or_staged": false,
+    "workload_or_plans_modified_during_continuation": false,
+    "positive_fault_negative_controls_run": false,
+    "positive_fault_negative_control_limit": "No valid physical hold existed to support a positive fault proof; the auditor rejects the base evidence. Six independent mutations validate the harness-failure diagnosis instead."
+  }
+}

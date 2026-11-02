@@ -633,7 +633,10 @@ func NotifyTestBeforeAPIServerRecv(eventType, key string, object interface{}) {
 		return
 	}
 	resourceKey := generateResourceKey(resourceType, namespace, name)
-	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "beforeAPIServerRecv", false) {
+	// A pause target needs callbacks even when its triggers observe other resources.
+	if !checkKVPairInTriggerObservationPoint(resourceKey, "when", "beforeAPIServerRecv", false) &&
+		!checkKVPairInAction("pauseAPIServer", "pauseScope", resourceKey, false) &&
+		!checkKVPairInAction("pauseAPIServer", "pauseScope", "all", false) {
 		return
 	}
 	jsonObject, err := json.Marshal(object)

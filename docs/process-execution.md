@@ -119,6 +119,14 @@ workload or workload timeout; it preserves the result and does not retry the
 fault workload. Completed runs with oracle alarms remain available for bug
 review. Process failures alone do not establish an operator bug.
 
+An API-server pause scope routes its delivery callback even when that resource
+does not appear in a trigger. The coordinator holds only the selected server
+and resource; unrelated deliveries continue. Resume releases every waiting
+delivery and also completes when none is waiting. A later pause creates a fresh
+hold, and cancellation returns an RPC error to blocked deliveries. Arming an
+action is not proof that delivery was held: use the scoped start/end pause
+records and the returned native cache values when reviewing fault effects.
+
 For healthy RabbitMQ scaling validation, use `scaleup`. The pinned historical
 operator rejects scale-down; `scaleup-scaledown` remains available as a historical
 reproduction workload and is not a clean positive baseline.

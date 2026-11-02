@@ -128,14 +128,11 @@ func handleWildcardsForMask(mask map[string]map[string]struct{}) {
 }
 
 func getMaskByResourceKey(mask map[string]map[string]struct{}, resourceKey string) map[string]struct{} {
+	mergedMaskLock.Lock()
+	defer mergedMaskLock.Unlock()
 	if val, ok := mask[resourceKey]; ok {
 		return val
 	} else {
-		mergedMaskLock.Lock()
-		defer mergedMaskLock.Unlock()
-		if val, ok := mask[resourceKey]; ok {
-			return val
-		}
 		mask[resourceKey] = make(map[string]struct{})
 		for existingResourceKey := range mask {
 			if strings.Contains(existingResourceKey, "*") {

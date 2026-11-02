@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_profile_pins_native_graph_and_unchanged_default_concurrency():
     config = load_controller_config(ROOT / "controllers/cloudnative-pg")
-    assert config.commit == "9bb80d2292f5845ac6c2d60dc691b222a5ac4655"
-    assert config.client_go_version == "v0.37.0"
+    assert config.commit == "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331"
+    assert config.client_go_version == "v0.36.2"
     assert (
         config.test_setting["pooler-finalizer-updates"]["independent_updates"] is True
     )
@@ -68,6 +68,8 @@ def kubernetes_boundary(tmp_path):
         + r"""
 import json, os, sys, time
 from pathlib import Path
+if sys.argv[1:]==['version','--client']:
+ print(json.dumps({'clientVersion':{'gitVersion':'fixture'}}));raise SystemExit(0)
 path=Path(os.environ['CNPG_TEST_CLUSTER']); s=json.loads(path.read_text())
 a=sys.argv[1:]
 if a[:2]==['--namespace','default']:a=a[2:]
@@ -171,6 +173,15 @@ else:raise SystemExit('unsupported kubectl operation '+repr(a))
 """
     )
     command.chmod(0o755)
+    # Initialize the external executable before measuring scenario deadlines.
+    subprocess.run(
+        [str(command), "version", "--client"],
+        env={"PATH": os.environ["PATH"]},
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
     return state, {
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "CNPG_TEST_CLUSTER": str(state),

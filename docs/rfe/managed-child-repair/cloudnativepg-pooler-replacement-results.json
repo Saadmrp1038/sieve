@@ -1,0 +1,2540 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-30T04:34:21.877303+00:00",
+  "status": "bounded_experiment_complete_no_reproducible_application_failure",
+  "native_subject_revision": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+  "runtime_source_commit": "ad86f0d411d2972fad5d8e5e4c0f41f34892ea3e",
+  "initial_runtime_commit": "377f56a859eff5c2a977ac61d668ac8af8712725",
+  "source_archive_sha256": "ea82ec34d068af3f8a757013d77a919f2891a9ff1796b3359ee0958909bc8d2f",
+  "worker_count": 10,
+  "operator_logic_changed": false,
+  "controller_API_image_rebuilds": false,
+  "counts": {
+    "distinct_authored_plans": 2,
+    "fault_attempts": 3,
+    "independent_physical_verifications": 3,
+    "generic_fault_proof_verifications": 1,
+    "supplemental_after_read_verifications": 2,
+    "fault_application_passes": 3,
+    "fault_application_failures": 0,
+    "vanilla_control_passes": 1,
+    "learning_baseline_passes": 2,
+    "preserved_initial_harness_failure": 1,
+    "raw_fault_alarms": 57
+  },
+  "plans": [
+    {
+      "path": "controllers/cloudnative-pg/plans/pooler-replacement/after-old-read.yaml",
+      "sha256": "938a2258bc56fa938b1e1cec2af160c488ce0816e90fb371e3fad41eeca41897",
+      "origin": "manually_authored"
+    },
+    {
+      "path": "controllers/cloudnative-pg/plans/pooler-replacement/restart-at-replacement.yaml",
+      "sha256": "ca2ca182f0eaaa88244153aa53b985bb9cb4c7fe4be03421098f8b125beda8c9",
+      "origin": "manually_authored"
+    }
+  ],
+  "generated_plan_inventory": {
+    "generated_counts": {
+      "intermediate-state": 83,
+      "unobserved-state": 67,
+      "stale-state": 0
+    },
+    "executed_generated_plans": 0,
+    "selected_authored_plans": 2,
+    "note": "Generated schedules are preserved but not counted as attempted; this bounded hypothesis test uses two immutable manually authored plans."
+  },
+  "controls": {
+    "source": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-control-retry1-vm",
+    "stage": "control",
+    "manifest_sha256": "9f308cfcf59f79d1b7e837b6875fa89447b052f79b09149599cb266e7bf83aa2",
+    "cases": [
+      {
+        "directory": "vanilla/cloudnative-pg/pooler-replacement/vanilla",
+        "application": {
+          "old_uid": "ea2f822e-caf5-4309-bab1-e7661b2d0429",
+          "new_uid": "5d36af8c-cd05-4b0e-849e-ae46348266b9",
+          "old_spec_instances": 1,
+          "new_spec_instances": 2,
+          "accepted_objects": {
+            "old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "A"
+                },
+                "creationTimestamp": "2026-10-30T03:52:53Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1359",
+                "uid": "ea2f822e-caf5-4309-bab1-e7661b2d0429"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "armed_old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "B"
+                },
+                "creationTimestamp": "2026-10-30T03:52:53Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1419",
+                "uid": "ea2f822e-caf5-4309-bab1-e7661b2d0429"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "instances": 1,
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "710"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "711"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1362"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "710"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            },
+            "new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "replacement"
+                },
+                "creationTimestamp": "2026-10-30T03:53:10Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1458",
+                "uid": "5d36af8c-cd05-4b0e-849e-ae46348266b9"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "released_new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "C"
+                },
+                "creationTimestamp": "2026-10-30T03:53:10Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1463",
+                "uid": "5d36af8c-cd05-4b0e-849e-ae46348266b9"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "710"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "711"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1362"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "710"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            }
+          },
+          "final_owned_children": {
+            "deployment": "ab2586cf-79e2-4721-a180-0f5f1515e888",
+            "service": "2762c352-9169-4d00-ab6e-b50d6487797d"
+          },
+          "sql_acknowledged_rows": 32,
+          "sql_instances": 3,
+          "one_writable_primary": true,
+          "command_receipts_verified": true,
+          "semantic_checks": [
+            {
+              "name": "pooler_identity_replaced",
+              "passed": true
+            },
+            {
+              "name": "replacement_spec_identity_preserved",
+              "passed": true
+            },
+            {
+              "name": "replacement_owns_children",
+              "passed": true
+            },
+            {
+              "name": "replacement_deployment_converged",
+              "passed": true
+            },
+            {
+              "name": "replacement_stable_after_convergence",
+              "passed": true
+            },
+            {
+              "name": "cluster_spec_identity_unchanged",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_sql_rows_preserved",
+              "passed": true
+            },
+            {
+              "name": "one_writable_primary",
+              "passed": true
+            }
+          ],
+          "process": {
+            "status": "completed",
+            "returncode": 0,
+            "duration_seconds": 160.79571357904933,
+            "log": "commands/0019-2ac9a64b"
+          }
+        },
+        "native": {
+          "build_proofs": [
+            {
+              "mode": "vanilla",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+              "image_id": "sha256:e8726c439fcef417c6dc7b5bde2eb95d7a96f291519d1fc48f0702ce12be9d3e",
+              "binary_sha256": "7d196a9038e8ee35cbd6f99db53a1c937e3765c52df4d9b67013a259f91ff501",
+              "original_Go_files_identical": 1002
+            },
+            {
+              "mode": "test",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+              "image_id": "sha256:cfc186e0238e82269bb27ab3a8312a0cf9b49801d3a774a03111f52da75a4564",
+              "binary_sha256": "28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1",
+              "original_Go_files_identical": 1002
+            }
+          ],
+          "controller_UID": "9e68c4de-de01-41a7-876f-ed18e65176c0",
+          "controller_image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+          "worker_count": 10
+        }
+      }
+    ],
+    "errors": [],
+    "status": "independently_verified"
+  },
+  "learning_baselines": {
+    "source": "/Users/pial/Projects/sieve/runs/cloudnativepg-replacement-learn-vm",
+    "stage": "learn",
+    "manifest_sha256": "f915bd001255f6da4496af64e2ddc38c6a3ec16343b2657f5c4ad2dad8eeae21",
+    "cases": [
+      {
+        "directory": "learning/cloudnative-pg/pooler-replacement/learn_prev",
+        "application": {
+          "old_uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+          "new_uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+          "old_spec_instances": 1,
+          "new_spec_instances": 2,
+          "accepted_objects": {
+            "old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "A"
+                },
+                "creationTimestamp": "2026-10-30T03:59:01Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1285",
+                "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "armed_old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "B"
+                },
+                "creationTimestamp": "2026-10-30T03:59:01Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1349",
+                "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "instances": 1,
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "717"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1288"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            },
+            "new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "replacement"
+                },
+                "creationTimestamp": "2026-10-30T03:59:20Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1387",
+                "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "released_new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "C"
+                },
+                "creationTimestamp": "2026-10-30T03:59:20Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1394",
+                "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "717"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1288"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            }
+          },
+          "final_owned_children": {
+            "deployment": "ae513a35-822e-4b18-a538-2c02820b924e",
+            "service": "21aa0452-0890-435f-9d94-89c711f3a266"
+          },
+          "sql_acknowledged_rows": 32,
+          "sql_instances": 3,
+          "one_writable_primary": true,
+          "command_receipts_verified": true,
+          "semantic_checks": [
+            {
+              "name": "pooler_identity_replaced",
+              "passed": true
+            },
+            {
+              "name": "replacement_spec_identity_preserved",
+              "passed": true
+            },
+            {
+              "name": "replacement_owns_children",
+              "passed": true
+            },
+            {
+              "name": "replacement_deployment_converged",
+              "passed": true
+            },
+            {
+              "name": "replacement_stable_after_convergence",
+              "passed": true
+            },
+            {
+              "name": "cluster_spec_identity_unchanged",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_sql_rows_preserved",
+              "passed": true
+            },
+            {
+              "name": "one_writable_primary",
+              "passed": true
+            }
+          ],
+          "process": {
+            "status": "completed",
+            "returncode": 0,
+            "duration_seconds": 174.21431445493363,
+            "log": "commands/0023-92614409"
+          }
+        },
+        "native": {
+          "build_proofs": [
+            {
+              "mode": "vanilla",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+              "image_id": "sha256:e8726c439fcef417c6dc7b5bde2eb95d7a96f291519d1fc48f0702ce12be9d3e",
+              "binary_sha256": "7d196a9038e8ee35cbd6f99db53a1c937e3765c52df4d9b67013a259f91ff501",
+              "original_Go_files_identical": 1002
+            },
+            {
+              "mode": "test",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+              "image_id": "sha256:cfc186e0238e82269bb27ab3a8312a0cf9b49801d3a774a03111f52da75a4564",
+              "binary_sha256": "28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1",
+              "original_Go_files_identical": 1002
+            }
+          ],
+          "controller_UID": "09ca599a-e49a-4499-ac2a-ad80ba1e46a7",
+          "controller_image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:learn",
+          "worker_count": 10
+        },
+        "API": {
+          "saved_objects_equal_API": 55,
+          "API_events": 543,
+          "accepted_positions": {
+            "old_pooler": 380,
+            "armed_old_pooler": 421,
+            "new_pooler": 443,
+            "released_new_pooler": 448
+          },
+          "old_parent_deleted_position": 432,
+          "child_history": [
+            {
+              "position": 389,
+              "key": "deployment/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 393,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 396,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 397,
+              "key": "service/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "a917a62b-300f-4fe0-9503-9fb4ec8615fa",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 402,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 420,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 436,
+              "key": "service/default/sieve-pooler",
+              "event": "DELETED",
+              "uid": "a917a62b-300f-4fe0-9503-9fb4ec8615fa",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 437,
+              "key": "deployment/default/sieve-pooler",
+              "event": "DELETED",
+              "uid": "df368f98-8a9c-4787-9ac5-a39621e8ec1b",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "7a50790d-5277-40bb-b75f-1dcdfa1f6519",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 452,
+              "key": "deployment/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 453,
+              "key": "service/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "21aa0452-0890-435f-9d94-89c711f3a266",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 459,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 463,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 468,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 509,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 510,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "ae513a35-822e-4b18-a538-2c02820b924e",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "616560a6-84f1-4fc2-9d7a-26db8c7eb27c",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            }
+          ]
+        }
+      },
+      {
+        "directory": "learning/cloudnative-pg/pooler-replacement/learn",
+        "application": {
+          "old_uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+          "new_uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+          "old_spec_instances": 1,
+          "new_spec_instances": 2,
+          "accepted_objects": {
+            "old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "A"
+                },
+                "creationTimestamp": "2026-10-30T04:04:38Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1301",
+                "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "armed_old_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "B"
+                },
+                "creationTimestamp": "2026-10-30T04:04:38Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1367",
+                "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 1,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "instances": 1,
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "717"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1308"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            },
+            "new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "replacement"
+                },
+                "creationTimestamp": "2026-10-30T04:04:58Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1407",
+                "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              }
+            },
+            "released_new_pooler": {
+              "apiVersion": "postgresql.cnpg.io/v1",
+              "kind": "Pooler",
+              "metadata": {
+                "annotations": {
+                  "sieve.testing/replacement-phase": "C"
+                },
+                "creationTimestamp": "2026-10-30T04:04:58Z",
+                "generation": 1,
+                "name": "sieve-pooler",
+                "namespace": "default",
+                "resourceVersion": "1410",
+                "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7"
+              },
+              "spec": {
+                "cluster": {
+                  "name": "sieve-db"
+                },
+                "instances": 2,
+                "pgbouncer": {
+                  "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                  "paused": false,
+                  "poolMode": "transaction"
+                },
+                "type": "rw"
+              },
+              "status": {
+                "image": "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+                "phase": "active",
+                "secrets": {
+                  "clientCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "clientTLS": {
+                    "name": "sieve-db-server",
+                    "version": "717"
+                  },
+                  "pgBouncerSecrets": {
+                    "authQuery": {
+                      "name": "sieve-db-pooler",
+                      "version": "1308"
+                    }
+                  },
+                  "serverCA": {
+                    "name": "sieve-db-ca",
+                    "version": "716"
+                  },
+                  "serverTLS": {}
+                }
+              }
+            }
+          },
+          "final_owned_children": {
+            "deployment": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+            "service": "3ef5ab1c-e447-4f2b-bcb0-a0acb64de0c7"
+          },
+          "sql_acknowledged_rows": 32,
+          "sql_instances": 3,
+          "one_writable_primary": true,
+          "command_receipts_verified": true,
+          "semantic_checks": [
+            {
+              "name": "pooler_identity_replaced",
+              "passed": true
+            },
+            {
+              "name": "replacement_spec_identity_preserved",
+              "passed": true
+            },
+            {
+              "name": "replacement_owns_children",
+              "passed": true
+            },
+            {
+              "name": "replacement_deployment_converged",
+              "passed": true
+            },
+            {
+              "name": "replacement_stable_after_convergence",
+              "passed": true
+            },
+            {
+              "name": "cluster_spec_identity_unchanged",
+              "passed": true
+            },
+            {
+              "name": "acknowledged_sql_rows_preserved",
+              "passed": true
+            },
+            {
+              "name": "one_writable_primary",
+              "passed": true
+            }
+          ],
+          "process": {
+            "status": "completed",
+            "returncode": 0,
+            "duration_seconds": 179.47211965196766,
+            "log": "commands/0052-b2ecc9ab"
+          }
+        },
+        "native": {
+          "build_proofs": [
+            {
+              "mode": "vanilla",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:vanilla",
+              "image_id": "sha256:e8726c439fcef417c6dc7b5bde2eb95d7a96f291519d1fc48f0702ce12be9d3e",
+              "binary_sha256": "7d196a9038e8ee35cbd6f99db53a1c937e3765c52df4d9b67013a259f91ff501",
+              "original_Go_files_identical": 1002
+            },
+            {
+              "mode": "test",
+              "image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:test",
+              "image_id": "sha256:cfc186e0238e82269bb27ab3a8312a0cf9b49801d3a774a03111f52da75a4564",
+              "binary_sha256": "28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1",
+              "original_Go_files_identical": 1002
+            }
+          ],
+          "controller_UID": "4cd381f2-e434-4950-9856-9b45d902b4c1",
+          "controller_image": "sieve-cnpg-calibration-20261028-fixed/cloudnative-pg:learn",
+          "worker_count": 10
+        },
+        "API": {
+          "saved_objects_equal_API": 55,
+          "API_events": 553,
+          "accepted_positions": {
+            "old_pooler": 388,
+            "armed_old_pooler": 429,
+            "new_pooler": 453,
+            "released_new_pooler": 456
+          },
+          "old_parent_deleted_position": 441,
+          "child_history": [
+            {
+              "position": 398,
+              "key": "deployment/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 400,
+              "key": "service/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "02a0b247-fdf4-481d-a64c-80358a5f30b4",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 403,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 408,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 410,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 428,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 446,
+              "key": "service/default/sieve-pooler",
+              "event": "DELETED",
+              "uid": "02a0b247-fdf4-481d-a64c-80358a5f30b4",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 447,
+              "key": "deployment/default/sieve-pooler",
+              "event": "DELETED",
+              "uid": "5bdd3a3b-7818-460b-9b83-69edaa432d5c",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "db493fcf-915d-4489-9d0c-bedfd8115c2d",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 461,
+              "key": "deployment/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 463,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 465,
+              "key": "service/default/sieve-pooler",
+              "event": "ADDED",
+              "uid": "3ef5ab1c-e447-4f2b-bcb0-a0acb64de0c7",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 469,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 477,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 514,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            },
+            {
+              "position": 518,
+              "key": "deployment/default/sieve-pooler",
+              "event": "MODIFIED",
+              "uid": "edcf739c-6fe9-4999-be44-6c42fdf867c1",
+              "owners": [
+                {
+                  "apiVersion": "postgresql.cnpg.io/v1",
+                  "kind": "Pooler",
+                  "name": "sieve-pooler",
+                  "uid": "de9acf4e-75c7-4a74-af65-a7af31bf54c7",
+                  "controller": true,
+                  "blockOwnerDeletion": true
+                }
+              ],
+              "replicas": null
+            }
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "status": "independently_verified"
+  },
+  "initial_harness_failure": {
+    "status": "independently_reviewed_harness_failure",
+    "source": "runs/cloudnativepg-replacement-control-vm",
+    "manifest_sha256": "cb949d00fa9e2730e12e8b865dd7308812c9bb636a7e44d781c0cb5a5725eb25",
+    "failed_command_stderr": "vanilla/cloudnative-pg/pooler-replacement/vanilla/workload-commands/0196-2d3c14b8.stderr.log",
+    "stderr_sha256": "2a29d66ce423645f81464f50aa4f827f456f9b25052223209e2440c72d842dc3",
+    "failure": "Database selector used cnpg.io/cluster label alone, which also selected Pooler pods; postgres exec was rejected on pgbouncer pod.",
+    "old_UID": "d1beae08-7e30-4039-a007-631e555e2681",
+    "replacement_UID": "938d3865-37be-4fab-b444-40892b20e0fa",
+    "replacement_converged_before_harness_failure": true,
+    "complete_application_outcome": "unknown",
+    "operator_bug_substantiated": false,
+    "source_fix_commit": "ad86f0d411d2972fad5d8e5e4c0f41f34892ea3e",
+    "red": "database-selection-red.log",
+    "green": "database-selection-green.log",
+    "raw_result_and_initial_review_unchanged": true
+  },
+  "fault_attempts": [
+    {
+      "name": "after-old-read",
+      "directory": "after-old-read/cloudnative-pg/pooler-replacement/test/after-old-read",
+      "old_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+      "new_UID": "be83fbab-ab38-4e1f-8af8-b0545025a3c5",
+      "semantic_status": "passed",
+      "raw_alarms": [
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 730 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 729 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 727 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 727 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run"
+      ],
+      "classifications": [
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 730 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 729 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 727 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 727 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        }
+      ],
+      "secret_RV_references": [
+        {
+          "resource": "secret/default/sieve-db-app",
+          "field": "applicationSecretVersion",
+          "actual_RV": "730"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCaSecretVersion",
+          "actual_RV": "726"
+        },
+        {
+          "resource": "secret/default/sieve-db-replication",
+          "field": "replicationSecretVersion",
+          "actual_RV": "729"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCaSecretVersion",
+          "actual_RV": "726"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "serverSecretVersion",
+          "actual_RV": "727"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCA",
+          "actual_RV": "726"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "clientTLS",
+          "actual_RV": "727"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCA",
+          "actual_RV": "726"
+        }
+      ],
+      "saved_objects_equal_API": 55,
+      "extra_old_owned_children": [
+        {
+          "key": "serviceaccount/default/sieve-pooler",
+          "UID": "1f018308-5689-4265-99ee-154d9dde5cee",
+          "old_owner_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+          "API_created": 402,
+          "API_deleted": 403
+        },
+        {
+          "key": "role/default/sieve-pooler",
+          "UID": "2954d264-9322-4321-a9c5-6580eb420607",
+          "old_owner_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+          "API_created": 404,
+          "API_deleted": 405
+        },
+        {
+          "key": "rolebinding/default/sieve-pooler",
+          "UID": "eb3ddad1-3090-46cb-b4d6-a746ba0d6b2d",
+          "old_owner_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+          "API_created": 407,
+          "API_deleted": 410
+        },
+        {
+          "key": "deployment/default/sieve-pooler",
+          "UID": "ce59e9b1-064d-44d3-97ad-daf5b7d78ea1",
+          "old_owner_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+          "API_created": 409,
+          "API_deleted": 418
+        },
+        {
+          "key": "service/default/sieve-pooler",
+          "UID": "d642ed42-362c-4994-aedd-f7e6cf898773",
+          "old_owner_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+          "API_created": 413,
+          "API_deleted": 419
+        }
+      ],
+      "physical": {
+        "verified": true,
+        "proof_kind": "independent_after_read_old_UID_held_across_replacement",
+        "held_read_UID": "7578b8eb-4fe2-488f-b7c6-76ed5f599e35",
+        "held_read_RV": "1306",
+        "held_read_position": 89,
+        "hold_position": 91,
+        "old_informer_delete_receipt_position": 96,
+        "new_informer_add_receipt_position": 104,
+        "new_C_informer_receipt_position": 112,
+        "release_position": 122,
+        "replacement_UID": "be83fbab-ab38-4e1f-8af8-b0545025a3c5",
+        "replacement_C_RV": "1351",
+        "actual_holds": 1,
+        "actual_releases": 1,
+        "injection_process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 0.13902390201110393,
+          "log": "commands/0024-4f1b3a79"
+        },
+        "generic_proof_unchanged": true
+      },
+      "generic_proof_limitation": [
+        "invalid missed-state evidence: expected a cache Get pause scoped to one reconciler"
+      ],
+      "actual_event_counts": {
+        "deployment/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "replicaset/default/sieve-pooler-68cd555bdd": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "role/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "rolebinding/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "service/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "serviceaccount/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        }
+      },
+      "attempt_key": "initial"
+    },
+    {
+      "name": "restart-at-replacement",
+      "directory": "restart-at-replacement/cloudnative-pg/pooler-replacement/test/restart-at-replacement",
+      "old_UID": "a336eef4-4e4c-42a7-a9cb-2c5be979de64",
+      "new_UID": "2edeb616-e15d-41d1-80f2-40c23394c404",
+      "semantic_status": "passed",
+      "raw_alarms": [
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 738 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 737 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 736 after testing run",
+        "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 735 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 736 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 735 after testing run"
+      ],
+      "classifications": [
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 738 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 737 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 736 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run",
+          "category": "actual_graceful_Lease_release_then_new_holder_0_to_1"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 735 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 736 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 735 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        }
+      ],
+      "secret_RV_references": [
+        {
+          "resource": "secret/default/sieve-db-app",
+          "field": "applicationSecretVersion",
+          "actual_RV": "738"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCaSecretVersion",
+          "actual_RV": "735"
+        },
+        {
+          "resource": "secret/default/sieve-db-replication",
+          "field": "replicationSecretVersion",
+          "actual_RV": "737"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCaSecretVersion",
+          "actual_RV": "735"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "serverSecretVersion",
+          "actual_RV": "736"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCA",
+          "actual_RV": "735"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "clientTLS",
+          "actual_RV": "736"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCA",
+          "actual_RV": "735"
+        }
+      ],
+      "saved_objects_equal_API": 55,
+      "extra_old_owned_children": [],
+      "physical": {
+        "verified": true,
+        "kind": "API_verified_restart",
+        "deleted_controller_UID": "4d410faa-3074-4cc7-8870-8f32ca6f3e8b",
+        "replacement_UID": "c09ffa55-4e3e-4c0c-a0e7-773c0ca8f2ef",
+        "lease_changes": [
+          {
+            "position": 28,
+            "uid": "d05a68a7-8c88-4a23-9c46-d15fb99b1890",
+            "holder": "cnpg-controller-manager-556cb46657-9622w_7eee94b8-bbe5-462c-987e-936bfca82094",
+            "transitions": 0
+          },
+          {
+            "position": 417,
+            "uid": "d05a68a7-8c88-4a23-9c46-d15fb99b1890",
+            "holder": "",
+            "transitions": 0
+          },
+          {
+            "position": 454,
+            "uid": "d05a68a7-8c88-4a23-9c46-d15fb99b1890",
+            "holder": "cnpg-controller-manager-556cb46657-5tk4h_f9ba2993-0411-43a6-bebd-34517194015b",
+            "transitions": 1
+          }
+        ]
+      },
+      "actual_event_counts": {
+        "deployment/default/sieve-pooler": {
+          "ADDED": 2,
+          "DELETED": 1
+        },
+        "replicaset/default/sieve-pooler-68cd555bdd": {
+          "ADDED": 2,
+          "DELETED": 1
+        },
+        "role/default/sieve-pooler": {
+          "ADDED": 2,
+          "DELETED": 1
+        },
+        "rolebinding/default/sieve-pooler": {
+          "ADDED": 2,
+          "DELETED": 1
+        },
+        "service/default/sieve-pooler": {
+          "ADDED": 2,
+          "DELETED": 1
+        },
+        "serviceaccount/default/sieve-pooler": {
+          "ADDED": 2,
+          "DELETED": 1
+        }
+      },
+      "attempt_key": "initial"
+    },
+    {
+      "name": "after-old-read",
+      "directory": "after-old-read/cloudnative-pg/pooler-replacement/test/after-old-read",
+      "old_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+      "new_UID": "ead57fe7-2ee2-4b3e-8b31-c092e87f9a16",
+      "semantic_status": "passed",
+      "raw_alarms": [
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 691 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 690 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+        "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 689 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 689 after testing run",
+        "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+        "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+        "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run"
+      ],
+      "classifications": [
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+          "category": "actual_learn_test_binary_hash_difference"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 691 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 690 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 689 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 689 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+          "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        },
+        {
+          "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+          "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+        }
+      ],
+      "secret_RV_references": [
+        {
+          "resource": "secret/default/sieve-db-app",
+          "field": "applicationSecretVersion",
+          "actual_RV": "691"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCaSecretVersion",
+          "actual_RV": "688"
+        },
+        {
+          "resource": "secret/default/sieve-db-replication",
+          "field": "replicationSecretVersion",
+          "actual_RV": "690"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCaSecretVersion",
+          "actual_RV": "688"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "serverSecretVersion",
+          "actual_RV": "689"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "clientCA",
+          "actual_RV": "688"
+        },
+        {
+          "resource": "secret/default/sieve-db-server",
+          "field": "clientTLS",
+          "actual_RV": "689"
+        },
+        {
+          "resource": "secret/default/sieve-db-ca",
+          "field": "serverCA",
+          "actual_RV": "688"
+        }
+      ],
+      "saved_objects_equal_API": 55,
+      "extra_old_owned_children": [
+        {
+          "key": "serviceaccount/default/sieve-pooler",
+          "UID": "98d1cb2c-6728-4931-a166-83a64a7fa97f",
+          "old_owner_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+          "API_created": 395,
+          "API_deleted": 397
+        },
+        {
+          "key": "role/default/sieve-pooler",
+          "UID": "2281a520-2a53-4dac-9980-9bc60b87e1c5",
+          "old_owner_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+          "API_created": 398,
+          "API_deleted": 400
+        },
+        {
+          "key": "rolebinding/default/sieve-pooler",
+          "UID": "94afe4f2-7b5a-4a7e-ba6c-b6c7b2ea354d",
+          "old_owner_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+          "API_created": 401,
+          "API_deleted": 403
+        },
+        {
+          "key": "deployment/default/sieve-pooler",
+          "UID": "8ae6e418-912e-4d86-95eb-535e54a95bba",
+          "old_owner_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+          "API_created": 402,
+          "API_deleted": 405
+        },
+        {
+          "key": "service/default/sieve-pooler",
+          "UID": "6867e3a5-807f-4894-b357-dd593dbeeb38",
+          "old_owner_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+          "API_created": 406,
+          "API_deleted": 412
+        }
+      ],
+      "physical": {
+        "verified": true,
+        "proof_kind": "independent_after_read_old_UID_held_across_replacement",
+        "held_read_UID": "89c7468f-304d-45e0-b857-6c606d3b883f",
+        "held_read_RV": "1261",
+        "held_read_position": 92,
+        "hold_position": 94,
+        "old_informer_delete_receipt_position": 99,
+        "new_informer_add_receipt_position": 107,
+        "new_C_informer_receipt_position": 115,
+        "release_position": 125,
+        "replacement_UID": "ead57fe7-2ee2-4b3e-8b31-c092e87f9a16",
+        "replacement_C_RV": "1304",
+        "actual_holds": 1,
+        "actual_releases": 1,
+        "injection_process": {
+          "status": "completed",
+          "returncode": 0,
+          "duration_seconds": 0.09134256606921554,
+          "log": "commands/0024-9e75a610"
+        },
+        "generic_proof_unchanged": true
+      },
+      "generic_proof_limitation": [
+        "invalid missed-state evidence: expected a cache Get pause scoped to one reconciler"
+      ],
+      "extra_old_owned_descendants": [
+        {
+          "key": "replicaset/default/sieve-pooler-68cd555bdd",
+          "UID": "2ecaaf23-6827-4a76-8b15-a3345f85cc09",
+          "owner_UID_chain": [
+            "2ecaaf23-6827-4a76-8b15-a3345f85cc09",
+            "8ae6e418-912e-4d86-95eb-535e54a95bba",
+            "89c7468f-304d-45e0-b857-6c606d3b883f"
+          ],
+          "API_created": 404,
+          "API_deleted": 414
+        },
+        {
+          "key": "pod/default/sieve-pooler-68cd555bdd-89hb7",
+          "UID": "45fd0f60-159b-45d0-a371-158d2c50ca63",
+          "owner_UID_chain": [
+            "45fd0f60-159b-45d0-a371-158d2c50ca63",
+            "2ecaaf23-6827-4a76-8b15-a3345f85cc09",
+            "8ae6e418-912e-4d86-95eb-535e54a95bba",
+            "89c7468f-304d-45e0-b857-6c606d3b883f"
+          ],
+          "API_created": 413,
+          "API_deleted": 446
+        }
+      ],
+      "actual_event_counts": {
+        "deployment/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "replicaset/default/sieve-pooler-68cd555bdd": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "role/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "rolebinding/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "service/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "serviceaccount/default/sieve-pooler": {
+          "ADDED": 3,
+          "DELETED": 2
+        },
+        "pod/default/sieve-pooler-68cd555bdd-*": {
+          "ADDED": 4,
+          "DELETED": 2
+        }
+      },
+      "attempt_key": "confirmation"
+    }
+  ],
+  "raw_alarm_classes": {
+    "actual_learn_test_binary_hash_difference": 6,
+    "cross_cluster_secret_RV_reference_matches_actual_API_metadata": 24,
+    "extra_deleted_owner_resource_cycle_then_garbage_collection": 26,
+    "actual_graceful_Lease_release_then_new_holder_0_to_1": 1
+  },
+  "all_raw_alarms": [
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 730 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 729 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 726 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 727 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 727 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 726 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 738 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 737 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 735 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 736 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: lease/default/db9c8771.cnpg.io[\"spec\"][\"leaseTransitions\"] is 0 after reference run, but 1 after testing run",
+      "category": "actual_graceful_Lease_release_then_new_holder_0_to_1"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 735 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 736 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "restart-at-replacement",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 735 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"cloudNativePGOperatorHash\"] is 7675b1bb46b67d6b784a50892a4b48353e3c0fb0ddd935b3a0ab471a2fea4a7a after reference run, but 28b051180a6d329b827cdd36f31e36e59856b9f5fde29aa0d6ab550d1d60f3d1 after testing run",
+      "category": "actual_learn_test_binary_hash_difference"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"applicationSecretVersion\"] is 719 after reference run, but 691 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"clientCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"replicationSecretVersion\"] is 718 after reference run, but 690 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverCaSecretVersion\"] is 716 after reference run, but 688 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: cluster/default/sieve-db[\"status\"][\"secretsResourceVersion\"][\"serverSecretVersion\"] is 717 after reference run, but 689 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"clientTLS\"][\"version\"] is 717 after reference run, but 689 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "End state inconsistency - object field has a different value: pooler/default/sieve-pooler[\"status\"][\"secrets\"][\"serverCA\"][\"version\"] is 716 after reference run, but 688 after testing run",
+      "category": "cross_cluster_secret_RV_reference_matches_actual_API_metadata"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: deployment/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* ADDED inconsistency: 3 event(s) seen during reference run, but 4 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: pod/default/sieve-pooler-68cd555bdd-* DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: replicaset/default/sieve-pooler-68cd555bdd DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: role/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: rolebinding/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: service/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler ADDED inconsistency: 2 event(s) seen during reference run, but 3 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    },
+    {
+      "attempt": "after-old-read",
+      "alarm": "State-update summaries inconsistency: serviceaccount/default/sieve-pooler DELETED inconsistency: 1 event(s) seen during reference run, but 2 seen during testing run",
+      "category": "extra_deleted_owner_resource_cycle_then_garbage_collection"
+    }
+  ],
+  "all_raw_alarms_preserved": true,
+  "stale_owner_recreation_repeated": true,
+  "confirmed_operator_bug": false,
+  "interpretation": "The same after-read hold twice induced five direct children owned by the deleted Pooler UID plus ReplicaSet descendants; one repeat also created a transient Pod. Garbage collection removed them. New-UID children converged to two Ready Pooler instances and all database checks passed. This demonstrates reproducible stale-owner resource churn, but not a demonstrated application contract failure. Name-only ownership suspicion is not established as a harmful operator bug by these runs.",
+  "generic_proof_limitation": "The generic proof supports before-read missed-state schedules and retains its unverified after-read verdict. Separate strict held-old-UID/delete/new-C-receipt/release and source/API audits verify these after-read actions without changing raw verdicts.",
+  "physical_audit_controls": {
+    "actual_positive_verified": true,
+    "negative_controls": [
+      {
+        "case": "wrong_old_UID",
+        "rejected": true
+      },
+      {
+        "case": "missing_actual_C_receipt",
+        "rejected": true
+      }
+    ],
+    "original_evidence_unchanged": true,
+    "synthetic_negative_files_not_operator_runs": true
+  },
+  "boundaries": {
+    "ordinary_fault_plans": 2,
+    "confirmation_runs_used": 1,
+    "confirmation_runs_cap": 2,
+    "automatic_repeats": 0,
+    "phase_timeout_seconds": 900,
+    "service_caps_seconds": [
+      1050,
+      1950
+    ],
+    "observation_seconds_after_convergence": 30,
+    "host_nodes": 1,
+    "database_instances": 3,
+    "database_rows": 32,
+    "SQL_checks": "Direct PostgreSQL connections; Pooler-client availability during replacement was not measured.",
+    "no_exhaustive_bug_absence_claim": true
+  },
+  "validation": {
+    "full_Python_suite": "404passed+10subtests",
+    "new_public_workload_tests": 4,
+    "all_CloudNativePG_workload_tests": 21,
+    "ruff": "passed",
+    "strict_mypy": "38sourcefiles+2workloads passed",
+    "wheel": "built",
+    "source_changes_committed_locally": true,
+    "push_or_PR_update": false,
+    "user_dirty_file_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287"
+  },
+  "preservation": {
+    "preexisting_inputs_verified": 66,
+    "whole_tree_files_reverified": 55639,
+    "whole_tree_bytes_reverified": 2086813466,
+    "trees": [
+      {
+        "key": "control",
+        "directory": "runs/cloudnativepg-replacement-control-vm",
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/control-result-hashes.json",
+        "manifest_sha256": "cb949d00fa9e2730e12e8b865dd7308812c9bb636a7e44d781c0cb5a5725eb25",
+        "file_count": 10841,
+        "bytes": 384922875
+      },
+      {
+        "key": "control-retry1",
+        "directory": "runs/cloudnativepg-replacement-control-retry1-vm",
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/control-retry1-result-hashes.json",
+        "manifest_sha256": "9f308cfcf59f79d1b7e837b6875fa89447b052f79b09149599cb266e7bf83aa2",
+        "file_count": 10848,
+        "bytes": 384864035
+      },
+      {
+        "key": "learn",
+        "directory": "runs/cloudnativepg-replacement-learn-vm",
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/learn-result-hashes.json",
+        "manifest_sha256": "f915bd001255f6da4496af64e2ddc38c6a3ec16343b2657f5c4ad2dad8eeae21",
+        "file_count": 11578,
+        "bytes": 512777768
+      },
+      {
+        "key": "test",
+        "directory": "runs/cloudnativepg-replacement-test-vm",
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/test-result-hashes.json",
+        "manifest_sha256": "ba4da692137af9c2244d8d491c8070bdc83a44fa6c906f9486bf33643a6c06e0",
+        "file_count": 11477,
+        "bytes": 409756121
+      },
+      {
+        "key": "test-repeat1",
+        "directory": "runs/cloudnativepg-replacement-test-repeat1-vm",
+        "manifest": ".cache/cloudnativepg/pooler-replacement-20261029/test-repeat1-result-hashes.json",
+        "manifest_sha256": "c63c909862f08f2a9e1a9bd2ddd84655185b5d487ad1f0b905260b6ddd134b44",
+        "file_count": 10895,
+        "bytes": 394492667
+      }
+    ],
+    "supporting_review_log_hashes": [
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/control-failure-review.json",
+        "sha256": "0a2ca442cbab92357545089643e8584201c7af38d4f00448bb864029d2ef2941"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/control-review.json",
+        "sha256": "d5c4e88cbee8a23f11c871ad6e1d54fea4854f2c2a4518c6e9ffa071623fbd43"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/control-retry1-review.json",
+        "sha256": "3ad78e2e82343ecbf46be83b382884bf6a9e1a96e7074ff23718507b407cdf9e"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/learn-review.json",
+        "sha256": "992bf2be0e5b7e2b3426c763fd4e2415cc91a0502e1c9f947ba5aec94d5879be"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/learn-review-api.json",
+        "sha256": "f4b72460a61df59eef13c849b486b33fd01f279c0081a7dbf9b21d261c656fdf"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-review-api.json",
+        "sha256": "c810cebdce1d53781c8ae79530cfb4b98e9856657439ca05836b6c77e03a90ea"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-final-review.json",
+        "sha256": "6ed47b5e9ff7475d5b9acb3cfadc507f1066063e07e0bbd0d2d545fed50f8f46"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-repeat1-review-api.json",
+        "sha256": "d065520b0065db1266250d93f517a124e9f402b7758debb8bba9a9b37a5c91b3"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/test-repeat1-final-review.json",
+        "sha256": "08a2715471de361c40b663e820ee335c510782996bda8a499ec7f435a7aa6713"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/physical-audit-controls.json",
+        "sha256": "56c9e09019ce9f9bec9034933c8a3c3f54d5ae78d6f7843dece094253c0209a5"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/preserved-inputs.json",
+        "sha256": "12e01f46f5a11deda412cf1aba54ac41f04cb397755472bdcdae8f39232b13ac"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/database-selection-red.log",
+        "sha256": "bf92592cdf86b5b96db5566dd31736b6565c2b0457855df7aab64f9b078cb2a8"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/database-selection-green.log",
+        "sha256": "3eeeedc72728d6b251632d1f576f7511693ae6e3b89278dba79e9db9b19bceb2"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/all-tests-v2.log",
+        "sha256": "db4b9968f2eb975636f65b5a77dc7f8f26db076aae40a58f18a9bf44d03d8e88"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/workload-red.log",
+        "sha256": "8649f7ff3bbfd4991c7acd1b4b67262229a9937bd8a521551d03bf95d6e0502c"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/workload-green.log",
+        "sha256": "d62f482d9de36872beca4d01c122773df2e49e635874671e02ccaa240a3ca03a"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/generated-plan-inventory.json",
+        "sha256": "9c3900ba19a7c15b04ee062949f55cfdb94380529d25f3d97ad4dc678b3f2205"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/physical-facts.py",
+        "sha256": "b89511335ecfc0ccbfdb3b9f062c59b8da255c12d7bd7cd57274f0dfb89d41a6"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/physical-facts-v2.py",
+        "sha256": "1d08ae0f4bb746a30053c5b323be2a21abeed6680d48e9b2c66b24fc14e9e587"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/classify-test.py",
+        "sha256": "8264ad7aaf86e1f480fae552a9b526ddd9691da221441043daa9ab06208a977f"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/classify-test-v2.py",
+        "sha256": "c3d2fc4fa10cd92597dbb05fac7628e8f4ff3e91f74bff7b91cb1ae2f244f77b"
+      },
+      {
+        "path": ".cache/cloudnativepg/pooler-replacement-20261029/classify-test-v3.py",
+        "sha256": "e233ec7eede03f4a58ac54fddf72f9bb0b704ef90a1e1e530c1a1022a6061add"
+      }
+    ],
+    "prior_campaign_reports_manifests_state_and_current_job_unchanged": true
+  },
+  "sources": [
+    {
+      "purpose": "Known deletion-timestamp fix scope",
+      "url": "https://github.com/cloudnative-pg/cloudnative-pg/pull/11359"
+    },
+    {
+      "purpose": "Owner/dependent garbage collection",
+      "url": "https://kubernetes.io/docs/concepts/architecture/garbage-collection/"
+    },
+    {
+      "purpose": "Native client-go graceful Lease release",
+      "url": "https://github.com/kubernetes/client-go/blob/v0.37.0/tools/leaderelection/leaderelection.go"
+    }
+  ]
+}

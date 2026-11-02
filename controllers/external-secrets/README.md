@@ -5,7 +5,7 @@ It keeps the operator's client-go v0.37.1 and controller-runtime v0.25.2
 dependencies and builds all providers with Go 1.27.3. Kubernetes v1.36.4,
 kind v0.33.0 and Helm v4.3.1 are used for VM validation.
 
-The main controller runs with the chart's default single worker. Its image,
+The main controller runs with an explicit ten reconciliation workers. Its image,
 Sieve configuration environment and API endpoint are supplied by the harness.
 The webhook and certificate controller use the unchanged published image. The
 chart is fetched by immutable release URL and checked against its SHA256.
@@ -69,7 +69,7 @@ and replay, so duplicate observations are not mistaken for repeated creates or
 deletes within one cache. Neither watch is disabled or deduplicated.
 
 Only observation calls and dependency wiring are added to the operator source.
-Reconciliation rules, provider registration and runtime defaults are unchanged.
+Reconciliation rules and provider registration are unchanged. Reconciliation concurrency is explicitly ten.
 This pin's informer implementation has direct integration tests at the
 instrumenter command and public client-go informer boundaries. Other client-go
 versions require their own compatibility validation.
@@ -106,3 +106,51 @@ and the limits of the replacement workloads.
 The [restart validation report](../../docs/rfe/managed-child-repair/external-secrets-restart-validation.md)
 records the remaining 26 original restart plans: all had verified pod deletion,
 a Ready replacement and successful workload convergence, with zero raw alarms.
+
+## Bounded sequence workload
+
+`bounded-sequences` uses the shared bounded history generator and semantic monitors.
+The default catalog has 14 histories of up to three updates over states a/b/c;
+index 8 selects a → b → c → a, including a return to an earlier value.
+External Secrets changes the Fake-provider version; cert-manager changes the
+Certificate DNS name and checks actual TLS material, hostname, SAN and matching key.
+The parent keeps its UID. Each accepted spec/generation, command and observation
+is retained, including rejected inputs and transient semantic violations.
+
+The first update is awaited; the remaining updates are submitted 0.25 seconds
+apart without convergence waits. Current-generation Ready must agree with the
+effective child value and exact controller ownership. The final value must stay
+healthy for 15 seconds after a Ready main-controller Pod is observed; a Pod UID
+change restarts that interval. This is sampled evidence, not continuous observation.
+Every observed main-controller Pod must declare ten workers. Kubernetes topology
+`num_workers: 0` is a separate node-count setting.
+
+Generate reviewable artifacts without Kubernetes access:
+
+```sh
+uv run python controllers/OPERATOR/workloads/workload.py bounded-sequences /tmp/fresh-sequence/workload.log --plan-only
+```
+
+Use this profile's name in place of OPERATOR. Plan-only writes `sequence-plan.json`,
+`sequence-no-fault.yaml` and `sequence-restart.yaml` and refuses existing artifacts.
+Normal execution writes the catalog, raw command journals, full accepted objects,
+`sequence-observations.json` and `semantic-outcome.json`, preserving Sieve’s copied
+execution YAML as an input. The fault is one
+asynchronous controller restart after informer receipt of the first labeled
+update. Its completion requires separate API deletion/replacement verification;
+a trigger, semantic success or generated catalog alone is insufficient. Fresh
+matched test-image controls must pass before replaying the fault.
+
+The bounded catalog is candidate coverage; running one selected history does not
+execute the other candidates. This slice does not infer arbitrary CRD semantics
+or claim an operator defect from a raw differential alarm.
+
+## Metadata lifetime histories
+
+The `metadata-{labels,annotations}-{settled,overlap}` workloads exercise managed
+Secret template entry add/change/remove, check cleanup, and compare with a fresh
+parent declaring the same final state. They preserve ten workers and retain raw
+accepted inputs, snapshots and command journals. Overlap requires independent
+invocation/delivery trace proof; update timing alone is insufficient. See the
+[shared workload and verifier guide](../../docs/rfe/managed-child-repair/metadata-histories.md)
+for plan-only preparation, monitors, artifacts and current coverage limits.

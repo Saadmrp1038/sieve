@@ -87,6 +87,10 @@ Local harness overrides belong in `configs/local.json`; defaults ship with the
 Python package. See the [architecture guide](docs/architecture.md) for module
 boundaries and the execution flow.
 
+External Secrets and cert-manager also provide [bounded metadata lifetime
+histories](docs/rfe/managed-child-repair/metadata-histories.md), with reusable
+cleanup/history-equivalence monitors and independent delivery-overlap evidence.
+
 ### Bugs found by Sieve
 Sieve has found 46 bugs in 10 different controllers, which are listed [here](docs/bugs.md). We also provide [steps](docs/reprod.md) to reproduce all the intermediate-state/unobserved-states/stale-state bugs found by Sieve. We would appreciate a lot if you mention Sieve and inform us when you report bugs found by Sieve.
 

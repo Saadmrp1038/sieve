@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import os
+import sys
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
@@ -30,6 +31,28 @@ EXPECTED_ROWS = [[i, f"ack-{i}"] for i in range(1, 33)]
 
 
 def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv and argv[0] == "failover-quorum-update":
+        from quorum import main as quorum_main
+
+        return quorum_main(argv)
+    if argv and argv[0] == "rolling-config-update":
+        from rolling import main as rolling_main
+
+        return rolling_main(argv)
+    if argv and argv[0] == "ca-secret-bootstrap":
+        from bootstrap import main as bootstrap_main
+
+        return bootstrap_main(argv)
+    if argv and argv[0] in (
+        "pooler-replacement",
+        "pooler-replacement-clients",
+        "pooler-replacement-fast-probe",
+    ):
+        from replacement import main as replacement_main
+
+        return replacement_main(argv)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workload", choices=["pooler-finalizer-updates"])
     parser.add_argument("output", type=Path)

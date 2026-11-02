@@ -1,0 +1,1423 @@
+{
+  "schema_version": 1,
+  "conclusion": "confirmed_operator_safety_failure_under_delayed_quorum_reset_delivery",
+  "sealed_at": "2026-11-01T20:55:36.755393+00:00",
+  "subject_commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
+  "source_commit": "20a1fed1106394b367d29c8568c36a2925a1561b",
+  "branch": "cloudnativepg-remaining-plans",
+  "bounds": {
+    "status": "complete_confirmed_operator_failure",
+    "closed_at": "2026-11-01T20:55:36.727395+00:00",
+    "faults_launched": 2,
+    "fault_limit": 2,
+    "workloads_executed": 6,
+    "reserved_workloads": 6,
+    "workload_limit": 6,
+    "automatic_repeats": 0,
+    "all_matched_controls_verified_before_faults": true,
+    "second_pair_launched": true,
+    "confirmation_complete": true,
+    "VM_idle": true,
+    "stop_reason": "Both reserved matched pairs completed; confirmed physical safety failure; both run limits exhausted.",
+    "report": "/Users/pial/Projects/sieve/docs/rfe/managed-child-repair/cloudnativepg-failover-quorum-harness-validation.md"
+  },
+  "provenance": {
+    "runtime_sha256": "b2acd9bceb49aff7c3d7d9fc37d45e1daaf50398c9b972e728d564ef4b35392e",
+    "protocol_sha256": "52d44fe42779f330a048aff2b92cd4d0b8b61dc6904beac4f7637a13593869d0",
+    "plans": {
+      "no-fault.yaml": "75f62d80b47582589ff08016345fafb918b7cbca37e8bf33b37ccbae2125561d",
+      "delay-quorum-reset.yaml": "72bf94c09d824092992c7a2cc9d2753c976f539921418abf5cdd3c384d12e236"
+    },
+    "build_review_sha256": "3bfdf62e22c99f3a85405cea7ba32cb37b0ce217ac26f14b6ad846433e6df5ef",
+    "evidence_index": ".cache/cloudnativepg/failover-quorum-harness-20261101/evidence-index.json",
+    "evidence_index_sha256": "4412e3a5695f203cd907b49c227597cfef1232ba4d195087e1ff1b4a448d16aa"
+  },
+  "harness_repair_validation": {
+    "source_commit": "20a1fed1106394b367d29c8568c36a2925a1561b",
+    "approved_seam": "Public client/coordinator RPC contract, confirmed by user",
+    "Python_tests": 413,
+    "protected_test_excluded": true,
+    "Go_client_race": "passed, client-all-final.log",
+    "Go_coordinator_race": "passed, coordinator-all.log",
+    "Go_instrumenter_race": "passed, instrumenter-all.log",
+    "Go_vet": "passed for client/coordinator/instrumenter",
+    "lint_format": "passed",
+    "strict_mypy_sources": 38,
+    "wheel": "passed",
+    "TDD_cycles": [
+      {
+        "behavior": "Exact scoped API callback without a resource trigger",
+        "RED": "client-routing-red.log",
+        "GREEN": "client-routing-green.log"
+      },
+      {
+        "behavior": "Resume without a waiting delivery",
+        "RED": "resume-no-waiter-red.log",
+        "GREEN": "resume-no-waiter-green.log"
+      },
+      {
+        "behavior": "Held delivery returns cancellation error",
+        "RED": "pause-cancellation-red.log",
+        "GREEN": "pause-cancellation-green.log"
+      },
+      {
+        "behavior": "Broadcast release, fresh subsequent pause, race-safe mask lookup",
+        "RED": "pause-repeat-red.log",
+        "GREEN": "pause-repeat-green.log"
+      },
+      {
+        "behavior": "All scope routes every delivery including configuration",
+        "RED": "client-all-scope-red.log",
+        "GREEN": "client-all-final.log"
+      }
+    ],
+    "retained_intermediate_test_fixture_failure": "client-all-scope-green.log expected only quorum objects but all also routes the bootstrap ConfigMap; corrected expected public callbacks before the final passing full client run."
+  },
+  "controls": [
+    {
+      "stage": "controls",
+      "directory": "fresh-learning/cloudnative-pg/failover-quorum-update/learn_prev",
+      "acknowledged_count_including_witness": 138,
+      "successful_reads": 183,
+      "denial_seconds": 121.39171265,
+      "native_current_quorum_denials": 24,
+      "client_failure_counts": {
+        "read": 127,
+        "write": 128
+      },
+      "max_success_gap_seconds": {
+        "read": 191.556226897,
+        "write": 194.326088413
+      },
+      "raw_alarm_count": 0,
+      "review_sha256": "629cecf9c24efb924bcc1f0b2d9de991a7cc616982b662331dae6b035bc99a68",
+      "availability_review_sha256": "921e64f33c4a0964d201b544ab0a08a5c66b8ccba41a60099f872e728413f53d"
+    },
+    {
+      "stage": "controls",
+      "directory": "fresh-learning/cloudnative-pg/failover-quorum-update/learn",
+      "acknowledged_count_including_witness": 189,
+      "successful_reads": 255,
+      "denial_seconds": 120.103249537,
+      "native_current_quorum_denials": 19,
+      "client_failure_counts": {
+        "read": 135,
+        "write": 138
+      },
+      "max_success_gap_seconds": {
+        "read": 206.707800268,
+        "write": 211.224932068
+      },
+      "raw_alarm_count": 0,
+      "review_sha256": "629cecf9c24efb924bcc1f0b2d9de991a7cc616982b662331dae6b035bc99a68",
+      "availability_review_sha256": "921e64f33c4a0964d201b544ab0a08a5c66b8ccba41a60099f872e728413f53d"
+    },
+    {
+      "stage": "controls",
+      "directory": "matched-no-fault/cloudnative-pg/failover-quorum-update/test/no-fault",
+      "acknowledged_count_including_witness": 145,
+      "successful_reads": 187,
+      "denial_seconds": 121.180060181,
+      "native_current_quorum_denials": 20,
+      "client_failure_counts": {
+        "read": 136,
+        "write": 134
+      },
+      "max_success_gap_seconds": {
+        "read": 199.729411713,
+        "write": 200.272950643
+      },
+      "raw_alarm_count": 2,
+      "review_sha256": "629cecf9c24efb924bcc1f0b2d9de991a7cc616982b662331dae6b035bc99a68",
+      "availability_review_sha256": "921e64f33c4a0964d201b544ab0a08a5c66b8ccba41a60099f872e728413f53d"
+    },
+    {
+      "stage": "control-2",
+      "directory": "control-2/cloudnative-pg/failover-quorum-update/test/no-fault",
+      "acknowledged_count_including_witness": 143,
+      "successful_reads": 195,
+      "denial_seconds": 121.075681797,
+      "native_current_quorum_denials": 21,
+      "client_failure_counts": {
+        "read": 133,
+        "write": 133
+      },
+      "max_success_gap_seconds": {
+        "read": 201.560861859,
+        "write": 205.380888532
+      },
+      "raw_alarm_count": 2,
+      "review_sha256": "4c96f596d9b46f5f0e57df4c6bcb0ae88035498465919c9a43127a1eac2e9f57",
+      "availability_review_sha256": "abd19966b91e8d8b4bb2cce4a292c8433839d53e8f9e366732f9cc16cbdb61ae"
+    }
+  ],
+  "faults": [
+    {
+      "stage": "fault-1",
+      "directory": "fault-1/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset",
+      "review": {
+        "status": "independently_verified_operator_failure",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-1-result-hashes.json",
+        "manifest_sha256": "3bb191b2e25be384d85eeb9efef33a9aa558686c2616ec9f2f35cdcad521defb",
+        "file_count": 1565,
+        "bytes": 97071810,
+        "VM_summary_sha256": "c4bba1d12b869728534cda72fc36363892b9d960392754c9e7f23611c67ec373",
+        "matched_control": "controls",
+        "matched_control_review_sha256": "629cecf9c24efb924bcc1f0b2d9de991a7cc616982b662331dae6b035bc99a68",
+        "fault_effect_verified": true,
+        "meaningful_failure": true,
+        "outcome": "unsafe_stale_quorum_promotion_and_client_visible_acknowledged_data_loss",
+        "all_alarms_classified": true,
+        "all_raw_evidence_retained": true,
+        "review_hashes": {
+          "physical-review": "de4454a9c6fa0f356a270d787d437c7e74a7970157839ee21e9eacf2704f70ad",
+          "data-review": "9afa51b9cd2659fc16744732f290caceef3a44a3d359891a4ba5b621a0adb205",
+          "instance-images": "cbee44a00240d601e5533f3f17db98b9858ddb2408062c78cd47a29dc1c65948"
+        },
+        "inventory_sha256": "749e03c55947aa8a86062e3e0e76f8b7d0c18b5afcb97ac5da1b3e70125b3d66",
+        "generic_fault_proof": "Unsupported action-sequence verdict retained unchanged; independent physical proof is separate.",
+        "global_irrecoverable_erasure_claimed": false,
+        "coverage_limits": [
+          "Initial missing-object cache Get is inferred from pinned source; normal W2 informer receipt is directly recorded.",
+          "All-instance SQL observations establish per-instance missing acknowledgements at the recorded times; retained old-branch rows are reported, not treated as global erasure.",
+          "Only this frozen subject, workload and fault schedule are tested; novelty is not established."
+        ]
+      },
+      "physical": {
+        "fault_effect_verified": true,
+        "meaningful_failure": true,
+        "outcome": "unsafe_promotion_with_missing_acknowledged_witness",
+        "hold_line": 218,
+        "release_line": 269,
+        "hold_seconds": 177.114145024,
+        "old_UID": "69920852-2f1e-4ee3-ae68-a9115678cb29",
+        "old_RV": "1778",
+        "current_RV": "1834",
+        "baseline_informer_initialization": "Normal native creation and exact W2 informer receipt precede the hold. Initial missing-object Get is not emitted by the frozen hook; its invocation is inferred from the pinned source and accepted failoverQuorum=false phase.",
+        "stale_Get_lines": [
+          231
+        ],
+        "native_decisions": [
+          {
+            "level": "info",
+            "ts": "2026-11-01T20:15:43.95205327Z",
+            "msg": "Quorum check algorithm results",
+            "controller": "cluster",
+            "controllerGroup": "postgresql.cnpg.io",
+            "controllerKind": "Cluster",
+            "Cluster": {
+              "name": "sieve-quorum",
+              "namespace": "default"
+            },
+            "namespace": "default",
+            "name": "sieve-quorum",
+            "reconcileID": "666c6ce1-77a6-45c4-a32f-1e1ea1092fc8",
+            "tag": "quorumCheck",
+            "isStronglyConsistent": true,
+            "readSetCardinality": 1,
+            "readSet": [
+              "sieve-quorum-2"
+            ],
+            "writeSetCardinality": 2,
+            "nodeSet": [
+              "sieve-quorum-2",
+              "sieve-quorum-3"
+            ],
+            "nodeSetCardinality": 2
+          }
+        ],
+        "acceptances_following_observed_stale_Get": [
+          {
+            "level": "info",
+            "ts": "2026-11-01T20:15:43.95205327Z",
+            "msg": "Quorum check algorithm results",
+            "controller": "cluster",
+            "controllerGroup": "postgresql.cnpg.io",
+            "controllerKind": "Cluster",
+            "Cluster": {
+              "name": "sieve-quorum",
+              "namespace": "default"
+            },
+            "namespace": "default",
+            "name": "sieve-quorum",
+            "reconcileID": "666c6ce1-77a6-45c4-a32f-1e1ea1092fc8",
+            "tag": "quorumCheck",
+            "isStronglyConsistent": true,
+            "readSetCardinality": 1,
+            "readSet": [
+              "sieve-quorum-2"
+            ],
+            "writeSetCardinality": 2,
+            "nodeSet": [
+              "sieve-quorum-2",
+              "sieve-quorum-3"
+            ],
+            "nodeSetCardinality": 2
+          }
+        ],
+        "owned_Ready_A_sample_times_near_native_R1_decision": [
+          1793564135232935473,
+          1793564137326191181,
+          1793564139420431166,
+          1793564141476078602,
+          1793564143692507185,
+          1793564146024135248,
+          1793564148031806192,
+          1793564150103694133,
+          1793564152037834212
+        ],
+        "promoted_SQL_samples": 39,
+        "A_lease_versions": [
+          "2055",
+          "2056",
+          "2057",
+          "2064",
+          "2074",
+          "2078",
+          "2085",
+          "2103",
+          "2107",
+          "2112",
+          "2117",
+          "2122",
+          "2128",
+          "2133",
+          "2137",
+          "2142",
+          "2147",
+          "2153",
+          "2158",
+          "2162",
+          "2167",
+          "2172",
+          "2178",
+          "2183",
+          "2187",
+          "2193",
+          "2197",
+          "2203",
+          "2208",
+          "2213",
+          "2219",
+          "2223",
+          "2229",
+          "2234",
+          "2239",
+          "2244",
+          "2248",
+          "2254",
+          "2259",
+          "2264",
+          "2269",
+          "2273",
+          "2279",
+          "2284"
+        ]
+      },
+      "negative_controls": [
+        {
+          "mutation": "missing_hold",
+          "rejected": true,
+          "reason": "Unique actual scoped hold/release absent"
+        },
+        {
+          "mutation": "missing_release",
+          "rejected": true,
+          "reason": "Unique actual scoped hold/release absent"
+        },
+        {
+          "mutation": "missing_stale_Get",
+          "rejected": true,
+          "reason": "No successful native Get of exact stale UID/RV/W2 during election observation"
+        },
+        {
+          "mutation": "wrong_quorum_UID",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "current_instead_of_stale_metadata",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_authoritative_W1",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_actual_R1_candidate_proof",
+          "rejected": true,
+          "reason": "Actual native R1/W2/N2 acceptance absent"
+        }
+      ],
+      "acknowledged_count_including_witness": 168,
+      "stream_counts": {
+        "read": {
+          "attempts": 740,
+          "successes": 681,
+          "failures": 59,
+          "terminal": {
+            "kind": "terminal",
+            "stream": "read",
+            "attempts": 740,
+            "ended_ns": 1793564335930534081,
+            "reason": "stop"
+          }
+        },
+        "write": {
+          "attempts": 247,
+          "successes": 167,
+          "failures": 80,
+          "terminal": {
+            "kind": "terminal",
+            "stream": "write",
+            "attempts": 247,
+            "ended_ns": 1793564336515489770,
+            "reason": "stop"
+          }
+        }
+      },
+      "missing_acknowledged_ids_on_final_instances": {
+        "sieve-quorum-1": [
+          38,
+          39,
+          40,
+          1000000000
+        ],
+        "sieve-quorum-2": [
+          38,
+          39,
+          40,
+          1000000000
+        ],
+        "sieve-quorum-3": [
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          153,
+          154,
+          155,
+          156,
+          157,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176,
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          212,
+          213,
+          214,
+          215,
+          216,
+          217,
+          218,
+          219,
+          220,
+          221,
+          222,
+          223,
+          224,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247
+        ]
+      },
+      "successful_read_violation_count": 626,
+      "first_successful_read_violation": {
+        "raw": {
+          "kind": "attempt",
+          "stream": "read",
+          "host": "sieve-quorum-rw.default.svc",
+          "seq": 115,
+          "started_ns": 1793564171161944402,
+          "monotonic_started_ns": 1140465581951425,
+          "timeout_seconds": 5,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout": "{\"count\" : 37, \"max\" : 37, \"bad\" : 0}\n",
+          "stderr": "",
+          "ended_ns": 1793564172243492754,
+          "monotonic_ended_ns": 1140466663499885,
+          "ok": true,
+          "acknowledged": false,
+          "outcome": "success"
+        },
+        "failed_checks": [
+          "acknowledged_lower_bound",
+          "monotonic_read"
+        ],
+        "known_count": 41,
+        "known_max": 1000000000,
+        "possible_count": 98,
+        "previous_successful_result": {
+          "count": 41,
+          "max": 1000000000,
+          "bad": 0
+        }
+      },
+      "primary": "sieve-quorum-1",
+      "replica_A": "sieve-quorum-2",
+      "replica_B": "sieve-quorum-3",
+      "raw_alarms": [
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "classification": "native_binary_provenance"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"cloudNativePGOperatorHash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "classification": "native_binary_provenance"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"isPrimary\"] is False after reference run, but True after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"timeLineID\"] is 1 after reference run, but 2 after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        }
+      ],
+      "semantic_failures": [
+        "acknowledged_writes_preserved_on_all_instances",
+        "no_automatic_failover_without_current_quorum",
+        "witness_preserved_on_all_instances"
+      ],
+      "generic_fault_proof_retained": {
+        "schema_version": 1,
+        "physically_verified": false,
+        "reasons": [
+          "physical proof for this action sequence is unavailable"
+        ],
+        "semantic_status": "failed",
+        "semantic_checks": [
+          {
+            "name": "required_ANY_2_effective_before_writes",
+            "passed": true
+          },
+          {
+            "name": "survivor_lacks_acknowledged_witness_before_recovery",
+            "passed": true
+          },
+          {
+            "name": "no_automatic_failover_without_current_quorum",
+            "passed": false
+          },
+          {
+            "name": "read_stream_complete",
+            "passed": true
+          },
+          {
+            "name": "read_recovered_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "write_stream_complete",
+            "passed": true
+          },
+          {
+            "name": "write_recovered_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "no_successful_reads_with_bad_payloads",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_writes_preserved_on_all_instances",
+            "passed": false
+          },
+          {
+            "name": "required_ANY_1_and_final_roles",
+            "passed": true
+          },
+          {
+            "name": "latest_accepted_cluster_spec",
+            "passed": true
+          },
+          {
+            "name": "workers_restored",
+            "passed": true
+          },
+          {
+            "name": "stable_after_recovery",
+            "passed": true
+          },
+          {
+            "name": "witness_preserved_on_all_instances",
+            "passed": false
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"cloudNativePGOperatorHash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"isPrimary\"] is False after reference run, but True after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"timeLineID\"] is 1 after reference run, but 2 after testing run",
+          "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run"
+        ],
+        "missed_state": null,
+        "workload_completed": false,
+        "triggered_actions": [
+          0,
+          1
+        ],
+        "evidence_sha256": {
+          "apiserver1.log": "5615d9c90ad9a1488894bde2e78212ca6b827447d74f09600296d2a07af93f67",
+          "sieve-server.log": "d96713878ef8d6803bfbba920fb98abf8a0735c0d8d8806fe95e6d164da4481d",
+          "injection-process-outcome.json": "edeb46d263842eaee1078690923d57f80f4d583097a43b3bae8b387cdde307d8",
+          "process-outcome.json": "418815d8cc843764aade715f4d48d73017ea73d2c0474e833239412408714921",
+          "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+          "semantic-outcome.json": "893f6b61dca8df63116da0f243fc952e82ece42a198ff830572a1260ffe4afc0"
+        }
+      },
+      "physical_review_sha256": "de4454a9c6fa0f356a270d787d437c7e74a7970157839ee21e9eacf2704f70ad",
+      "data_review_sha256": "9afa51b9cd2659fc16744732f290caceef3a44a3d359891a4ba5b621a0adb205",
+      "operations_review_sha256": "0df9a98a866bd57c86c8358e9fd1789d730411a85bc9f34da5fcc99473f9f0a5",
+      "availability_review_sha256": "4e192073fe4d1ea1a25752e2e315161706429844cc7b08337ec440bb8573028a",
+      "native_error_review": {
+        "status": "independently_verified",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-1-result-hashes.json",
+        "manifest_sha256": "3bb191b2e25be384d85eeb9efef33a9aa558686c2616ec9f2f35cdcad521defb",
+        "file_count": 1565,
+        "bytes": 97071810,
+        "reviewer_sha256": "ee868bff20b7b427b4ac2b14f04e730a0b1f1920a0183bda1e8c6882814e4c43",
+        "items": [],
+        "unique_incidents": 0
+      },
+      "native_error_review_sha256": "318f5fcbe8d36feb8a5ce90ebfcca4064131f77aac6faed922bd70cead191c18"
+    },
+    {
+      "stage": "fault-2",
+      "directory": "fault-2/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset",
+      "review": {
+        "status": "independently_verified_operator_failure",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-2-result-hashes.json",
+        "manifest_sha256": "2a15144124d4053d8b61892ac0396fe0de5c9b70a57e5f8ae7f7be1ed4c47e7c",
+        "file_count": 1581,
+        "bytes": 97732844,
+        "VM_summary_sha256": "ea71ba22afc249f24a455e7484cb0620dbcf36c53813951f6e618c9df4dcafa5",
+        "matched_control": "control-2",
+        "matched_control_review_sha256": "4c96f596d9b46f5f0e57df4c6bcb0ae88035498465919c9a43127a1eac2e9f57",
+        "fault_effect_verified": true,
+        "meaningful_failure": true,
+        "outcome": "unsafe_stale_quorum_promotion_and_client_visible_acknowledged_data_loss",
+        "all_alarms_classified": true,
+        "all_raw_evidence_retained": true,
+        "native_operator_error_incidents": 1,
+        "review_hashes": {
+          "physical-review": "1857b4aef62382be618b7b1b6ad19e76393a6d71bdb11ea406ee32e257ec838c",
+          "data-review": "6683fc5876c2bb818ca44cec2c3327a5a7a9695acb29163294cbf6dea8aa92f3",
+          "instance-images": "473e5bacbc9a95d20bf5fd6ed56a1c0300444e163a41f41ca25f5ae1df652e17",
+          "native-error-review": "ed771945daea9673c67057616afcbc97d6958fb66c2cef3ea19d8b4434b41e7e"
+        },
+        "inventory_sha256": "c6d8573ff544d9315d6c13ac84e3c222632296b5091775ce711cdf29f7860c6b",
+        "generic_fault_proof": "Unsupported action-sequence verdict retained unchanged; independent physical proof is separate.",
+        "global_irrecoverable_erasure_claimed": false,
+        "coverage_limits": [
+          "Initial missing-object cache Get is inferred from pinned source; normal W2 informer receipt is directly recorded.",
+          "All-instance SQL observations establish per-instance missing acknowledgements at the recorded times; retained old-branch rows are reported, not treated as global erasure.",
+          "Only this frozen subject, workload and fault schedule are tested; novelty is not established."
+        ]
+      },
+      "physical": {
+        "fault_effect_verified": true,
+        "meaningful_failure": true,
+        "outcome": "unsafe_promotion_with_missing_acknowledged_witness",
+        "hold_line": 222,
+        "release_line": 273,
+        "hold_seconds": 172.635120128,
+        "old_UID": "5e96231a-899d-4bdd-94c3-31e773cfd7a0",
+        "old_RV": "1791",
+        "current_RV": "1854",
+        "baseline_informer_initialization": "Normal native creation and exact W2 informer receipt precede the hold. Initial missing-object Get is not emitted by the frozen hook; its invocation is inferred from the pinned source and accepted failoverQuorum=false phase.",
+        "stale_Get_lines": [
+          235
+        ],
+        "native_decisions": [
+          {
+            "level": "info",
+            "ts": "2026-11-01T20:46:20.762145052Z",
+            "msg": "Quorum check algorithm results",
+            "controller": "cluster",
+            "controllerGroup": "postgresql.cnpg.io",
+            "controllerKind": "Cluster",
+            "Cluster": {
+              "name": "sieve-quorum",
+              "namespace": "default"
+            },
+            "namespace": "default",
+            "name": "sieve-quorum",
+            "reconcileID": "c856407c-1eeb-42c9-9c3f-168cdb4b103c",
+            "tag": "quorumCheck",
+            "isStronglyConsistent": true,
+            "readSetCardinality": 1,
+            "readSet": [
+              "sieve-quorum-2"
+            ],
+            "writeSetCardinality": 2,
+            "nodeSet": [
+              "sieve-quorum-2",
+              "sieve-quorum-3"
+            ],
+            "nodeSetCardinality": 2
+          }
+        ],
+        "acceptances_following_observed_stale_Get": [
+          {
+            "level": "info",
+            "ts": "2026-11-01T20:46:20.762145052Z",
+            "msg": "Quorum check algorithm results",
+            "controller": "cluster",
+            "controllerGroup": "postgresql.cnpg.io",
+            "controllerKind": "Cluster",
+            "Cluster": {
+              "name": "sieve-quorum",
+              "namespace": "default"
+            },
+            "namespace": "default",
+            "name": "sieve-quorum",
+            "reconcileID": "c856407c-1eeb-42c9-9c3f-168cdb4b103c",
+            "tag": "quorumCheck",
+            "isStronglyConsistent": true,
+            "readSetCardinality": 1,
+            "readSet": [
+              "sieve-quorum-2"
+            ],
+            "writeSetCardinality": 2,
+            "nodeSet": [
+              "sieve-quorum-2",
+              "sieve-quorum-3"
+            ],
+            "nodeSetCardinality": 2
+          }
+        ],
+        "owned_Ready_A_sample_times_near_native_R1_decision": [
+          1793565971423713623,
+          1793565972843350182,
+          1793565974248533965,
+          1793565975656566599,
+          1793565977247299905,
+          1793565979158627318,
+          1793565981311251601,
+          1793565983363019613,
+          1793565985784621473,
+          1793565987754500694,
+          1793565989907628149
+        ],
+        "promoted_SQL_samples": 44,
+        "A_lease_versions": [
+          "2045",
+          "2047",
+          "2048",
+          "2056",
+          "2064",
+          "2071",
+          "2089",
+          "2094",
+          "2098",
+          "2102",
+          "2110",
+          "2114",
+          "2119",
+          "2123",
+          "2129",
+          "2135",
+          "2139",
+          "2144",
+          "2148",
+          "2154",
+          "2160",
+          "2165",
+          "2169",
+          "2173",
+          "2179",
+          "2185",
+          "2190",
+          "2194",
+          "2198",
+          "2205",
+          "2210",
+          "2215",
+          "2219",
+          "2223",
+          "2231",
+          "2235",
+          "2240",
+          "2244",
+          "2248",
+          "2256",
+          "2260",
+          "2266",
+          "2270",
+          "2274",
+          "2282",
+          "2287",
+          "2291",
+          "2295",
+          "2300",
+          "2307"
+        ]
+      },
+      "negative_controls": [
+        {
+          "mutation": "missing_hold",
+          "rejected": true,
+          "reason": "Unique actual scoped hold/release absent"
+        },
+        {
+          "mutation": "missing_release",
+          "rejected": true,
+          "reason": "Unique actual scoped hold/release absent"
+        },
+        {
+          "mutation": "missing_stale_Get",
+          "rejected": true,
+          "reason": "No successful native Get of exact stale UID/RV/W2 during election observation"
+        },
+        {
+          "mutation": "wrong_quorum_UID",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "current_instead_of_stale_metadata",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_authoritative_W1",
+          "rejected": true,
+          "reason": ""
+        },
+        {
+          "mutation": "missing_actual_R1_candidate_proof",
+          "rejected": true,
+          "reason": "Actual native R1/W2/N2 acceptance absent"
+        }
+      ],
+      "acknowledged_count_including_witness": 170,
+      "stream_counts": {
+        "read": {
+          "attempts": 797,
+          "successes": 747,
+          "failures": 50,
+          "terminal": {
+            "kind": "terminal",
+            "stream": "read",
+            "attempts": 797,
+            "ended_ns": 1793566189337192818,
+            "reason": "stop"
+          }
+        },
+        "write": {
+          "attempts": 244,
+          "successes": 169,
+          "failures": 75,
+          "terminal": {
+            "kind": "terminal",
+            "stream": "write",
+            "attempts": 244,
+            "ended_ns": 1793566189965839816,
+            "reason": "stop"
+          }
+        }
+      },
+      "missing_acknowledged_ids_on_final_instances": {
+        "sieve-quorum-1": [
+          39,
+          40,
+          41,
+          1000000000
+        ],
+        "sieve-quorum-2": [
+          39,
+          40,
+          41,
+          1000000000
+        ],
+        "sieve-quorum-3": [
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          153,
+          154,
+          155,
+          156,
+          157,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176,
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          212,
+          213,
+          214,
+          215,
+          216,
+          217,
+          218,
+          219,
+          220,
+          221,
+          222,
+          223,
+          224,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244
+        ]
+      },
+      "successful_read_violation_count": 690,
+      "first_successful_read_violation": {
+        "raw": {
+          "kind": "attempt",
+          "stream": "read",
+          "host": "sieve-quorum-rw.default.svc",
+          "seq": 108,
+          "started_ns": 1793566007689398947,
+          "monotonic_started_ns": 1142302109406128,
+          "timeout_seconds": 5,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout": "{\"count\" : 38, \"max\" : 38, \"bad\" : 0}\n",
+          "stderr": "",
+          "ended_ns": 1793566008758393052,
+          "monotonic_ended_ns": 1142303178400509,
+          "ok": true,
+          "acknowledged": false,
+          "outcome": "success"
+        },
+        "failed_checks": [
+          "acknowledged_lower_bound",
+          "monotonic_read"
+        ],
+        "known_count": 42,
+        "known_max": 1000000000,
+        "possible_count": 91,
+        "previous_successful_result": {
+          "count": 42,
+          "max": 1000000000,
+          "bad": 0
+        }
+      },
+      "primary": "sieve-quorum-1",
+      "replica_A": "sieve-quorum-2",
+      "replica_B": "sieve-quorum-3",
+      "raw_alarms": [
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "classification": "native_binary_provenance"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"cloudNativePGOperatorHash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "classification": "native_binary_provenance"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"isPrimary\"] is False after reference run, but True after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"timeLineID\"] is 1 after reference run, but 2 after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        },
+        {
+          "raw": "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "classification": "physically_verified_unsafe_A_promotion_consequence"
+        }
+      ],
+      "semantic_failures": [
+        "acknowledged_writes_preserved_on_all_instances",
+        "no_automatic_failover_without_current_quorum",
+        "witness_preserved_on_all_instances"
+      ],
+      "generic_fault_proof_retained": {
+        "schema_version": 1,
+        "physically_verified": false,
+        "reasons": [
+          "physical proof for this action sequence is unavailable"
+        ],
+        "semantic_status": "failed",
+        "semantic_checks": [
+          {
+            "name": "required_ANY_2_effective_before_writes",
+            "passed": true
+          },
+          {
+            "name": "survivor_lacks_acknowledged_witness_before_recovery",
+            "passed": true
+          },
+          {
+            "name": "no_automatic_failover_without_current_quorum",
+            "passed": false
+          },
+          {
+            "name": "read_stream_complete",
+            "passed": true
+          },
+          {
+            "name": "read_recovered_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "write_stream_complete",
+            "passed": true
+          },
+          {
+            "name": "write_recovered_after_convergence",
+            "passed": true
+          },
+          {
+            "name": "no_successful_reads_with_bad_payloads",
+            "passed": true
+          },
+          {
+            "name": "acknowledged_writes_preserved_on_all_instances",
+            "passed": false
+          },
+          {
+            "name": "required_ANY_1_and_final_roles",
+            "passed": true
+          },
+          {
+            "name": "latest_accepted_cluster_spec",
+            "passed": true
+          },
+          {
+            "name": "workers_restored",
+            "passed": true
+          },
+          {
+            "name": "stable_after_recovery",
+            "passed": true
+          },
+          {
+            "name": "witness_preserved_on_all_instances",
+            "passed": false
+          }
+        ],
+        "raw_alarms": [
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"availableArchitectures\"][0][\"hash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"cloudNativePGOperatorHash\"] is 0e9d0f59285b7457607fc9533d3e2b33649c0a10c0263899e473c78294811d8e after reference run, but af49de3174b1b9e230e41f963ee29b7e537e0695e7e7864bde8b8b526860031c after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"isPrimary\"] is False after reference run, but True after testing run",
+          "End state inconsistency - object field has a different value: cluster/default/sieve-quorum[\"status\"][\"instancesReportedState\"][\"sieve-quorum-2\"][\"timeLineID\"] is 1 after reference run, but 2 after testing run",
+          "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: persistentvolumeclaim/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"cnpg.io/instanceRole\"] is replica after reference run, but primary after testing run",
+          "End state inconsistency - object field has a different value: pod/default/sieve-quorum-2[\"metadata\"][\"labels\"][\"role\"] is replica after reference run, but primary after testing run"
+        ],
+        "missed_state": null,
+        "workload_completed": false,
+        "triggered_actions": [
+          0,
+          1
+        ],
+        "evidence_sha256": {
+          "apiserver1.log": "1dabfc48edf1a0682a031a89cbcf40d29dbd4fcae57fc0f019f5157695cc2765",
+          "sieve-server.log": "eb78f83d48dfaabe5cd9b66703cb3066fd09cd4b45e1821f3d1feb6ebd22f363",
+          "injection-process-outcome.json": "6cf230a1766289b5317ece138bb224030cfd1453797d0f5d07205e705e148c4b",
+          "process-outcome.json": "33ed2b1c779cf591e88da8c30c47ea99028710ec7d121fcf15e600000ec0d173",
+          "workload.log": "b12a978245a5891c3eaf7132c4529d323fc711f12dd765e994993a347c036733",
+          "semantic-outcome.json": "893f6b61dca8df63116da0f243fc952e82ece42a198ff830572a1260ffe4afc0"
+        }
+      },
+      "physical_review_sha256": "1857b4aef62382be618b7b1b6ad19e76393a6d71bdb11ea406ee32e257ec838c",
+      "data_review_sha256": "6683fc5876c2bb818ca44cec2c3327a5a7a9695acb29163294cbf6dea8aa92f3",
+      "operations_review_sha256": "697b174cbede32d4df7de51b056ce3d24b73c54f1922b3eecaf5a184a1d38266",
+      "availability_review_sha256": "04f018b805e09dff9d6aeaf79735d224f508f1a70b0d796604beea26d65cec63",
+      "native_error_review": {
+        "status": "independently_verified",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-2-result-hashes.json",
+        "manifest_sha256": "2a15144124d4053d8b61892ac0396fe0de5c9b70a57e5f8ae7f7be1ed4c47e7c",
+        "file_count": 1581,
+        "bytes": 97732844,
+        "reviewer_sha256": "ee868bff20b7b427b4ac2b14f04e730a0b1f1920a0183bda1e8c6882814e4c43",
+        "items": [
+          {
+            "directory": "fault-2/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset",
+            "raw": {
+              "file": "controller.log",
+              "line": 139,
+              "record": {
+                "level": "error",
+                "ts": "2026-11-01T20:43:11.340309236Z",
+                "msg": "Failed to update lease",
+                "lock": "default/db9c8771.cnpg.io",
+                "error": "Operation cannot be fulfilled on leases.coordination.k8s.io \"db9c8771.cnpg.io\": the object has been modified; please apply your changes to the latest version and try again",
+                "stacktrace": "k8s.io/client-go/tools/leaderelection.(*LeaderElector).tryAcquireOrRenew\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:497\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew.func1.1\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:292\nk8s.io/apimachinery/pkg/util/wait.loopConditionUntilContext.func1\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/loop.go:53\nk8s.io/apimachinery/pkg/util/wait.loopConditionUntilContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/loop.go:54\nk8s.io/apimachinery/pkg/util/wait.PollUntilContextTimeout\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/poll.go:48\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew.func1\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:285\nk8s.io/apimachinery/pkg/util/wait.BackoffUntilWithContext.func1\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:255\nk8s.io/apimachinery/pkg/util/wait.BackoffUntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:256\nk8s.io/apimachinery/pkg/util/wait.JitterUntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:223\nk8s.io/apimachinery/pkg/util/wait.UntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:172\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:284\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).Run\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:221\nsigs.k8s.io/controller-runtime/pkg/manager.(*controllerManager).Start.func3\n\tsigs.k8s.io/controller-runtime@v0.24.1/pkg/manager/internal.go:470"
+              }
+            },
+            "classification": "recovered_operator_leader_lease_resourceVersion_conflict",
+            "resolved": true,
+            "same_holder_with_zero_lease_transitions": true,
+            "last_successful_renewal": "2026-11-01T20:50:56.471689Z",
+            "reason": "Exact optimistic-concurrency conflict in the operator leader lease, retained in both log copies. Raw API receipts prove continuous same-holder renewals afterward, beyond the stable period. Separate physical proof uses the PostgreSQL primary lease; the operator Pod never restarted and actual startup was ten workers."
+          },
+          {
+            "directory": "fault-2/cloudnative-pg/failover-quorum-update/test/delay-quorum-reset",
+            "raw": {
+              "file": "streamed-controller.log",
+              "line": 139,
+              "record": {
+                "level": "error",
+                "ts": "2026-11-01T20:43:11.340309236Z",
+                "msg": "Failed to update lease",
+                "lock": "default/db9c8771.cnpg.io",
+                "error": "Operation cannot be fulfilled on leases.coordination.k8s.io \"db9c8771.cnpg.io\": the object has been modified; please apply your changes to the latest version and try again",
+                "stacktrace": "k8s.io/client-go/tools/leaderelection.(*LeaderElector).tryAcquireOrRenew\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:497\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew.func1.1\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:292\nk8s.io/apimachinery/pkg/util/wait.loopConditionUntilContext.func1\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/loop.go:53\nk8s.io/apimachinery/pkg/util/wait.loopConditionUntilContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/loop.go:54\nk8s.io/apimachinery/pkg/util/wait.PollUntilContextTimeout\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/poll.go:48\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew.func1\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:285\nk8s.io/apimachinery/pkg/util/wait.BackoffUntilWithContext.func1\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:255\nk8s.io/apimachinery/pkg/util/wait.BackoffUntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:256\nk8s.io/apimachinery/pkg/util/wait.JitterUntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:223\nk8s.io/apimachinery/pkg/util/wait.UntilWithContext\n\tk8s.io/apimachinery@v0.36.2/pkg/util/wait/backoff.go:172\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).renew\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:284\nk8s.io/client-go/tools/leaderelection.(*LeaderElector).Run\n\tk8s.io/client-go@v0.36.2/tools/leaderelection/leaderelection.go:221\nsigs.k8s.io/controller-runtime/pkg/manager.(*controllerManager).Start.func3\n\tsigs.k8s.io/controller-runtime@v0.24.1/pkg/manager/internal.go:470"
+              }
+            },
+            "classification": "recovered_operator_leader_lease_resourceVersion_conflict",
+            "resolved": true,
+            "same_holder_with_zero_lease_transitions": true,
+            "last_successful_renewal": "2026-11-01T20:50:56.471689Z",
+            "reason": "Exact optimistic-concurrency conflict in the operator leader lease, retained in both log copies. Raw API receipts prove continuous same-holder renewals afterward, beyond the stable period. Separate physical proof uses the PostgreSQL primary lease; the operator Pod never restarted and actual startup was ten workers."
+          }
+        ],
+        "unique_incidents": 1
+      },
+      "native_error_review_sha256": "ed771945daea9673c67057616afcbc97d6958fb66c2cef3ea19d8b4434b41e7e"
+    }
+  ],
+  "preservation": {
+    "status": "unchanged",
+    "verified_at": "2026-11-01T20:54:46.880913+00:00",
+    "prior_result_trees": 54,
+    "prior_files": 293561,
+    "prior_bytes": 12756467213,
+    "preserved_inputs": 392,
+    "frozen_source_files_checked": 697,
+    "runtime_overlay": [
+      "controllers/cloudnative-pg/config.json",
+      "controllers/cloudnative-pg/build/build.sh",
+      "controllers/cloudnative-pg/deploy/operator.yaml"
+    ],
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "new_result_trees": [
+      {
+        "stage": "build",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/build-result-hashes.json",
+        "manifest_sha256": "21e460f6cebe0ac0437289e8c242fc84ac5d1cb188ffd983fb39972d771103e2",
+        "file_count": 4050,
+        "bytes": 151093578
+      },
+      {
+        "stage": "control-2",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/control-2-result-hashes.json",
+        "manifest_sha256": "9e7014f6098b9d80be6985e0f4ba82f5722b62985f79d40b5230e1de9ba6faf4",
+        "file_count": 1365,
+        "bytes": 89113747
+      },
+      {
+        "stage": "controls",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/controls-result-hashes.json",
+        "manifest_sha256": "f682b371872d978655ce7b581139921214f5aff21dcf8e0f507278a73fd8afb5",
+        "file_count": 4218,
+        "bytes": 374982497
+      },
+      {
+        "stage": "fault-1",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-1-result-hashes.json",
+        "manifest_sha256": "3bb191b2e25be384d85eeb9efef33a9aa558686c2616ec9f2f35cdcad521defb",
+        "file_count": 1565,
+        "bytes": 97071810
+      },
+      {
+        "stage": "fault-2",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/fault-2-result-hashes.json",
+        "manifest_sha256": "2a15144124d4053d8b61892ac0396fe0de5c9b70a57e5f8ae7f7be1ed4c47e7c",
+        "file_count": 1581,
+        "bytes": 97732844
+      },
+      {
+        "stage": "api-artifacts",
+        "manifest": "/Users/pial/Projects/sieve/.cache/cloudnativepg/failover-quorum-harness-20261101/api-artifacts-result-hashes.json",
+        "manifest_sha256": "2f1b0e7ad32229df86d9e0c135d8fb34ee391eed599b8480ae475615022c98f8",
+        "file_count": 12,
+        "bytes": 1108451487
+      }
+    ],
+    "source_commit": "20a1fed1106394b367d29c8568c36a2925a1561b",
+    "runtime_sha256": "b2acd9bceb49aff7c3d7d9fc37d45e1daaf50398c9b972e728d564ef4b35392e",
+    "protocol_sha256": "52d44fe42779f330a048aff2b92cd4d0b8b61dc6904beac4f7637a13593869d0",
+    "reserved_workloads": 6,
+    "launched_fault_attempts": 2,
+    "all_faults_bound_to_verified_matched_controls": true
+  },
+  "final_VM_state": {
+    "status": "idle",
+    "running_sieve_services": [],
+    "running_containers": [],
+    "owned_kind_network_attachments": {},
+    "images_unchanged": {
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:vanilla": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:learn": "sha256:829475520322f4d12ab1a2abb303bc3f93110d6c36340c266eed7ed1d9e5e9e1",
+      "sieve-cnpg-ca-cache-20261031-fixed/cloudnative-pg:test": "sha256:e15f3ab979f909a370bc0020b5be1068255fc14e875e7defafad2d27353b6503",
+      "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie@sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce": "sha256:348997438269fddc0e2825e00594367ad61751adb08a7698a0a14f793b0dc2ce",
+      "ghcr.io/cloudnative-pg/pgbouncer:1.25.1@sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8": "sha256:e6ddfe22d845e603825e235dd8334b21ecd125abea2a2172478f556b8dee2bb8",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-learn": "sha256:efe50af72929e2602f7e6da5210dadb4f000000e2e9db96a4921fb77cd2b6949",
+      "sieve-cnpg-ca-cache-20261031-fixed/node:v1.36.4-test": "sha256:e2edfd6407de5ed4d9d63a1f9458674ce89dd561e48d94ccf5cb4938f0c76f0e",
+      "sieve-cnpg-quorum-harness-20261101-fixed/cloudnative-pg:learn": "sha256:41ecb8268b3424c18860502b55d662aaef4bd92a61c83f1bd3f3ac35913425be",
+      "sieve-cnpg-quorum-harness-20261101-fixed/cloudnative-pg:test": "sha256:75f28958938681e7c7380647ce29dd8c15f791a6d2f7a45a1da6ecb131de2578",
+      "sieve-cnpg-quorum-harness-20261101-fixed/cloudnative-pg:vanilla": "sha256:e4ed3015cb7983d4c6a18569d0f1a7b3f6b9cf3b2d711c93c9605277b393ffeb",
+      "sieve-cnpg-quorum-harness-20261101-fixed/kube-apiserver:learn": "sha256:2d6555f260641148f330c335a3b9d8348af9bef21941cbf01ac1db462514276b",
+      "sieve-cnpg-quorum-harness-20261101-fixed/node:v1.36.4-learn": "sha256:30fdd8b68d2b7f3f3e630e48469e8d2208ed276bca0ebc141f2968d513e02068",
+      "sieve-cnpg-quorum-harness-20261101-fixed/kube-apiserver:test": "sha256:ff99e45f93c8c806cd9cda3e9636fc2bcfce6b3d42e012bfdef0e9c4524d82d9",
+      "sieve-cnpg-quorum-harness-20261101-fixed/node:v1.36.4-test": "sha256:00cf9484987a342b4544499f3d2491a456bba1bf34c15665a17bd9eb8b78df7e"
+    },
+    "service_states": {
+      "build": "Result=success\nActiveState=inactive\nSubState=dead",
+      "controls": "Result=success\nActiveState=inactive\nSubState=dead",
+      "fault-2": "Result=success\nActiveState=inactive\nSubState=dead",
+      "control-2": "Result=success\nActiveState=inactive\nSubState=dead",
+      "fault-1": "Result=success\nActiveState=inactive\nSubState=dead"
+    },
+    "free_bytes": 171830104064
+  },
+  "limits": [
+    "Only the pinned native subject and frozen schedule were exercised; production frequency and novelty are not established.",
+    "Initial missing-object cache Get is not recorded by the hook. Normal W2 informer initialization is directly recorded; earlier Get is a pinned-source inference.",
+    "Per-instance final missing acknowledgements and client-visible read regression are directly measured. Retained old-branch data is reported; global irrecoverable erasure is not claimed.",
+    "Generic Sieve physical proof reports this action sequence as unsupported. Independent manifest-bound physical audits and seven mutated-evidence checks per fault supply separate proof.",
+    "Historical instance-manager logs for every operand exit were not retained; exact restart statuses and kubelet events are preserved without claiming complete restart root causes."
+  ],
+  "restrictions": {
+    "protected_test_modified_or_staged": false,
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "ten_reconciliation_workers": true,
+    "workload_or_plans_changed_between_pairs": false,
+    "raw_alarms_or_masks_modified": false,
+    "credential_access": false,
+    "generative_evaluation": false,
+    "local_Docker": false,
+    "image_pruning": false,
+    "push": false,
+    "PR": false
+  }
+}

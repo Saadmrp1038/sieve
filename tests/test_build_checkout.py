@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 from sieve_tool.build import kubernetes
 
 
@@ -117,6 +119,64 @@ def test_controller_patches_do_not_need_global_git_identity(tmp_path, monkeypatc
             )
         )
     assert (checkout / ".cache/controllers/operator/logic.go").read_text() == "patched"
+
+
+@pytest.mark.parametrize("available", [True, False])
+def test_controller_fetches_exact_commit_outside_cloned_branches(tmp_path, available):
+    from types import SimpleNamespace
+
+    from sieve_tool.build.controllers import download_controller
+    from sieve_tool.paths import repository
+    from sieve_tool.process import ProcessError
+
+    upstream = tmp_path / "upstream"
+    upstream.mkdir()
+    git = ["git", "-C", str(upstream)]
+    subprocess.run([*git, "init", "-b", "main"], check=True, capture_output=True)
+
+    def commit(content):
+        (upstream / "logic.go").write_text(content)
+        subprocess.run([*git, "add", "."], check=True)
+        subprocess.run(
+            [
+                *git,
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@localhost",
+                "commit",
+                "-m",
+                content,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        return subprocess.check_output([*git, "rev-parse", "HEAD"], text=True).strip()
+
+    base = commit("base")
+    fixed = commit("fixed")
+    subprocess.run([*git, "update-ref", "refs/pull/10989/head", fixed], check=True)
+    subprocess.run([*git, "reset", "--hard", base], check=True, capture_output=True)
+    checkout = tmp_path / "sieve"
+    checkout.mkdir()
+    with repository(checkout):
+        config = SimpleNamespace(
+            controller_name="operator",
+            # file:// uses Git transport, without copying unreachable local objects.
+            github_link=upstream.as_uri(),
+            commit=fixed if available else "f" * 40,
+            cherry_pick_commits=[],
+        )
+        if available:
+            download_controller(config)
+        else:
+            with pytest.raises(ProcessError, match="fetch pinned controller revision"):
+                download_controller(config)
+    selected = checkout / ".cache/controllers/operator"
+    assert (selected / "logic.go").read_text() == ("fixed" if available else "base")
+    assert subprocess.check_output(
+        ["git", "-C", str(selected), "rev-parse", "HEAD"], text=True
+    ).strip() == (fixed if available else base)
 
 
 def test_cached_checkout_without_requested_tag_fetches_release(tmp_path, monkeypatch):

@@ -14,3 +14,6 @@ extraEnv:
     value: kind-control-plane
   - name: KUBERNETES_SERVICE_PORT
     value: "6443"
+
+# Reconciliation concurrency, separate from Kubernetes node count.
+concurrent: 10

@@ -1,9 +1,9 @@
 {
     "name": "cloudnative-pg",
     "github_link": "https://github.com/cloudnative-pg/cloudnative-pg.git",
-    "commit": "9bb80d2292f5845ac6c2d60dc691b222a5ac4655",
+    "commit": "96cb6b05aea5f76ddac43d21e0f178e0a8b1b331",
     "kubernetes_version": "v1.36.4",
-    "client_go_version": "v0.37.0",
+    "client_go_version": "v0.36.2",
     "dockerfile_path": "Dockerfile",
     "controller_image_name": "sieve-cloudnative-pg:latest",
     "annotated_reconcile_functions": {
@@ -24,15 +24,34 @@
         "publication",
         "subscription",
         "imagecatalog",
-        "clusterimagecatalog"
+        "clusterimagecatalog",
+        "failoverquorum"
     ],
     "controller_pod_label": "cloudnative-pg",
     "controller_deployment_file_path": "controllers/cloudnative-pg/deploy/operator.yaml",
     "test_setting": {
+        "ca-secret-bootstrap": {
+            "num_workers": 0
+        },
+        "pooler-replacement-fast-probe": {
+            "num_workers": 0
+        },
+        "pooler-replacement-clients": {
+            "num_workers": 0
+        },
+        "pooler-replacement": {
+            "num_workers": 0
+        },
         "pooler-finalizer-updates": {
             "num_workers": 0,
             "independent_updates": true,
             "write_trigger": "occurrence"
+        },
+        "rolling-config-update": {
+            "num_workers": 0
+        },
+        "failover-quorum-update": {
+            "num_workers": 3
         }
     },
     "container_name": "manager"

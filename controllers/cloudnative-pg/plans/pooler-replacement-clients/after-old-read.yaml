@@ -1,0 +1,33 @@
+workload: pooler-replacement-clients
+actions:
+  - actionType: pauseController
+    pauseAt: afterControllerRead
+    pauseScope: pooler/default/sieve-pooler
+    pauseBy: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*PoolerReconciler).Reconcile
+    trigger:
+      definitions:
+        - triggerName: armed
+          condition:
+            conditionType: onObjectUpdateTo
+            resourceKey: pooler/default/sieve-pooler
+            occurrence: 1
+            stateMatch: '{"metadata":{"annotations":{"sieve.testing/replacement-phase":"B"}}}'
+          observationPoint:
+            when: beforeAPIServerRecv
+            by: kind-control-plane
+      expression: armed
+  - actionType: resumeController
+    pauseAt: afterControllerRead
+    pauseScope: pooler/default/sieve-pooler
+    trigger:
+      definitions:
+        - triggerName: replacement_received
+          condition:
+            conditionType: onObjectUpdateTo
+            resourceKey: pooler/default/sieve-pooler
+            occurrence: 1
+            stateMatch: '{"metadata":{"annotations":{"sieve.testing/replacement-phase":"C"}}}'
+          observationPoint:
+            when: afterControllerRecv
+            by: informer
+      expression: replacement_received

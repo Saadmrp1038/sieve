@@ -1,0 +1,16 @@
+workload: pooler-replacement
+actions:
+  - actionType: restartController
+    controllerLabel: cloudnative-pg
+    trigger:
+      definitions:
+        - triggerName: replacement_accepted
+          condition:
+            conditionType: onObjectUpdateTo
+            resourceKey: pooler/default/sieve-pooler
+            occurrence: 1
+            stateMatch: '{"metadata":{"annotations":{"sieve.testing/replacement-phase":"C"}}}'
+          observationPoint:
+            when: afterAPIServerRecv
+            by: kind-control-plane
+      expression: replacement_accepted

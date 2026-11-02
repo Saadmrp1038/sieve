@@ -277,6 +277,7 @@ func (a *PauseAPIServerAction) runInternal(actionContext *ActionContext, async b
 			return err
 		}
 	}
+	actionContext.pauseAPIServerSharedDataLock.Lock()
 	if _, ok := actionContext.apiserverLockedMap[a.apiServerName]; !ok {
 		actionContext.apiserverLockedMap[a.apiServerName] = map[string]bool{}
 	}
@@ -284,10 +285,11 @@ func (a *PauseAPIServerAction) runInternal(actionContext *ActionContext, async b
 		actionContext.apiserverLocks[a.apiServerName] = map[string]chan string{}
 	}
 	log.Printf("Create channel for %s %s\n", a.apiServerName, a.pauseScope)
-	if _, ok := actionContext.apiserverLocks[a.apiServerName][a.pauseScope]; !ok {
+	if !actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] {
 		actionContext.apiserverLocks[a.apiServerName][a.pauseScope] = make(chan string)
 	}
 	actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] = true
+	actionContext.pauseAPIServerSharedDataLock.Unlock()
 	if a.waitAfter > 0 {
 		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
 			return err
@@ -334,9 +336,12 @@ func (a *ResumeAPIServerAction) runInternal(actionContext *ActionContext, async 
 		}
 	}
 	log.Printf("Close channel for %s %s\n", a.apiServerName, a.pauseScope)
-	actionContext.apiserverLocks[a.apiServerName][a.pauseScope] <- "release"
-	close(actionContext.apiserverLocks[a.apiServerName][a.pauseScope])
-	actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] = false
+	actionContext.pauseAPIServerSharedDataLock.Lock()
+	if actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] {
+		actionContext.apiserverLockedMap[a.apiServerName][a.pauseScope] = false
+		close(actionContext.apiserverLocks[a.apiServerName][a.pauseScope])
+	}
+	actionContext.pauseAPIServerSharedDataLock.Unlock()
 	if a.waitAfter > 0 {
 		if err := actionSleep(actionContext.ctx, a.waitAfter); err != nil {
 			return err

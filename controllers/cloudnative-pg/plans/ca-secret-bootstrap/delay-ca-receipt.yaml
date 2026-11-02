@@ -1,0 +1,47 @@
+workload: ca-secret-bootstrap
+actions:
+  - actionType: pauseAPIServer
+    apiServerName: kind-control-plane
+    pauseScope: secret/default/sieve-ca-bootstrap-ca
+    trigger:
+      definitions:
+        - triggerName: ca_created
+          condition:
+            conditionType: onObjectCreate
+            resourceKey: secret/default/sieve-ca-bootstrap-ca
+            occurrence: 1
+          observationPoint:
+            when: beforeAPIServerRecv
+            by: kind-control-plane
+      expression: ca_created
+  - actionType: resumeAPIServer
+    apiServerName: kind-control-plane
+    pauseScope: secret/default/sieve-ca-bootstrap-ca
+    trigger:
+      definitions:
+        - triggerName: duplicate_ca_request
+          condition:
+            conditionType: onObjectCreate
+            resourceKey: secret/default/sieve-ca-bootstrap-ca
+            occurrence: 1
+          observationPoint:
+            when: beforeControllerWrite
+            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile
+        - triggerName: bootstrap_error
+          condition:
+            conditionType: onObjectUpdateTo
+            resourceKey: cluster/default/sieve-ca-bootstrap
+            occurrence: 1
+            stateMatch: '{"status":{"phase":"Unable to create required cluster objects"}}'
+          observationPoint:
+            when: beforeAPIServerRecv
+            by: kind-control-plane
+        - triggerName: replication_certificate
+          condition:
+            conditionType: onObjectCreate
+            resourceKey: secret/default/sieve-ca-bootstrap-replication
+            occurrence: 1
+          observationPoint:
+            when: beforeControllerWrite
+            by: github.com/cloudnative-pg/cloudnative-pg/internal/controller.(*ClusterReconciler).Reconcile
+      expression: (duplicate_ca_request&bootstrap_error)|replication_certificate

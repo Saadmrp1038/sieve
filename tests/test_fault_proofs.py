@@ -41,6 +41,7 @@ def save_case(
     existing_replica=False,
     replacement_namespace="default",
     standard_layout=False,
+    sequence_artifacts=None,
 ):
     plan = ROOT / "fixtures/plans/restart.yaml"
     label = load_plan(plan).actions[0].controller_label
@@ -108,6 +109,8 @@ def save_case(
     )
     if semantic is not None:
         (directory / "semantic-outcome.json").write_text(json.dumps(semantic))
+    for name, content in (sequence_artifacts or {}).items():
+        (directory / name).write_text(content)
     raw = RunResult(True, True, [], [], ["retained history alarm"], True, "")
     save_run_result(context, raw, 0)
     return json.loads((directory / "fault-proof.json").read_text())
@@ -319,3 +322,28 @@ def test_report_distinguishes_generated_attempted_and_triggered(tmp_path, capsys
         report["physically_verified"],
     ) == (2, 1, 1, 1)
     assert report["workloads_completed"] == 1
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "sequence-plan.json",
+        "sequence-observations.json",
+        "sequence-restart.yaml",
+        "sequence-no-fault.yaml",
+        "metadata-plan.json",
+        "metadata-observations.json",
+        "metadata-coverage.json",
+        "metadata-no-fault.yaml",
+    ],
+)
+def test_saved_proof_binds_generated_sequence_and_semantic_observations(
+    tmp_path, capsys, name
+):
+    proof = save_case(
+        tmp_path, deleted=True, sequence_artifacts={name: "original evidence\n"}
+    )
+    assert name in proof["evidence_sha256"]
+    (tmp_path / "case" / name).write_text("changed evidence\n")
+    assert cli.main(["report", "--proofs", "--results", str(tmp_path)]) == 1
+    assert "evidence hash" in capsys.readouterr().err

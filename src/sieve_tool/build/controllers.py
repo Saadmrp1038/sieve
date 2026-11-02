@@ -28,6 +28,17 @@ def download_controller(controller_config: ControllerConfig):
         category="network",
     )
     git = ["git", "-C", target]
+    available = run(
+        [*git, "cat-file", "-e", f"{controller_config.commit}^{{commit}}"],
+        operation="inspect controller revision",
+        check=False,
+    )
+    if available.returncode != 0:
+        run(
+            [*git, "fetch", "--no-tags", "origin", controller_config.commit],
+            operation="fetch pinned controller revision",
+            category="network",
+        )
     run(
         [*git, "checkout", controller_config.commit],
         operation="select controller revision",

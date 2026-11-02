@@ -1,0 +1,15 @@
+workload: ca-secret-bootstrap
+actions:
+  - actionType: restartController
+    controllerLabel: cloudnative-pg
+    trigger:
+      definitions:
+        - triggerName: ca_persisted
+          condition:
+            conditionType: onObjectCreate
+            resourceKey: secret/default/sieve-ca-bootstrap-ca
+            occurrence: 1
+          observationPoint:
+            when: afterAPIServerRecv
+            by: kind-control-plane
+      expression: ca_persisted

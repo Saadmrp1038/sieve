@@ -88,6 +88,14 @@ class ExternalSecretsTarget:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1].startswith("metadata-"):
+        from metadata_workload import main as run_metadata
+
+        raise SystemExit(run_metadata(sys.argv[1:]))
+    if len(sys.argv) > 1 and sys.argv[1] == "bounded-sequences":
+        from sequence_workload import main as run_sequences
+
+        raise SystemExit(run_sequences(sys.argv[1:]))
     if len(sys.argv) > 1 and sys.argv[1].startswith("miss-"):
         from updates import run as run_updates
 

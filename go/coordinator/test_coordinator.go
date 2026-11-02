@@ -22,6 +22,7 @@ type ActionContext struct {
 	restart                       func(context.Context, string, string) error
 	apiserverLocks                map[string]map[string]chan string
 	apiserverLockedMap            map[string]map[string]bool
+	pauseAPIServerSharedDataLock  *sync.Mutex
 	controllerOngoingReadLock     *sync.Mutex
 	controllerPausingChs          map[string]map[string]chan string
 	controllerShouldPauseMap      map[string]map[string]bool
@@ -41,6 +42,7 @@ type testCoordinator struct {
 	pauseControllerSharedDataLock *sync.Mutex
 	apiserverLocks                map[string]map[string]chan string
 	apiserverLockedMap            map[string]map[string]bool
+	pauseAPIServerSharedDataLock  *sync.Mutex
 	mergedFieldPathMask           map[string]map[string]struct{}
 	mergedFieldKeyMask            map[string]map[string]struct{}
 	mergedFieldPathMaskAPIFrom    map[string]map[string]struct{}
@@ -73,6 +75,7 @@ func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 	controllerShouldPauseMap := make(map[string]map[string]bool)
 	apiserverLocks := make(map[string]map[string]chan string)
 	apiserverLockedMap := make(map[string]map[string]bool)
+	pauseAPIServerSharedDataLock := &sync.Mutex{}
 	actionContext := &ActionContext{
 		ctx: ctx,
 		restart: func(ctx context.Context, label, followingAPI string) error {
@@ -87,6 +90,7 @@ func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 		pauseControllerSharedDataLock: pauseControllerSharedDataLock,
 		apiserverLocks:                apiserverLocks,
 		apiserverLockedMap:            apiserverLockedMap,
+		pauseAPIServerSharedDataLock:  pauseAPIServerSharedDataLock,
 		controllerOngoingReadLock:     controllerOngoingReadLock,
 		asyncDoneCh:                   asyncDoneCh,
 	}
@@ -103,6 +107,7 @@ func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 		pauseControllerSharedDataLock: pauseControllerSharedDataLock,
 		apiserverLocks:                apiserverLocks,
 		apiserverLockedMap:            apiserverLockedMap,
+		pauseAPIServerSharedDataLock:  pauseAPIServerSharedDataLock,
 		mergedFieldPathMask:           mergedFieldPathMask,
 		mergedFieldKeyMask:            mergedFieldKeyMask,
 		mergedFieldPathMaskAPIFrom:    convertFieldPathMaskToAPIForm(mergedFieldPathMask),
@@ -379,24 +384,25 @@ func (tc *testCoordinator) ProcessPauseControllerWrite(beforeWrite bool, resourc
 	}
 }
 
-func (tc *testCoordinator) ProcessPauseAPIServerRecv(handlerName, apiServerHostname, pauseScope string) {
-	if _, ok := tc.apiserverLockedMap[apiServerHostname]; ok {
-		if val, ok := tc.apiserverLockedMap[apiServerHostname][pauseScope]; ok {
-			if val {
-				log.Printf("Start to pause API server for %s\n", apiServerHostname)
-				pausingCh := tc.apiserverLocks[apiServerHostname][pauseScope]
-				<-pausingCh
-				return
-			}
-		}
-		if val, ok := tc.apiserverLockedMap[apiServerHostname]["all"]; ok {
-			if val {
-				log.Printf("Start to pause API server for %s, %s\n", apiServerHostname, pauseScope)
-				pausingCh := tc.apiserverLocks[apiServerHostname]["all"]
-				<-pausingCh
-				return
-			}
-		}
+func (tc *testCoordinator) ProcessPauseAPIServerRecv(handlerName, apiServerHostname, pauseScope string) error {
+	tc.pauseAPIServerSharedDataLock.Lock()
+	var pausingCh chan string
+	if tc.apiserverLockedMap[apiServerHostname][pauseScope] {
+		pausingCh = tc.apiserverLocks[apiServerHostname][pauseScope]
+	} else if tc.apiserverLockedMap[apiServerHostname]["all"] {
+		pausingCh = tc.apiserverLocks[apiServerHostname]["all"]
+	}
+	tc.pauseAPIServerSharedDataLock.Unlock()
+	if pausingCh == nil {
+		return nil
+	}
+	log.Printf("Start to pause API server for %s, %s\n", apiServerHostname, pauseScope)
+	select {
+	case <-pausingCh:
+		log.Printf("End pause API server for %s, %s\n", apiServerHostname, pauseScope)
+		return nil
+	case <-tc.actionContext.ctx.Done():
+		return tc.actionContext.ctx.Err()
 	}
 }
 
@@ -416,7 +422,9 @@ func (tc *testCoordinator) NotifyTestBeforeAPIServerRecv(request *sieve.NotifyTe
 		log.Printf("do not support %s\n", request.OperationType)
 	}
 	tc.WriteToObjectStates(request.APIServerHostname, beforeAPIServerRecv, request.ResourceKey, request.Object)
-	tc.ProcessPauseAPIServerRecv(handlerName, request.APIServerHostname, request.ResourceKey)
+	if err := tc.ProcessPauseAPIServerRecv(handlerName, request.APIServerHostname, request.ResourceKey); err != nil {
+		return err
+	}
 	*response = sieve.Response{Message: "", Ok: true}
 	return nil
 }
@@ -437,7 +445,9 @@ func (tc *testCoordinator) NotifyTestAfterAPIServerRecv(request *sieve.NotifyTes
 		log.Printf("do not support %s\n", request.OperationType)
 	}
 	tc.WriteToObjectStates(request.APIServerHostname, afterAPIServerRecv, request.ResourceKey, request.Object)
-	tc.ProcessPauseAPIServerRecv(handlerName, request.APIServerHostname, request.ResourceKey)
+	if err := tc.ProcessPauseAPIServerRecv(handlerName, request.APIServerHostname, request.ResourceKey); err != nil {
+		return err
+	}
 	*response = sieve.Response{Message: "", Ok: true}
 	return nil
 }
