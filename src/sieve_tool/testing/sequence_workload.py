@@ -213,7 +213,14 @@ def run(arguments: Sequence[str], target: SequenceTarget) -> int:
     with execution(log_dir=args.output.parent / "sequence-commands"):
         try:
             accepted = target.setup(wait_for)
-            evidence["accepted"].append({"state": "a", "response": accepted})
+            evidence["accepted"].append(
+                {
+                    "state": "a",
+                    "response": accepted,
+                    "wall_ns": time.time_ns(),
+                    "monotonic_ns": time.monotonic_ns(),
+                }
+            )
 
             def sample(state: str) -> bool:
                 observation = target.observe()
@@ -251,6 +258,8 @@ def run(arguments: Sequence[str], target: SequenceTarget) -> int:
                     verdict = SemanticVerdict("pending", ("controller_recovery",))
                 evidence["samples"].append(
                     {
+                        "expected_state": state,
+                        "accepted_generation": accepted["metadata"]["generation"],
                         "wall_ns": time.time_ns(),
                         "monotonic_ns": time.monotonic_ns(),
                         **asdict(observation),
@@ -275,7 +284,14 @@ def run(arguments: Sequence[str], target: SequenceTarget) -> int:
                 accepted = patch_input(
                     target, accepted, f"sequence-{index}-{state}", state
                 )
-                evidence["accepted"].append({"state": state, "response": accepted})
+                evidence["accepted"].append(
+                    {
+                        "state": state,
+                        "response": accepted,
+                        "wall_ns": time.time_ns(),
+                        "monotonic_ns": time.monotonic_ns(),
+                    }
+                )
                 save()
                 failure = "convergence_failed"
                 if index == 1:

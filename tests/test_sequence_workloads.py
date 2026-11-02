@@ -424,3 +424,27 @@ def test_plan_only_freezes_catalog_and_matched_plans_without_kubernetes_effects(
         .trigger.definitions[0]
         .condition.resource_key.startswith(("externalsecret/", "certificate/"))
     )
+
+
+def test_samples_bind_the_latest_accepted_input_and_its_order(
+    tmp_path, sequence_cluster
+):
+    output = tmp_path / "ordered/workload.log"
+    result = invoke("external-secrets", output, sequence_cluster)
+    assert result.returncode == 0, result.stderr
+    evidence = json.loads(output.with_name("sequence-observations.json").read_text())
+    for sample in evidence["samples"]:
+        latest = [
+            a
+            for a in evidence["accepted"]
+            if a["monotonic_ns"] <= sample["monotonic_ns"]
+        ][-1]
+        assert sample["expected_state"] == latest["state"]
+        assert (
+            sample["accepted_generation"]
+            == latest["response"]["metadata"]["generation"]
+        )
+        assert sample["wall_ns"] >= latest["wall_ns"]
+    assert [a["monotonic_ns"] for a in evidence["accepted"]] == sorted(
+        a["monotonic_ns"] for a in evidence["accepted"]
+    )
