@@ -153,11 +153,14 @@ def run(arguments: Sequence[str], target: SequenceTarget) -> int:
                 "sequence-observations.json",
                 "semantic-outcome.json",
                 "sequence-commands",
-                "sequence-no-fault.yaml",
-                "sequence-restart.yaml",
             )
         ),
     ]
+    if args.plan_only:
+        artifacts.extend(
+            args.output.with_name(name)
+            for name in ("sequence-no-fault.yaml", "sequence-restart.yaml")
+        )
     if any(p.exists() or p.is_symlink() for p in artifacts):
         parser.error("sequence output artifacts already exist; choose a fresh output")
     selected = catalog[args.sequence_index]
@@ -178,13 +181,13 @@ def run(arguments: Sequence[str], target: SequenceTarget) -> int:
     args.output.with_name("sequence-plan.json").write_text(
         json.dumps(plan, indent=2) + "\n"
     )
-    for name, fault_plan in sequence_plans(
-        controller_label=target.operator,
-        parent_key=f"{target.parent_kind}/default/{target.name}",
-        selected=selected,
-    ).items():
-        write_plan(fault_plan, args.output.with_name(name))
     if args.plan_only:
+        for name, fault_plan in sequence_plans(
+            controller_label=target.operator,
+            parent_key=f"{target.parent_kind}/default/{target.name}",
+            selected=selected,
+        ).items():
+            write_plan(fault_plan, args.output.with_name(name))
         return 0
     evidence: Resource = {
         "schema_version": 1,

@@ -131,10 +131,11 @@ Generate reviewable artifacts without Kubernetes access:
 uv run python controllers/OPERATOR/workloads/workload.py bounded-sequences /tmp/fresh-sequence/workload.log --plan-only
 ```
 
-Use this profile's name in place of OPERATOR. The CLI writes `sequence-plan.json`,
+Use this profile's name in place of OPERATOR. Plan-only writes `sequence-plan.json`,
 `sequence-no-fault.yaml` and `sequence-restart.yaml` and refuses existing artifacts.
-Normal execution additionally writes raw command journals, full accepted objects,
-`sequence-observations.json` and `semantic-outcome.json`. The fault is one
+Normal execution writes the catalog, raw command journals, full accepted objects,
+`sequence-observations.json` and `semantic-outcome.json`, preserving Sieve’s copied
+execution YAML as an input. The fault is one
 asynchronous controller restart after informer receipt of the first labeled
 update. Its completion requires separate API deletion/replacement verification;
 a trigger, semantic success or generated catalog alone is insufficient. Fresh

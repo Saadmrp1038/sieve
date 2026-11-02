@@ -448,3 +448,26 @@ def test_samples_bind_the_latest_accepted_input_and_its_order(
     assert [a["monotonic_ns"] for a in evidence["accepted"]] == sorted(
         a["monotonic_ns"] for a in evidence["accepted"]
     )
+
+
+@pytest.mark.parametrize("name", ["sequence-no-fault.yaml", "sequence-restart.yaml"])
+def test_workload_preserves_the_harness_input_plan_in_its_result_directory(
+    tmp_path, sequence_cluster, name
+):
+    output = tmp_path / "harness-result/workload.log"
+    output.parent.mkdir()
+    plan = output.with_name(name)
+    original = (
+        b"workload: bounded-sequences\nactions: []\n# copied Sieve execution input\n"
+    )
+    plan.write_bytes(original)
+    result = invoke("external-secrets", output, sequence_cluster)
+    assert result.returncode == 0, result.stderr
+    assert output.read_text() == "FINISH-SIEVE-TEST\n"
+    assert plan.read_bytes() == original
+    other = (
+        "sequence-restart.yaml"
+        if name == "sequence-no-fault.yaml"
+        else "sequence-no-fault.yaml"
+    )
+    assert not output.with_name(other).exists()
