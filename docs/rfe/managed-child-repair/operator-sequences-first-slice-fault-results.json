@@ -1,0 +1,531 @@
+{
+  "schema_version": 1,
+  "status": "complete_within_authorized_bounds",
+  "implementation_complete": true,
+  "requested_fault_family_verified_across_both_operators": true,
+  "source_commit": "9a7c8be73c13fd78b83c53d36a4d18769b4214fe",
+  "phase1_report_commit": "2287a76322ac244ede0182d9d69f12fe25f13c13",
+  "budget": {
+    "workload_limit": 9,
+    "fault_limit": 2,
+    "prior_workloads": 6,
+    "prior_faults": 0,
+    "additional_workloads": 3,
+    "automatic_repeats": 0,
+    "authorized_at": "2026-11-02T05:00:55.144504+00:00",
+    "user_answer": "9 workloads, 2 faults",
+    "supersedes_answer": "8 workloads, 2 faults",
+    "failed_control_remains_counted": true
+  },
+  "total_workloads": 9,
+  "passed_workloads": 8,
+  "harness_failed_workloads_retained": 1,
+  "total_fault_attempts": 2,
+  "physically_verified_faults": 2,
+  "semantic_fault_passes": 2,
+  "raw_alarms_in_eligible_matched_controls_and_faults": 0,
+  "operator_defects_verified": 0,
+  "novel_defects_claimed": 0,
+  "automatic_repeats": 0,
+  "workers_per_controller": 10,
+  "history_candidates_per_operator": 14,
+  "selected_history": [
+    "a",
+    "b",
+    "c",
+    "a"
+  ],
+  "executed_distinct_histories_per_operator": 1,
+  "parent_keys_per_operator": 1,
+  "fault_family": "asynchronous restartController after first labeled informer receipt; owning Deployment deleted and same spec recreated",
+  "negative_physical_probes_rejected": 28,
+  "trials": [
+    {
+      "operator": "external-secrets",
+      "stage": "matched-control",
+      "workload_completed": true,
+      "semantic_status": "passed",
+      "raw_alarms": [],
+      "summary_sha256": "ec7e84035daa3ee32c67483d216eb28b2df6eac4472b1ed7b6cb290a9ea21d29",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-faults-20261101/external-secrets-matched-control-result-hashes.json",
+      "manifest_sha256": "7eb50dcb475d2980dee0977285f5111881f32863b3f01b574a92e2106cf977fa",
+      "semantic": {
+        "samples": 29,
+        "pending_samples": 0,
+        "accepted_API_event_positions": [
+          67,
+          70,
+          73,
+          76
+        ],
+        "accepted_UID": "b0cc2d0e-9fb2-41f0-b6db-b799d3e6b0c3",
+        "last_controller_uid": "ded04118-239b-4d6e-92e7-d0f875757924",
+        "observed_controller_uids": [
+          "ded04118-239b-4d6e-92e7-d0f875757924"
+        ],
+        "stable_seconds": 15.504038732,
+        "maximum_stable_sample_gap_seconds": 0.675226685,
+        "TLS_material_checks": 0,
+        "command_count": 96,
+        "control_or_fault_mode": "test"
+      },
+      "image_review_sha256": "5f0289eb6e655d933673d036324671b6b7b829c29d9b3f970011092aebd2e21d"
+    },
+    {
+      "operator": "external-secrets",
+      "stage": "fault",
+      "workload_completed": true,
+      "semantic_status": "passed",
+      "raw_alarms": [],
+      "summary_sha256": "76429b5f2302e97aa03aa61fd77022626c36632736abbf85044bfe48945bde05",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-faults-20261101/external-secrets-fault-result-hashes.json",
+      "manifest_sha256": "c965e46536929327ab0b422e72fef8dd8ac905e3311b3f7e657523b15c00c5ed",
+      "semantic": {
+        "samples": 35,
+        "pending_samples": 8,
+        "accepted_API_event_positions": [
+          69,
+          70,
+          95,
+          98
+        ],
+        "accepted_UID": "772c8574-5072-4ad4-99d4-af7cec603226",
+        "last_controller_uid": "3adc72f7-1d05-4097-9806-ec260a583b7c",
+        "observed_controller_uids": [
+          "c9774f6f-ba6a-473b-b657-99870c397c1c",
+          "3adc72f7-1d05-4097-9806-ec260a583b7c"
+        ],
+        "stable_seconds": 15.031001947,
+        "maximum_stable_sample_gap_seconds": 0.670979203,
+        "TLS_material_checks": 0,
+        "command_count": 114,
+        "control_or_fault_mode": "test"
+      },
+      "image_review_sha256": "cd6741617c33119672f7e34c513b6126493688895efd7d61b6383e9af2957c2f",
+      "physical": {
+        "physically_verified": true,
+        "operator": "external-secrets",
+        "case": "runs/operator-sequences-first-slice-followup-external-secrets-fault-vm/restart/external-secrets/bounded-sequences/test/sequence-restart",
+        "application_status": "passed",
+        "first_phase_receipts": [
+          {
+            "line": 30,
+            "resourceVersion": "769",
+            "accepted_resourceVersion_match": true
+          }
+        ],
+        "imported_image_digest": "sha256:274d9b48c4ea3e99694ecc4dd64f8db4853bb3ce6ada28e8bc020bd72591f86b",
+        "old_uid": "c9774f6f-ba6a-473b-b657-99870c397c1c",
+        "replacement_uid": "3adc72f7-1d05-4097-9806-ec260a583b7c",
+        "old_deletion_position": 79,
+        "replacement_first_position": 82,
+        "replacement_ready_position": 91,
+        "replicaset_uids": [
+          "5f13aa85-6663-40dd-b2d3-15be7cdfe9a5",
+          "59508c8d-7e49-4fb9-b851-ccfe957a53de"
+        ],
+        "deployment_uids": [
+          "b2775622-1270-4e54-9944-3ec35118839b",
+          "def68ad8-f718-45d3-95d7-db2e5a781755"
+        ],
+        "deployment_name": "external-secrets",
+        "deployment_spec_unchanged": true,
+        "lineage_kind": "same named Deployment/spec recreated with distinct UIDs",
+        "observed_image_ids": [
+          [
+            "docker.io/library/import-2026-11-02@sha256:274d9b48c4ea3e99694ecc4dd64f8db4853bb3ce6ada28e8bc020bd72591f86b"
+          ],
+          [
+            "docker.io/library/import-2026-11-02@sha256:274d9b48c4ea3e99694ecc4dd64f8db4853bb3ce6ada28e8bc020bd72591f86b"
+          ]
+        ],
+        "ten_workers_before_and_after": true,
+        "first_phase_receipt_verified": true
+      },
+      "physical_probes": [
+        {
+          "probe": "missing_pod_deletion",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "286edba428a1ac9f914d9bdde0549bbfe8fb8095e2ba4d8627d7c67d7d93371a"
+            }
+          }
+        },
+        {
+          "probe": "missing_replacement_ready",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "81cb2b4b55ab5276d50bdee8471002ad456c8132cfa266bf544438285a85036f"
+            }
+          }
+        },
+        {
+          "probe": "wrong_deletion_uid",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "26cd9321c384c8cf93ba2f5c1ca39e1e9072b273f8380edbab72b07f9c5db45e"
+            }
+          }
+        },
+        {
+          "probe": "wrong_namespace",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "fb87641b2aa66e80e9d354033aeea8f4a0d98a19e313631be6a661bcf2805f39"
+            }
+          }
+        },
+        {
+          "probe": "wrong_scope",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "1f19682df81e81382dd00b6b9c0c640889b666624c70e0aa834eb24d61b25427"
+            }
+          }
+        },
+        {
+          "probe": "wrong_worker_count",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "f3b436417c420f574769ed1773218905ffed75ae0444b879c03545f0be203cf3"
+            }
+          }
+        },
+        {
+          "probe": "wrong_image_name",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "bd64479f2dccf936913f6204c88824091eb58bfd87d70598493aeed9a82ff00c"
+            }
+          }
+        },
+        {
+          "probe": "wrong_imported_digest",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "9e01239e9d0964aabf2a802961da77b81395dbac73a5b342036b5a6d18079f92"
+            }
+          }
+        },
+        {
+          "probe": "wrong_owner",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "46d7e23fa2204e9800187f29c3486f407f8a66055fbb2b0a5f2b52c2088ea53d"
+            }
+          }
+        },
+        {
+          "probe": "changed_deployment_spec",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "0a775922444900032c19c413ed5de7636684f86bb853c9debab6df9db002601a"
+            }
+          }
+        },
+        {
+          "probe": "missing_deployment_deletion",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d0a2e7360087215869a61aad864febf125a287089165c818627552ba6fbcdeee",
+              "after": "42c10a89ac1ddcbb5cec48795fe18634e15d9c33eb9eb8113052acb937132775"
+            }
+          }
+        },
+        {
+          "probe": "wrong_phase",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "c4e3b83fd15744f77f0bd39eb117d74ff9cb2ca8381b15e84220a7fe7e841bdd",
+              "after": "c4e9bc3eeb444a6d60b79eef3bfd82f90ee5052c475ddcb2b62c970f7670255e"
+            }
+          }
+        },
+        {
+          "probe": "wrong_receipt_uid",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "c4e3b83fd15744f77f0bd39eb117d74ff9cb2ca8381b15e84220a7fe7e841bdd",
+              "after": "0e0c7e89685b5ec0cace3fca3c0e69ef3cef783832cced02aebc55eeb6394d38"
+            }
+          }
+        },
+        {
+          "probe": "incomplete_coordinator",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "c4e3b83fd15744f77f0bd39eb117d74ff9cb2ca8381b15e84220a7fe7e841bdd",
+              "after": "76648d39986aca3ebb8e6294c9b9feac927dd81ebb74e32094b8fecc085de47b"
+            }
+          }
+        }
+      ],
+      "physical_review_sha256": "0aa026a28aae5b7fb052f3b3ddf3850234e5239698a609b96a91c7cd861064f8",
+      "probes_sha256": "d8ee14a55e824150692c5d75546f3b67e236186dbab7efd72947f6f666b45489"
+    },
+    {
+      "operator": "cert-manager",
+      "stage": "fault",
+      "workload_completed": true,
+      "semantic_status": "passed",
+      "raw_alarms": [],
+      "summary_sha256": "04062af07ab0b97ab513a4f2ac8f1e1e733036a7adb8618e46ec48d22a5b1c96",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-faults-20261101/cert-manager-fault-result-hashes.json",
+      "manifest_sha256": "f251b3429482634cff94b4c7f809a39b5658c7dbceca4c66bb1d0e5bc513b068",
+      "semantic": {
+        "samples": 34,
+        "pending_samples": 11,
+        "accepted_API_event_positions": [
+          29,
+          41,
+          81,
+          95
+        ],
+        "accepted_UID": "448bb3f5-b786-44e3-9f61-5456ccc68afc",
+        "last_controller_uid": "9b7ccddf-5875-403e-9d51-6bf7a457249f",
+        "observed_controller_uids": [
+          "c2ef5d4e-da84-491e-970d-0aff27a450b0",
+          "9b7ccddf-5875-403e-9d51-6bf7a457249f"
+        ],
+        "stable_seconds": 15.611482117,
+        "maximum_stable_sample_gap_seconds": 0.871305707,
+        "TLS_material_checks": 3,
+        "command_count": 227,
+        "control_or_fault_mode": "test"
+      },
+      "image_review_sha256": "08e268c0bb014323582f7757dba8756adc7b4fb703a63c7158dc411b1cb4698a",
+      "physical": {
+        "physically_verified": true,
+        "operator": "cert-manager",
+        "case": "runs/operator-sequences-first-slice-followup-cert-manager-fault-vm/restart/cert-manager/bounded-sequences/test/sequence-restart",
+        "application_status": "passed",
+        "first_phase_receipts": [
+          {
+            "line": 46,
+            "resourceVersion": "715",
+            "accepted_resourceVersion_match": true
+          }
+        ],
+        "imported_image_digest": "sha256:a03831be27da4262f4053d06be3a943d0ec969d9abd480a81e846b5e301d3863",
+        "old_uid": "c2ef5d4e-da84-491e-970d-0aff27a450b0",
+        "replacement_uid": "9b7ccddf-5875-403e-9d51-6bf7a457249f",
+        "old_deletion_position": 55,
+        "replacement_first_position": 58,
+        "replacement_ready_position": 67,
+        "replicaset_uids": [
+          "fdf37df7-895f-404d-b0da-2ef41959137a",
+          "3d55e818-4c40-4495-bfce-650cda29b52e"
+        ],
+        "deployment_uids": [
+          "47669071-97f7-4a22-9fe0-82711bbc50ac",
+          "138ffaf2-d2d8-4024-a799-b91f4361d700"
+        ],
+        "deployment_name": "cert-manager",
+        "deployment_spec_unchanged": true,
+        "lineage_kind": "same named Deployment/spec recreated with distinct UIDs",
+        "observed_image_ids": [
+          [
+            "docker.io/library/import-2026-11-02@sha256:a03831be27da4262f4053d06be3a943d0ec969d9abd480a81e846b5e301d3863"
+          ],
+          [
+            "docker.io/library/import-2026-11-02@sha256:a03831be27da4262f4053d06be3a943d0ec969d9abd480a81e846b5e301d3863"
+          ]
+        ],
+        "ten_workers_before_and_after": true,
+        "first_phase_receipt_verified": true
+      },
+      "physical_probes": [
+        {
+          "probe": "missing_pod_deletion",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "c8cb73bd6cf67eb7efba47e2434039f8f7faaded7289199e81b3fe8780735cf5"
+            }
+          }
+        },
+        {
+          "probe": "missing_replacement_ready",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "2e8b9930dea9459ed8478d8168b89b1f9d61fb87a0732f9cd4ad0ff35fb498e5"
+            }
+          }
+        },
+        {
+          "probe": "wrong_deletion_uid",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "e178bbc6e43c67ffdc78c21aebdf11e2ca9ef773f0aacb43e9be649126e31c21"
+            }
+          }
+        },
+        {
+          "probe": "wrong_namespace",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "eda81f573d86ad29d728cb3c09f5c802fb8e365f9654c1651b6a127f2e092797"
+            }
+          }
+        },
+        {
+          "probe": "wrong_scope",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "803d05bf883780410ac657afc28dfb8a7c8aed1a928d0640bfa4f790b3f6e793"
+            }
+          }
+        },
+        {
+          "probe": "wrong_worker_count",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "ed61473bdf3e310c31b0f25cf372bf9df8270d26cb73411952a2ee1a90cb9298"
+            }
+          }
+        },
+        {
+          "probe": "wrong_image_name",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "788a760759f1ad8703b982e88831f74f7352f515644bb36826da50f0b4930f76"
+            }
+          }
+        },
+        {
+          "probe": "wrong_imported_digest",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "c816f370dfd002c0f6802060837338c8b8b5eec1cc068f729f00ceb637334482"
+            }
+          }
+        },
+        {
+          "probe": "wrong_owner",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "9df30b7755acff35c7aded12894e418ce9f9bcbb60c01cb7d786d412d08579ef"
+            }
+          }
+        },
+        {
+          "probe": "changed_deployment_spec",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "912d8e5c98c731067d245ff69fbe207587a30580d4cc2df203d7a398af809e4d"
+            }
+          }
+        },
+        {
+          "probe": "missing_deployment_deletion",
+          "rejected": true,
+          "changed_files": {
+            "apiserver1.log": {
+              "before": "d9dfb5900bac60de50f7d23ad7fb620bf1a08209e23adc85ab88886163464c64",
+              "after": "f5ab427436d6fc640c275e13b7bbcca6d25a89872d94f7a18ff06db17345fb6a"
+            }
+          }
+        },
+        {
+          "probe": "wrong_phase",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "1b59cfb8eb3bc2b6c7b2790e1c987e71d45f8ce227e8385d2821d58c6095d0fe",
+              "after": "42eac3e4ffc81aee58de85a85f594e7dba2e193247d1e07436d4daa644700670"
+            }
+          }
+        },
+        {
+          "probe": "wrong_receipt_uid",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "1b59cfb8eb3bc2b6c7b2790e1c987e71d45f8ce227e8385d2821d58c6095d0fe",
+              "after": "130a9300dbba56688692b52d3b29157057110f4ba871086bafbe9e9f18702b29"
+            }
+          }
+        },
+        {
+          "probe": "incomplete_coordinator",
+          "rejected": true,
+          "changed_files": {
+            "sieve-server.log": {
+              "before": "1b59cfb8eb3bc2b6c7b2790e1c987e71d45f8ce227e8385d2821d58c6095d0fe",
+              "after": "8f5b7ada1551d8d6ce75f268e05f8f8fe3b6a1e5e2240031ac27c1e6860226c5"
+            }
+          }
+        }
+      ],
+      "physical_review_sha256": "6fc3659c6c9b4b9138decddebc3936d92cd2ab6b89f1b66cfcf2aeec08d38c17",
+      "probes_sha256": "a4de09fbee7b15046baed5eca27d1fbd5c61a9d63c1f162a4878e03e76389e37"
+    }
+  ],
+  "preservation": {
+    "old_trees": 60,
+    "phase1_trees": 7,
+    "continuation_trees": 3,
+    "total_trees": 70,
+    "files": 310173,
+    "bytes": 16429255727,
+    "phase1_index_sha256": "1aae53ad8f1036fd576e608380de6cd3c80717e644698418862d9d628ee66e81",
+    "phase1_indexed_files_verified": 254,
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "VM_idle": true,
+    "named_image_refs_unchanged": 126
+  },
+  "bindings": {
+    "protocol.json": "90369ada6851421a78f6b7effb821613ebdf86cac8f651c0f2357befeb1fee46",
+    "phase1-binding.json": "ca34e58bb47007d569da5e28d7eebdefd600dd2ac6bc940120b2b3dce7bd7985",
+    "learning-reuse.json": "1313f60eb39d03e606492293683b6a8eddf9cc0bd2630c661f30afd5f8b8e414",
+    "final-integrity.json": "e386dca01b56ab8d7e5c5bba9ba5dd178780f77317168a012d8968a5fd681a77",
+    "final-vm-state.json": "01a50b3b9d2465d8571415c73853d66e4db1f9094f2562385c55e38d98a8a8cb",
+    "external-secrets-controls-review.json": "23a6259961a1c09e902f9bd48f4d817a6bd9e54daafd6d2190d7ab5642a1f240",
+    "cert-manager-controls-review.json": "19bb7b2acabb61cd4dae55df040967e8245aac77f677fffb4384d49dfbe4d65d"
+  },
+  "prior_results_sha256": "076da85ae7041cca5745bde6d8cb76ccdf74357d7e8fc7b86b5151d9c26142dd",
+  "no_push_or_PR": true
+}
