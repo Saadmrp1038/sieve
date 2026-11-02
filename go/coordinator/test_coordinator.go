@@ -116,6 +116,7 @@ func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 		mergedFieldKeyMaskAPIForm:     convertFieldKeyMaskToAPIForm(mergedFieldKeyMask),
 		stateMachine:                  NewStateMachine(testPlan, stateNotificationCh, asyncDoneCh, actionContext),
 	}
+	server.coverage.overlap = newDeliveryOverlap(ctx, spec.DeliveryOverlap)
 	listener := &TestCoordinator{
 		Server: server,
 	}
@@ -125,6 +126,13 @@ func NewTestCoordinator(ctx context.Context) (*TestCoordinator, error) {
 
 func (tc *TestCoordinator) NotifyTestCoverage(request *sieve.NotifyTestCoverageRequest, response *sieve.Response) error {
 	return tc.Server.coverage.record(request, response)
+}
+
+func (tc *TestCoordinator) DeliveryOverlap(request *DeliveryOverlapRequest, response *DeliveryOverlapStatus) error {
+	if tc.Server.coverage.overlap == nil {
+		return fmt.Errorf("delivery overlap is not configured")
+	}
+	return tc.Server.coverage.overlap.query(request, response)
 }
 
 func (tc *TestCoordinator) NotifyTestBeforeAPIServerRecv(request *sieve.NotifyTestBeforeAPIServerRecvRequest, response *sieve.Response) error {

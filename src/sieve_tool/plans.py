@@ -293,6 +293,32 @@ type FaultAction = Annotated[
 ]
 
 
+class DeliveryOverlap(PlanModel):
+    mode: Literal["observe", "hold"]
+    resource_key: Nonempty
+    reconciler: Nonempty
+    hold_phase: Nonempty
+    release_phase: Nonempty
+    timeout_seconds: Annotated[int, Field(strict=True, ge=1, le=60)]
+
+    @model_validator(mode="after")
+    def unambiguous_identity(self) -> Self:
+        if (
+            any(c in self.reconciler for c in "\t\r\n")
+            or "*" in re.sub(r"\(\*[A-Za-z_][A-Za-z0-9_]*\)", "", self.reconciler)
+            or not self.reconciler.strip()
+            or self.hold_phase == self.release_phase
+            or any(
+                not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,62}", phase)
+                for phase in (self.hold_phase, self.release_phase)
+            )
+        ):
+            raise ValueError(
+                "deliveryOverlap requires exact identity and distinct phases"
+            )
+        return self
+
+
 class FaultPlan(PlanModel):
     nullable_fields: ClassVar[frozenset[str]] = frozenset({"actions"})
     workload: Nonempty
@@ -300,6 +326,18 @@ class FaultPlan(PlanModel):
     sieve_server_addr: Nonempty | None = None
     annotated_reconcile_stack_frame: list[str] | None = None
     coverage_resources: list[Nonempty] = Field(default_factory=list, max_length=16)
+    delivery_overlap: DeliveryOverlap | None = None
+
+    @model_validator(mode="after")
+    def scoped_overlap(self) -> Self:
+        if self.delivery_overlap is not None and (
+            self.delivery_overlap.resource_key not in self.coverage_resources
+            or self.actions != []
+        ):
+            raise ValueError(
+                "deliveryOverlap requires a covered exact resource and no other actions"
+            )
+        return self
 
     @field_validator("coverage_resources")
     @classmethod

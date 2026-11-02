@@ -51,11 +51,21 @@ func (v *planBool) UnmarshalYAML(n *yaml.Node) error {
 }
 
 type PlanSpec struct {
-	SieveServerAddr              *planText    `yaml:"sieveServerAddr"`
-	Workload                     planText     `yaml:"workload"`
-	Actions                      []ActionSpec `yaml:"actions"`
-	AnnotatedReconcileStackFrame []planText   `yaml:"annotatedReconcileStackFrame"`
-	CoverageResources            []planText   `yaml:"coverageResources"`
+	SieveServerAddr              *planText            `yaml:"sieveServerAddr"`
+	Workload                     planText             `yaml:"workload"`
+	Actions                      []ActionSpec         `yaml:"actions"`
+	AnnotatedReconcileStackFrame []planText           `yaml:"annotatedReconcileStackFrame"`
+	CoverageResources            []planText           `yaml:"coverageResources"`
+	DeliveryOverlap              *DeliveryOverlapSpec `yaml:"deliveryOverlap"`
+}
+
+type DeliveryOverlapSpec struct {
+	Mode           planText `yaml:"mode"`
+	ResourceKey    planText `yaml:"resourceKey"`
+	Reconciler     planText `yaml:"reconciler"`
+	HoldPhase      planText `yaml:"holdPhase"`
+	ReleasePhase   planText `yaml:"releasePhase"`
+	TimeoutSeconds planInt  `yaml:"timeoutSeconds"`
 }
 
 type ActionSpec struct {
@@ -155,6 +165,13 @@ func decodePlan(data []byte) (*PlanSpec, error) {
 	for i := range spec.Actions {
 		if err := spec.Actions[i].validate(); err != nil {
 			return nil, fmt.Errorf("actions[%d].%w", i, err)
+		}
+	}
+	if p := spec.DeliveryOverlap; p != nil {
+		phase := regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{0,62}$`)
+		frameWithoutReceiver := regexp.MustCompile(`\(\*[A-Za-z_][A-Za-z0-9_]*\)`).ReplaceAllString(string(p.Reconciler), "")
+		if (p.Mode != "hold" && p.Mode != "observe") || !coverageSeen[p.ResourceKey] || p.Reconciler == "" || strings.TrimSpace(string(p.Reconciler)) == "" || strings.ContainsAny(string(p.Reconciler), "\t\r\n") || strings.Contains(frameWithoutReceiver, "*") || !phase.MatchString(string(p.HoldPhase)) || !phase.MatchString(string(p.ReleasePhase)) || p.HoldPhase == p.ReleasePhase || p.TimeoutSeconds < 1 || p.TimeoutSeconds > 60 || spec.Actions == nil || len(spec.Actions) != 0 {
+			return nil, fmt.Errorf("deliveryOverlap: requires exact covered scope/identity, distinct phases, 1–60s timeout and no other actions")
 		}
 	}
 	return &spec, nil

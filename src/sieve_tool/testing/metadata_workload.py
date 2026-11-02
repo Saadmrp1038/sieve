@@ -12,6 +12,7 @@ from typing import Protocol
 
 from sieve_tool.plans import FaultPlan, write_plan
 from sieve_tool.process import ProcessTimeout, deadline, execution
+from sieve_tool.process import run as run_process
 from sieve_tool.testing.child_repair import Resource, Wait, get, kubectl
 from sieve_tool.testing.semantic import (
     HistoryEquivalenceMonitor,
@@ -46,6 +47,28 @@ class MetadataTarget(Protocol):
     ) -> Resource: ...
 
     def observe(self, name: str) -> SequenceObservation: ...
+
+
+def _overlap_gate(wait_for: str) -> Resource:
+    response = run_process(
+        [
+            "docker",
+            "exec",
+            "kind-control-plane",
+            "/sieve/coordinator/sieve-coordinator",
+            "overlap",
+            wait_for,
+            "--timeout-seconds",
+            "25",
+        ],
+        capture_output=True,
+        category="request",
+        operation="wait for delivery overlap " + wait_for,
+    )
+    value = json.loads(response.stdout)
+    if not isinstance(value, dict):
+        raise RuntimeError("Invalid delivery overlap response")
+    return value
 
 
 def _patch(
@@ -131,12 +154,15 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     parser.add_argument("--repair-timeout", type=float, default=180)
     parser.add_argument("--settle-seconds", type=float, default=15)
     parser.add_argument("--plan-only", action="store_true")
+    parser.add_argument("--delivery-overlap", action="store_true")
     args = parser.parse_args(arguments)
     if not math.isfinite(args.repair_timeout) or args.repair_timeout <= 0:
         parser.error("repair timeout must be finite and positive")
     if not math.isfinite(args.settle_seconds) or args.settle_seconds < 0:
         parser.error("settle seconds must be finite and nonnegative")
     _, channel, schedule = args.workload.split("-")
+    if args.delivery_overlap and (schedule != "overlap" or args.plan_only):
+        parser.error("delivery overlap requires an executing overlap test plan")
     catalog = metadata_histories()
     index = (
         args.history_index
@@ -231,6 +257,18 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     stage = "setup_failed"
     with execution(log_dir=args.output.with_name("metadata-commands")):
         try:
+            gate: Resource | None = None
+            if args.delivery_overlap:
+                gate = _overlap_gate("status")
+                if (
+                    gate.get("mode") not in ("hold", "observe")
+                    or gate.get("state") not in ("armed", "observing")
+                    or gate.get("resourceKey")
+                    != target.parent_kind + "/default/" + subject_name
+                ):
+                    raise RuntimeError("Delivery overlap plan does not match workload")
+                evidence["delivery_overlap"] = {"initial": gate}
+                save()
             for name in (subject_name, reference_name):
                 if (
                     get(target.parent_kind, name) is not None
@@ -347,6 +385,56 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
                 stage = "input_failed"
                 accepted = _patch(target, accepted, channel, step, index)
                 record(step.operation, accepted, "subject")
+                if gate is not None and gate["mode"] == "hold":
+                    if index == 2:
+                        stage = "overlap_failed"
+                        held = _overlap_gate("held")
+                        metadata = accepted["metadata"]
+                        if (
+                            held.get("state") != "held"
+                            or held.get("resourceKey") != gate["resourceKey"]
+                            or held.get("reconciler") != gate.get("reconciler")
+                            or held.get("uid") != metadata["uid"]
+                            or type(held.get("generation")) is not int
+                            or held["generation"] != metadata["generation"]
+                            or not held.get("invocationID")
+                            or not held.get("instanceID")
+                            or not held.get("resourceVersion")
+                        ):
+                            raise RuntimeError(
+                                "Held invocation does not match accepted change"
+                            )
+                        evidence["delivery_overlap"]["held"] = held
+                        save()
+                    elif index == 3:
+                        stage = "overlap_failed"
+                        completed = _overlap_gate("completed")
+                        held = evidence["delivery_overlap"]["held"]
+                        if (
+                            completed.get("state") != "completed"
+                            or any(
+                                completed.get(k) != held[k]
+                                for k in (
+                                    "resourceKey",
+                                    "reconciler",
+                                    "uid",
+                                    "generation",
+                                    "invocationID",
+                                    "instanceID",
+                                    "resourceVersion",
+                                )
+                            )
+                            or type(completed.get("releasedGeneration")) is not int
+                            or completed["releasedGeneration"]
+                            != accepted["metadata"]["generation"]
+                            or completed.get("releasedResourceVersion")
+                            != accepted["metadata"]["resourceVersion"]
+                        ):
+                            raise RuntimeError(
+                                "Completed overlap does not match accepted removal"
+                            )
+                        evidence["delivery_overlap"]["completed"] = completed
+                        save()
                 if step.value is None:
                     del expected[channel][HISTORY_KEY]
                 else:

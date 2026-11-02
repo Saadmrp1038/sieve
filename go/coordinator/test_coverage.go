@@ -13,6 +13,7 @@ import (
 // Serialize coverage records at one observer, independently of fault triggers.
 type testCoverage struct {
 	sync.Mutex
+	overlap   *deliveryOverlap
 	resources map[string]bool
 	active    map[string]string
 	seen      map[string]bool
@@ -30,7 +31,18 @@ func newTestCoverage(resources []planText) *testCoverage {
 
 func (c *testCoverage) record(r *sieve.NotifyTestCoverageRequest, response *sieve.Response) error {
 	c.Lock()
-	defer c.Unlock()
+	err := c.recordLocked(r, response)
+	if err == nil && c.overlap != nil {
+		err = c.overlap.observe(r)
+	}
+	c.Unlock()
+	if err == nil && c.overlap != nil && r.Kind == "read" {
+		return c.overlap.waitRead(r)
+	}
+	return err
+}
+
+func (c *testCoverage) recordLocked(r *sieve.NotifyTestCoverageRequest, response *sieve.Response) error {
 	fail := func(problem string) error {
 		log.Printf("[SIEVE-TRACE-ERROR] test coverage: %s", problem)
 		return fmt.Errorf("test coverage: %s", problem)

@@ -49,6 +49,12 @@ func serve(ctx context.Context, phase string) error {
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+	if len(os.Args) >= 2 && os.Args[1] == "overlap" {
+		if err := overlapCommand(os.Args[2:], os.Stdout); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if len(os.Args) != 2 {
 		log.Fatal("usage: sieve-coordinator learn|test")
 	}

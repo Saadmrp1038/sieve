@@ -81,6 +81,7 @@ files = [
     "src/sieve_tool/testing/metadata_workload.py",
     "src/sieve_tool/testing/sequence_coverage.py",
     "src/sieve_tool/testing/sequence_report.py",
+    "src/sieve_tool/testing/overlap_schedule.py",
 ]
 strict = true
 follow_imports = "silent"
