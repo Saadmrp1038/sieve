@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "status": "implementation_validated_fault_runs_blocked_at_user_workload_cap",
+  "implementation_complete": true,
+  "requested_physical_fault_validation_complete": false,
+  "source_commits": [
+    "09cd60ac4de0b4a7a742a47afc695eee8e777ebb",
+    "11becfdedb4c717156cb5487ab5dbd0198b535ae",
+    "9a7c8be73c13fd78b83c53d36a4d18769b4214fe"
+  ],
+  "operators": {
+    "external-secrets": {
+      "pin": "fc0dd82da6422c6ec840d24425bbda68e5259aab",
+      "compiler": "go1.27.3",
+      "client_go": "v0.37.1"
+    },
+    "cert-manager": {
+      "pin": "925c22283de556172d48d96a165dc2fa27f7a6ff",
+      "compiler": "go1.26.10",
+      "client_go": "v0.36.2"
+    }
+  },
+  "reconciliation_workers": 10,
+  "candidate_histories_per_operator": 14,
+  "selected_history": [
+    "a",
+    "b",
+    "c",
+    "a"
+  ],
+  "sequence_step_limit": 3,
+  "candidate_limit": 16,
+  "parent_keys_per_operator": 1,
+  "workload_limit": 6,
+  "workload_attempts": 6,
+  "passed_workloads": 5,
+  "harness_failed_workloads": 1,
+  "fault_limit": 2,
+  "fault_attempts": 0,
+  "physically_verified_faults": 0,
+  "operator_defects_verified": 0,
+  "budget_expansion_requested": 9,
+  "budget_expansion_authorized": false,
+  "next_executions_if_nine_authorized": [
+    "External Secrets repaired matched test-image no-fault control",
+    "External Secrets single restart, only after control review",
+    "cert-manager single restart, only after control review"
+  ],
+  "automatic_repeats": 0,
+  "cases": [
+    {
+      "operator": "external-secrets",
+      "directory": "fresh-learning/external-secrets/bounded-sequences/learn_prev",
+      "status": "passed",
+      "samples": 29,
+      "pending_samples": 1,
+      "stable_seconds": 15.493836883,
+      "maximum_stable_sample_gap_seconds": 0.674613165,
+      "accepted_API_event_positions": [
+        67,
+        70,
+        73,
+        76
+      ],
+      "raw_alarms": null
+    },
+    {
+      "operator": "external-secrets",
+      "directory": "fresh-learning/external-secrets/bounded-sequences/learn",
+      "status": "passed",
+      "samples": 30,
+      "pending_samples": 2,
+      "stable_seconds": 15.325108482,
+      "maximum_stable_sample_gap_seconds": 0.772487541,
+      "accepted_API_event_positions": [
+        67,
+        70,
+        73,
+        76
+      ],
+      "raw_alarms": null
+    },
+    {
+      "operator": "external-secrets",
+      "directory": "matched-no-fault/external-secrets/bounded-sequences/test/sequence-no-fault",
+      "status": "harness_failed_before_sequence_setup",
+      "process_returncode": 2,
+      "matched_control_eligible": false,
+      "operator_defect_established": false,
+      "fix_commit": "9a7c8be73c13fd78b83c53d36a4d18769b4214fe"
+    },
+    {
+      "operator": "cert-manager",
+      "directory": "fresh-learning/cert-manager/bounded-sequences/learn_prev",
+      "status": "passed",
+      "samples": 29,
+      "pending_samples": 6,
+      "stable_seconds": 15.545857945,
+      "maximum_stable_sample_gap_seconds": 0.865580315,
+      "accepted_API_event_positions": [
+        29,
+        41,
+        55,
+        68
+      ],
+      "raw_alarms": null
+    },
+    {
+      "operator": "cert-manager",
+      "directory": "fresh-learning/cert-manager/bounded-sequences/learn",
+      "status": "passed",
+      "samples": 30,
+      "pending_samples": 7,
+      "stable_seconds": 15.620311819,
+      "maximum_stable_sample_gap_seconds": 0.873962893,
+      "accepted_API_event_positions": [
+        29,
+        41,
+        55,
+        68
+      ],
+      "raw_alarms": null
+    },
+    {
+      "operator": "cert-manager",
+      "directory": "matched-no-fault/cert-manager/bounded-sequences/test/sequence-no-fault",
+      "status": "passed",
+      "samples": 28,
+      "pending_samples": 5,
+      "stable_seconds": 15.439461578,
+      "maximum_stable_sample_gap_seconds": 0.870203628,
+      "accepted_API_event_positions": [
+        29,
+        41,
+        55,
+        69
+      ],
+      "raw_alarms": []
+    }
+  ],
+  "validation": {
+    "tests": 492,
+    "subtests": 10,
+    "protected_test_excluded": true,
+    "strict_shared_sources": 41,
+    "strict_adapter_checks": 2,
+    "lint": "passed",
+    "format": "passed",
+    "wheel": "passed"
+  },
+  "preservation": {
+    "prior_trees": 60,
+    "prior_files": 306352,
+    "prior_bytes": 14674913176,
+    "new_trees": 7,
+    "new_files": 2631,
+    "new_bytes": 1733907748,
+    "protected_test_sha256": "b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287",
+    "VM_idle": true,
+    "old_named_image_refs_unchanged": 108
+  },
+  "bindings": {
+    "build-review-v2.json": "c3bd468c42234d7b0a74971a5e2b5ffc4952785b405466e94a8f180ee2d32fa8",
+    "external-secrets-learning-review-v1.json": "d150e5ab2e2060626843be31ef84ccfc1d3f490998df6e4d6c5dac599f3b7814",
+    "external-secrets-failed-control-review.json": "2dd0267319c61bc8287bef62c85586505fef856ed58703ca40b0605b827975ee",
+    "cert-manager-controls-review.json": "19bb7b2acabb61cd4dae55df040967e8245aac77f677fffb4384d49dfbe4d65d",
+    "control-physical-review-v2.json": "0646bd7474e580a18f1920673992b4adfb4ddcdac3b6c9a1b7619195eec069ac",
+    "final-prior-preservation.json": "887f45036981bb552dd0757754ca26cf2d8b11d720d0b3e4f1a089a4dad32f56",
+    "final-new-integrity.json": "26667f15ee473ae2d78207e194a7b48f87f05eb61246191e7cf5d39e29cb7744",
+    "final-vm-state.json": "b80b37b954595118080e749626aaea6020672133ec3e26c99e4098f2ddbf38ad",
+    "budget-gate-probe.json": "4893f8732a491cb3c0a44607c31f7396f817baace2bd996194039f2d290d1a77"
+  },
+  "result_trees": [
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-build-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/build-result-hashes.json",
+      "manifest_sha256": "ba9d5ddad0cc5eea5765189eea212427f621e7ff79f468eada75431e921bfbe9",
+      "file_count": 29,
+      "bytes": 122635
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-build-retry1-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/build-retry1/build-result-hashes.json",
+      "manifest_sha256": "25582a79d76443607fc58fb1f162f96039182b01ceb59c829442415985469d18",
+      "file_count": 55,
+      "bytes": 16438700
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-build-retry2-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/build-retry2/build-result-hashes.json",
+      "manifest_sha256": "857590ce8fc3db0c6f8ff8b65b346171ac8d1cc472ac093d4e26a0bbccaee205",
+      "file_count": 151,
+      "bytes": 610964619
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-build-retry3-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/build-retry3/build-result-hashes.json",
+      "manifest_sha256": "e1ab929aab506b60c3a1f5c4ca212c70d43cf3f4731155995361b1a7208f1669",
+      "file_count": 179,
+      "bytes": 778502877
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-cert-manager-controls-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/cert-manager-controls-result-hashes.json",
+      "manifest_sha256": "78dad6e3652ef0980647cb1037eb52fa2783f3a1f75f7033a0ad02f154747fca",
+      "file_count": 1562,
+      "bytes": 26538047
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-external-secrets-controls-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/external-secrets-controls-result-hashes.json",
+      "manifest_sha256": "e0d5e0c84c7b97312662e46da716a6cff4794a18604dc157b457c3d2a2842036",
+      "file_count": 645,
+      "bytes": 20317082
+    },
+    {
+      "root": "/Users/pial/Projects/sieve/runs/operator-sequences-first-slice-image-artifacts-vm",
+      "manifest": "/Users/pial/Projects/sieve/.cache/operator-sequences/first-slice-20261101/image-artifacts-result-hashes.json",
+      "manifest_sha256": "f59ed51f857b1159a42720330513d5f70af485603991af89f91c56e500389d03",
+      "file_count": 10,
+      "bytes": 281023788
+    }
+  ],
+  "no_push_or_PR": true
+}
