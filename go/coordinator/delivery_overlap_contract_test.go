@@ -222,3 +222,62 @@ deliveryOverlap:
 		t.Fatal(err)
 	}
 }
+
+func TestDeliveryOverlapObserverErrorImmediatelyReleasesAndInvalidatesHeldRPC(t *testing.T) {
+	client, output := coverageContract(t, `coverageResources: [externalsecret/default/a]
+deliveryOverlap:
+  mode: hold
+  resourceKey: externalsecret/default/a
+  reconciler: operator.Reconcile
+  holdPhase: change
+  releasePhase: remove
+  timeoutSeconds: 5
+`)
+	begin := sieve.NotifyTestCoverageRequest{Kind: "begin", Frame: "operator.Reconcile", InvocationID: "selected", InstanceID: "receiver"}
+	var response sieve.Response
+	if err := client.Call("TestCoordinator.NotifyTestCoverage", &begin, &response); err != nil {
+		t.Fatal(err)
+	}
+	read := begin
+	read.Kind = "read"
+	read.ResourceKey = "externalsecret/default/a"
+	read.Object = `{"metadata":{"name":"a","namespace":"default","uid":"parent","generation":2,"resourceVersion":"20","labels":{"sieve.testing/state":"change"}},"spec":{"value":"two"}}`
+	held := client.Go("TestCoordinator.NotifyTestCoverage", &read, new(sieve.Response), make(chan *rpc.Call, 1))
+	var status overlapReply
+	if err := client.Call("TestCoordinator.DeliveryOverlap", overlapQuery{"held", 1000}, &status); err != nil {
+		t.Fatal(err)
+	}
+	invalid := sieve.NotifyTestCoverageRequest{Kind: "receipt-end", ResourceKey: read.ResourceKey, Object: read.Object, ReceiptID: 99, Operation: "Updated", Observer: "informer"}
+	if err := client.Call("TestCoordinator.NotifyTestCoverage", &invalid, &response); err == nil {
+		t.Fatal("unmatched receipt was accepted")
+	}
+	select {
+	case result := <-held.Done:
+		if result.Error == nil || !strings.Contains(result.Error.Error(), "unmatched receipt end") {
+			t.Fatalf("observer failure did not reach held worker: %v", result.Error)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("observer failure stranded a held worker")
+	}
+	if err := client.Call("TestCoordinator.DeliveryOverlap", overlapQuery{"completed", 100}, &status); err == nil || !strings.Contains(err.Error(), "unmatched receipt end") {
+		t.Fatalf("invalid attempt did not retain observer failure: %v", err)
+	}
+	newer := sieve.NotifyTestCoverageRequest{Kind: "receipt-begin", ResourceKey: read.ResourceKey, Object: `{"metadata":{"name":"a","namespace":"default","uid":"parent","generation":3,"resourceVersion":"30","labels":{"sieve.testing/state":"remove"}},"spec":{"value":"final"}}`, Operation: "Updated", Observer: "informer"}
+	if err := client.Call("TestCoordinator.NotifyTestCoverage", &newer, &response); err != nil {
+		t.Fatal(err)
+	}
+	newer.Kind, newer.ReceiptID = "receipt-end", response.Number
+	if err := client.Call("TestCoordinator.NotifyTestCoverage", &newer, &response); err != nil {
+		t.Fatal(err)
+	}
+	begin.Kind = "end"
+	if err := client.Call("TestCoordinator.NotifyTestCoverage", &begin, &response); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Call("TestCoordinator.DeliveryOverlap", overlapQuery{"status", 100}, &status); err == nil {
+		t.Fatal("later valid events revived the invalid attempt")
+	}
+	if !strings.Contains(output.text(), "[SIEVE-TRACE-ERROR] test coverage: unmatched receipt end") {
+		t.Fatal("original observer alarm was not retained")
+	}
+}

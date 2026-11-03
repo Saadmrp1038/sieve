@@ -32,8 +32,14 @@ func newTestCoverage(resources []planText) *testCoverage {
 func (c *testCoverage) record(r *sieve.NotifyTestCoverageRequest, response *sieve.Response) error {
 	c.Lock()
 	err := c.recordLocked(r, response)
-	if err == nil && c.overlap != nil {
-		err = c.overlap.observe(r)
+	if c.overlap != nil {
+		if err != nil {
+			c.overlap.Lock()
+			c.overlap.failLocked(err.Error())
+			c.overlap.Unlock()
+		} else {
+			err = c.overlap.observe(r)
+		}
 	}
 	c.Unlock()
 	if err == nil && c.overlap != nil && r.Kind == "read" {
