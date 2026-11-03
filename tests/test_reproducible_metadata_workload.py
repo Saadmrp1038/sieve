@@ -85,6 +85,36 @@ def test_matched_observe_control_does_not_wait_for_a_hold(
 
 
 @pytest.mark.parametrize("operator", ["external-secrets", "cert-manager"])
+def test_overlap_commands_use_the_selected_artifact_directory(
+    tmp_path, overlap_cluster, operator
+):
+    output = tmp_path / "gate directory/workload.log"
+    result = invoke(
+        operator,
+        output,
+        {**overlap_cluster, "OVERLAP_TEST_OPERATOR": operator},
+        "--delivery-overlap",
+        schedule="overlap",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    rows = [
+        json.loads(line)
+        for line in output.with_name("metadata-commands")
+        .joinpath("commands.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    commands = [
+        row
+        for row in rows
+        if row["status"] == "started"
+        and row["operation"].startswith("wait for delivery overlap ")
+    ]
+    assert len(commands) == 3
+    assert {row["cwd"] for row in commands} == {str(output.parent.resolve())}
+
+
+@pytest.mark.parametrize("operator", ["external-secrets", "cert-manager"])
 @pytest.mark.parametrize("bad", ["uid", "generation", "releasedResourceVersion"])
 def test_mismatched_gate_retains_progress_and_never_reports_success(
     tmp_path, overlap_cluster, operator, bad

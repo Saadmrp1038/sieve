@@ -50,7 +50,7 @@ class MetadataTarget(Protocol):
     def observe(self, name: str) -> SequenceObservation: ...
 
 
-def _overlap_gate(wait_for: str) -> Resource:
+def _overlap_gate(wait_for: str, directory: Path) -> Resource:
     response = run_process(
         [
             "docker",
@@ -62,6 +62,7 @@ def _overlap_gate(wait_for: str) -> Resource:
             "--timeout-seconds",
             "25",
         ],
+        cwd=directory,
         capture_output=True,
         category="request",
         operation="wait for delivery overlap " + wait_for,
@@ -281,7 +282,7 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
         try:
             gate: Resource | None = None
             if args.delivery_overlap:
-                gate = _overlap_gate("status")
+                gate = _overlap_gate("status", args.output.parent.resolve())
                 if (
                     gate.get("mode") not in ("hold", "observe")
                     or gate.get("state") not in ("armed", "observing")
@@ -410,7 +411,7 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
                 if gate is not None and gate["mode"] == "hold":
                     if index == hold_after:
                         stage = "overlap_failed"
-                        held = _overlap_gate("held")
+                        held = _overlap_gate("held", args.output.parent.resolve())
                         metadata = accepted["metadata"]
                         if (
                             held.get("state") != "held"
@@ -430,7 +431,9 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
                         save()
                     elif index == release_after:
                         stage = "overlap_failed"
-                        completed = _overlap_gate("completed")
+                        completed = _overlap_gate(
+                            "completed", args.output.parent.resolve()
+                        )
                         held = evidence["delivery_overlap"]["held"]
                         if (
                             completed.get("state") != "completed"
