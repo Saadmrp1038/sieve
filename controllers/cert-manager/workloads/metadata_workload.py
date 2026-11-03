@@ -33,6 +33,8 @@ class CertificateMetadata:
                     "create",
                     "-f",
                     "-",
+                    "-o",
+                    "json",
                     payload={
                         "apiVersion": "cert-manager.io/v1",
                         "kind": "Issuer",
@@ -53,6 +55,8 @@ class CertificateMetadata:
                 "create",
                 "-f",
                 "-",
+                "-o",
+                "json",
                 payload={
                     "apiVersion": "cert-manager.io/v1",
                     "kind": "Certificate",

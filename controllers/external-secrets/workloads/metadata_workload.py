@@ -31,6 +31,8 @@ class ExternalSecretMetadata:
                     "create",
                     "-f",
                     "-",
+                    "-o",
+                    "json",
                     payload={
                         "apiVersion": "external-secrets.io/v1",
                         "kind": "SecretStore",
@@ -63,6 +65,8 @@ class ExternalSecretMetadata:
                 "create",
                 "-f",
                 "-",
+                "-o",
+                "json",
                 payload={
                     "apiVersion": "external-secrets.io/v1",
                     "kind": "ExternalSecret",

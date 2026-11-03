@@ -15,7 +15,9 @@ def run_instrumenter(config):
     run(
         ["go", "build", "-o", str(binary), "."],
         cwd=repository_root() / "go/instrumenter",
-        env={**os.environ, "GOWORK": "off"},
+        # Build this module with its own Go requirement; leave the operator's
+        # pinned toolchain in the parent environment for its native build.
+        env={**os.environ, "GOWORK": "off", "GOTOOLCHAIN": "auto"},
         check=True,
         operation="run instrumenter",
         category="compile",

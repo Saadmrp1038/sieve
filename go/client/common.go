@@ -291,6 +291,9 @@ func loadTestPlan(testPlan map[string]interface{}) error {
 	if err := loadReconcileFuns(testPlan); err != nil {
 		return err
 	}
+	if err := loadTestCoverage(testPlan); err != nil {
+		return err
+	}
 	actions, ok := testPlan["actions"].([]interface{})
 	if !ok {
 		return fmt.Errorf("cannot convert testPlan[\"actions\"] to []interface{}")

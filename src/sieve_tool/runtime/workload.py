@@ -220,9 +220,15 @@ def run_workload(context):
             command = list(context.controller_config.test_command)
             if command[0] in ("python", "python3"):
                 command[0] = sys.executable
+            workload_arguments = [context.test_workload, directory / "workload.log"]
+            if (
+                context.mode == sieve_modes.TEST
+                and context.test_plan_content.get("deliveryOverlap") is not None
+            ):
+                workload_arguments.append("--delivery-overlap")
             try:
                 result = run(
-                    [*command, context.test_workload, directory / "workload.log"],
+                    [*command, *workload_arguments],
                     operation="execute workload",
                     category="workload",
                     cwd=repository_root(),

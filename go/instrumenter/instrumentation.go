@@ -130,7 +130,7 @@ func writeInstrumentedFile(ofilepath, pkg string, f *dst.File, customizedImportM
 	check(os.Rename(temporary.Name(), ofilepath))
 }
 
-func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, stackFrame string) {
+func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, stackFrame, mode string) {
 	f := parseSourceFile(ifilepath, pkg, map[string]string{})
 	_, funcDecl := findFuncDecl(f, funName, recvType)
 
@@ -138,7 +138,7 @@ func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, 
 		index := 0
 		beforeReconcileInstrumentation := &dst.ExprStmt{
 			X: &dst.CallExpr{
-				Fun:  &dst.Ident{Name: "NotifyLearnBeforeReconcile", Path: "sieve.client"},
+				Fun:  &dst.Ident{Name: "Notify" + mode + "BeforeReconcile", Path: "sieve.client"},
 				Args: []dst.Expr{&dst.Ident{Name: fmt.Sprintf("\"%s\"", stackFrame)}},
 			},
 		}
@@ -154,7 +154,7 @@ func instrumentAnnotatedReconcile(ifilepath, ofilepath, pkg, funName, recvType, 
 		index += 1
 		afterReconcileInstrumentation := &dst.DeferStmt{
 			Call: &dst.CallExpr{
-				Fun:  &dst.Ident{Name: "NotifyLearnAfterReconcile", Path: "sieve.client"},
+				Fun:  &dst.Ident{Name: "Notify" + mode + "AfterReconcile", Path: "sieve.client"},
 				Args: []dst.Expr{&dst.Ident{Name: fmt.Sprintf("\"%s\"", stackFrame)}},
 			},
 		}

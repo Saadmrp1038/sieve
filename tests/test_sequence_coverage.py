@@ -51,6 +51,8 @@ def test_overlap_binds_an_older_read_and_completed_new_delivery_to_one_live_invo
     assert coverage.verified
     assert coverage.witnesses[0]["invocation_id"] == "call-1"
     assert coverage.witnesses[0]["positions"] == [0, 1, 2, 3, 4]
+    assert coverage.observed_inputs == (0,)
+    assert coverage.delivered_inputs == (1,)
 
 
 @pytest.mark.parametrize(

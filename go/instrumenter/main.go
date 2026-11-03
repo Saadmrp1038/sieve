@@ -44,7 +44,7 @@ func instrumentControllerForLearn(config InstrumentationConfig) {
 			panic(err)
 		}
 		fmt.Printf("instrumenting %s\n", source_file_to_instrument)
-		instrumentAnnotatedReconcile(source_file_to_instrument, source_file_to_instrument, pkg, funName, recvType, stackFrame)
+		instrumentAnnotatedReconcile(source_file_to_instrument, source_file_to_instrument, pkg, funName, recvType, stackFrame, "Learn")
 	}
 
 	for _, api_to_instrument := range apis {
@@ -72,6 +72,14 @@ func instrumentControllerForTest(config InstrumentationConfig) {
 	storeGoFile := path.Join(clientGoPath, "tools", "cache", "store.go")
 	fmt.Printf("instrumenting %s\n", storeGoFile)
 	instrumentStoreGoForAll(storeGoFile, storeGoFile, "Test")
+	for filePath, stackFrame := range config.ReconcileFunctions {
+		source := path.Join(applicationFilePath, filePath)
+		pkg, receiver, function, err := reconcileTarget(stackFrame)
+		if err != nil {
+			panic(err)
+		}
+		instrumentAnnotatedReconcile(source, source, pkg, function, receiver, stackFrame, "Test")
+	}
 
 	for _, api_to_instrument := range apis {
 		module, filePath, pkg, funName, recvType := api_to_instrument.Module, api_to_instrument.FilePath, api_to_instrument.Package, api_to_instrument.Function, api_to_instrument.ReceiverType

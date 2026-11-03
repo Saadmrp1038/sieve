@@ -1,6 +1,7 @@
 """Independent physical fault evidence, alongside unmodified oracle alarms."""
 
 import hashlib
+import json
 import re
 from dataclasses import asdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from sieve_tool.acceptance.missed_state import verify_missed_state
 from sieve_tool.oracle.artifacts import ArtifactError, read_artifact, read_outcome
 from sieve_tool.plans import FaultPlan, PauseControllerAction, RestartControllerAction
 from sieve_tool.results import TestResult
+from sieve_tool.testing.overlap_schedule import verify_scheduled_overlap
 from sieve_tool.trace import iter_api_events
 
 
@@ -39,6 +41,7 @@ class FaultProof(BaseModel):
     evidence_sha256: dict[str, str]
     workload_completed: bool
     triggered_actions: list[int]
+    delivery_overlap: dict[str, object] | None = None
 
 
 def read_fault_proof(path: Path) -> FaultProof:
@@ -70,7 +73,26 @@ def audit_fault(
     actions = plan.actions or []
     restarts = [a for a in actions if isinstance(a, RestartControllerAction)]
     missed = None
-    if any(isinstance(a, PauseControllerAction) for a in actions):
+    overlap = None
+    if plan.delivery_overlap is not None:
+        if plan.workload.startswith("metadata-") and "-at-" in plan.workload:
+            from sieve_tool.testing.metadata_cases import validate_case_plan
+
+            try:
+                case = validate_case_plan(
+                    json.loads((directory / "metadata-plan.json").read_text())
+                )
+                if (
+                    case.workload != plan.workload
+                    or case.plan(plan.delivery_overlap.mode).delivery_overlap
+                    != plan.delivery_overlap
+                ):
+                    raise ValueError("frozen case differs from injected plan")
+            except (ValueError, KeyError, TypeError, OSError) as error:
+                reasons.append("invalid frozen history/placement: " + str(error))
+        overlap = verify_scheduled_overlap(directory, plan.delivery_overlap)
+        reasons.extend(overlap["reasons"])
+    elif any(isinstance(a, PauseControllerAction) for a in actions):
         missed = verify_missed_state(directory, plan)
         reasons.extend(missed.reasons)
     elif len(restarts) != 1 or len(actions) != 1:
@@ -144,6 +166,8 @@ def audit_fault(
         and process.returncode == 0
     )
     source_names = (
+        "controller.log",
+        "streamed-controller.log",
         "apiserver1.log",
         "sieve-server.log",
         "injection-process-outcome.json",
@@ -160,7 +184,7 @@ def audit_fault(
         "metadata-coverage.json",
         "metadata-no-fault.yaml",
     )
-    return {
+    proof = {
         "schema_version": 1,
         "physically_verified": not reasons,
         "reasons": reasons,
@@ -184,3 +208,6 @@ def audit_fault(
             if (directory / name).is_file()
         },
     }
+    if overlap is not None:
+        proof["delivery_overlap"] = overlap
+    return proof

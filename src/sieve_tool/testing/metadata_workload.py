@@ -12,7 +12,9 @@ from typing import Protocol
 
 from sieve_tool.plans import FaultPlan, write_plan
 from sieve_tool.process import ProcessTimeout, deadline, execution
+from sieve_tool.process import run as run_process
 from sieve_tool.testing.child_repair import Resource, Wait, get, kubectl
+from sieve_tool.testing.metadata_cases import case_for_workload, explore
 from sieve_tool.testing.semantic import (
     HistoryEquivalenceMonitor,
     LatestStateMonitor,
@@ -46,6 +48,29 @@ class MetadataTarget(Protocol):
     ) -> Resource: ...
 
     def observe(self, name: str) -> SequenceObservation: ...
+
+
+def _overlap_gate(wait_for: str, directory: Path) -> Resource:
+    response = run_process(
+        [
+            "docker",
+            "exec",
+            "kind-control-plane",
+            "/sieve/coordinator/sieve-coordinator",
+            "overlap",
+            wait_for,
+            "--timeout-seconds",
+            "25",
+        ],
+        cwd=directory,
+        capture_output=True,
+        category="request",
+        operation="wait for delivery overlap " + wait_for,
+    )
+    value = json.loads(response.stdout)
+    if not isinstance(value, dict):
+        raise RuntimeError("Invalid delivery overlap response")
+    return value
 
 
 def _patch(
@@ -118,25 +143,39 @@ def _patch(
 
 def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    legacy = [
+        f"metadata-{c}-{s}"
+        for c in ("labels", "annotations")
+        for s in ("settled", "overlap")
+    ]
     parser.add_argument(
         "workload",
-        choices=[
-            f"metadata-{c}-{s}"
-            for c in ("labels", "annotations")
-            for s in ("settled", "overlap")
-        ],
+        choices=[*legacy, *(c.workload for c in explore(operators=(target.operator,)))],
     )
     parser.add_argument("output", type=Path)
     parser.add_argument("--history-index", type=int)
     parser.add_argument("--repair-timeout", type=float, default=180)
     parser.add_argument("--settle-seconds", type=float, default=15)
     parser.add_argument("--plan-only", action="store_true")
+    parser.add_argument("--delivery-overlap", action="store_true")
     args = parser.parse_args(arguments)
     if not math.isfinite(args.repair_timeout) or args.repair_timeout <= 0:
         parser.error("repair timeout must be finite and positive")
     if not math.isfinite(args.settle_seconds) or args.settle_seconds < 0:
         parser.error("settle seconds must be finite and nonnegative")
-    _, channel, schedule = args.workload.split("-")
+    case = (
+        None
+        if args.workload in legacy
+        else case_for_workload(target.operator, args.workload)
+    )
+    if case is not None and args.history_index is not None:
+        parser.error("named case already selects its history")
+    if case is None:
+        _, channel, schedule = args.workload.split("-")
+    else:
+        channel, schedule = case.channel, "overlap"
+    if args.delivery_overlap and (schedule != "overlap" or args.plan_only):
+        parser.error("delivery overlap requires an executing overlap test plan")
     catalog = metadata_histories()
     index = (
         args.history_index
@@ -145,7 +184,9 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     )
     if not 0 <= index < len(catalog) or catalog[index].channel != channel:
         parser.error("history index must select the workload's metadata channel")
-    selected = catalog[index]
+    selected = catalog[index] if case is None else case.history
+    hold_after = case.hold_after_step if case is not None else 2
+    release_after = hold_after + 1
     artifacts = [
         args.output,
         *(
@@ -174,12 +215,26 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
         "repair_timeout": args.repair_timeout,
         "settle_seconds": args.settle_seconds,
     }
+    if case is not None:
+        plan = {
+            **case.metadata_plan(),
+            "repair_timeout": args.repair_timeout,
+            "settle_seconds": args.settle_seconds,
+        }
     args.output.with_name("metadata-plan.json").write_text(
         json.dumps(plan, indent=2) + "\n"
     )
     if args.plan_only:
         write_plan(
-            FaultPlan(workload=args.workload, actions=[]),
+            case.plan("observe")
+            if case is not None
+            else FaultPlan(
+                workload=args.workload,
+                actions=[],
+                coverage_resources=[
+                    target.parent_kind + "/default/sieve-metadata-subject"
+                ],
+            ),
             args.output.with_name("metadata-no-fault.yaml"),
         )
         return 0
@@ -225,6 +280,18 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
     stage = "setup_failed"
     with execution(log_dir=args.output.with_name("metadata-commands")):
         try:
+            gate: Resource | None = None
+            if args.delivery_overlap:
+                gate = _overlap_gate("status", args.output.parent.resolve())
+                if (
+                    gate.get("mode") not in ("hold", "observe")
+                    or gate.get("state") not in ("armed", "observing")
+                    or gate.get("resourceKey")
+                    != target.parent_kind + "/default/" + subject_name
+                ):
+                    raise RuntimeError("Delivery overlap plan does not match workload")
+                evidence["delivery_overlap"] = {"initial": gate}
+                save()
             for name in (subject_name, reference_name):
                 if (
                     get(target.parent_kind, name) is not None
@@ -341,13 +408,65 @@ def run(arguments: Sequence[str], target: MetadataTarget) -> int:
                 stage = "input_failed"
                 accepted = _patch(target, accepted, channel, step, index)
                 record(step.operation, accepted, "subject")
+                if gate is not None and gate["mode"] == "hold":
+                    if index == hold_after:
+                        stage = "overlap_failed"
+                        held = _overlap_gate("held", args.output.parent.resolve())
+                        metadata = accepted["metadata"]
+                        if (
+                            held.get("state") != "held"
+                            or held.get("resourceKey") != gate["resourceKey"]
+                            or held.get("reconciler") != gate.get("reconciler")
+                            or held.get("uid") != metadata["uid"]
+                            or type(held.get("generation")) is not int
+                            or held["generation"] != metadata["generation"]
+                            or not held.get("invocationID")
+                            or not held.get("instanceID")
+                            or not held.get("resourceVersion")
+                        ):
+                            raise RuntimeError(
+                                "Held invocation does not match accepted held input"
+                            )
+                        evidence["delivery_overlap"]["held"] = held
+                        save()
+                    elif index == release_after:
+                        stage = "overlap_failed"
+                        completed = _overlap_gate(
+                            "completed", args.output.parent.resolve()
+                        )
+                        held = evidence["delivery_overlap"]["held"]
+                        if (
+                            completed.get("state") != "completed"
+                            or any(
+                                completed.get(k) != held[k]
+                                for k in (
+                                    "resourceKey",
+                                    "reconciler",
+                                    "uid",
+                                    "generation",
+                                    "invocationID",
+                                    "instanceID",
+                                    "resourceVersion",
+                                )
+                            )
+                            or type(completed.get("releasedGeneration")) is not int
+                            or completed["releasedGeneration"]
+                            != accepted["metadata"]["generation"]
+                            or completed.get("releasedResourceVersion")
+                            != accepted["metadata"]["resourceVersion"]
+                        ):
+                            raise RuntimeError(
+                                "Completed overlap does not match accepted release input"
+                            )
+                        evidence["delivery_overlap"]["completed"] = completed
+                        save()
                 if step.value is None:
                     del expected[channel][HISTORY_KEY]
                 else:
                     expected[channel][HISTORY_KEY] = step.value
                 stage = "convergence_failed"
                 # Establish that the entry was really managed before removal.
-                if schedule == "settled" or index == 1:
+                if schedule == "settled" or index == 1 and hold_after != 1:
                     wait_for(
                         lambda: sample().status == "satisfied",
                         "metadata " + step.operation,

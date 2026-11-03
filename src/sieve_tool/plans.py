@@ -293,12 +293,94 @@ type FaultAction = Annotated[
 ]
 
 
+class DeliveryOverlap(PlanModel):
+    mode: Literal["observe", "hold"]
+    resource_key: Nonempty
+    reconciler: Nonempty
+    hold_phase: Nonempty
+    release_phase: Nonempty
+    timeout_seconds: Annotated[int, Field(strict=True, ge=1, le=60)]
+
+    @model_validator(mode="after")
+    def unambiguous_identity(self) -> Self:
+        if (
+            any(c in self.reconciler for c in "\t\r\n")
+            or "*" in re.sub(r"\(\*[A-Za-z_][A-Za-z0-9_]*\)", "", self.reconciler)
+            or not self.reconciler.strip()
+            or self.hold_phase == self.release_phase
+            or any(
+                not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,62}", phase)
+                for phase in (self.hold_phase, self.release_phase)
+            )
+        ):
+            raise ValueError(
+                "deliveryOverlap requires exact identity and distinct phases"
+            )
+        return self
+
+
 class FaultPlan(PlanModel):
     nullable_fields: ClassVar[frozenset[str]] = frozenset({"actions"})
     workload: Nonempty
     actions: list[FaultAction] | None
     sieve_server_addr: Nonempty | None = None
     annotated_reconcile_stack_frame: list[str] | None = None
+    coverage_resources: list[Nonempty] = Field(default_factory=list, max_length=16)
+    delivery_overlap: DeliveryOverlap | None = None
+
+    @model_validator(mode="after")
+    def scoped_overlap(self) -> Self:
+        if self.delivery_overlap is not None and (
+            self.delivery_overlap.resource_key not in self.coverage_resources
+            or self.actions != []
+        ):
+            raise ValueError(
+                "deliveryOverlap requires a covered exact resource and no other actions"
+            )
+        if (
+            self.delivery_overlap is not None
+            and self.workload.startswith("metadata-")
+            and "-at-" in self.workload
+        ):
+            from sieve_tool.testing.metadata_cases import SCOPES, case_for_workload
+
+            operator = {
+                "externalsecret": "external-secrets",
+                "certificate": "cert-manager",
+            }.get(self.delivery_overlap.resource_key.split("/")[0], "")
+            case = case_for_workload(operator, self.workload)
+            kind, frame = SCOPES[operator]
+            held, released = (
+                case.history.steps[case.hold_after_step - 1],
+                case.history.steps[case.release_after_step - 1],
+            )
+            if (
+                self.delivery_overlap.resource_key
+                != kind + "/default/sieve-metadata-subject"
+                or self.delivery_overlap.reconciler != frame
+                or self.delivery_overlap.hold_phase
+                != f"metadata-{case.hold_after_step}-{held.operation}"
+                or self.delivery_overlap.release_phase
+                != f"metadata-{case.release_after_step}-{released.operation}"
+            ):
+                raise ValueError(
+                    "named metadata case placement does not match deliveryOverlap"
+                )
+        return self
+
+    @field_validator("coverage_resources")
+    @classmethod
+    def exact_coverage_scopes(cls, values: list[str]) -> list[str]:
+        if len(set(values)) != len(values) or any(
+            not re.fullmatch(
+                r"[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*", value
+            )
+            for value in values
+        ):
+            raise ValueError(
+                "coverageResources requires unique exact resource/namespace/name scopes"
+            )
+        return values
 
     def to_dict(self) -> dict[str, object]:
         return self.model_dump(by_alias=True, exclude_unset=True)
