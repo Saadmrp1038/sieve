@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kustomize-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      sievetag: kustomize-controller
+  template:
+    metadata:
+      labels:
+        sievetag: kustomize-controller
+    spec:
+      serviceAccountName: kustomize-controller
+      containers:
+        - name: manager
+          image: ${SIEVE-DR}/kustomize-controller:${SIEVE-DT}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --concurrent=10
+            - --watch-all-namespaces=false
+            - --log-level=info
+          env:
+            - name: RUNTIME_NAMESPACE
+              value: default
+            - name: sieveTestPlan
+              valueFrom:
+                configMapKeyRef:
+                  name: sieve-testing-global-config
+                  key: sieveTestPlan
+            - name: KUBERNETES_SERVICE_HOST
+              value: kind-control-plane
+            - name: KUBERNETES_SERVICE_PORT
+              value: '6443'

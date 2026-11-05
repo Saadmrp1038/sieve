@@ -1,0 +1,29 @@
+{
+    "name": "kustomize-controller",
+    "github_link": "https://github.com/fluxcd/kustomize-controller.git",
+    "commit": "746d9d2d360bbc7a5ee75ab79dadcf05e48ab927",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.37.1",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-kustomize-controller:latest",
+    "test_command": ["python3", "controllers/kustomize-controller/workloads/workload.py"],
+    "custom_resource_definitions": ["kustomization", "gitrepository"],
+    "annotated_reconcile_functions": {
+        "internal/controller/kustomization_controller.go": "github.com/fluxcd/kustomize-controller/internal/controller.(*KustomizationReconciler).Reconcile"
+    },
+    "apis_to_instrument": [{
+        "module": "github.com/fluxcd/pkg/ssa@v0.83.0",
+        "file_path": "manager_delete.go",
+        "package": "github.com/fluxcd/pkg/ssa",
+        "func_name": "Delete",
+        "receiver_type": "*ResourceManager"
+    }],
+    "controller_pod_label": "kustomize-controller",
+    "container_name": "manager",
+    "controller_deployment_file_path": "controllers/kustomize-controller/deploy/operator.yaml",
+    "test_setting": {
+        "prune-retry": {"num_workers": 0, "write_trigger": "occurrence"},
+        "partial-apply-control": {"num_workers": 0, "write_trigger": "occurrence"},
+        "partial-apply-rejected": {"num_workers": 0, "write_trigger": "occurrence"}
+    }
+}

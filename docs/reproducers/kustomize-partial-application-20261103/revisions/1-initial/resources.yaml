@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  value: synthetic-anchor
+kind: ConfigMap
+metadata:
+  name: sieve-partial-anchor
+  namespace: default

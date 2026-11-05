@@ -38,6 +38,7 @@ def assemble_trace(
     write_starts: dict[int, int] = {}
     finished_writes: set[int] = set()
     api_starts: dict[int, int] = {}
+    finished_apis: set[int] = set()
     reads: set[str] = set()
     read_types: set[str] = set()
     previous: dict[tuple[str, str | None], ReconcileBegin | None] = {}
@@ -117,9 +118,16 @@ def assemble_trace(
                 by_position[event.start_timestamp] = event
             case Marker.BEFORE_API:
                 assert isinstance(event, OperationID)
+                if event.id in api_starts:
+                    raise record.error(f"duplicate annotated call start {event.id}")
                 api_starts[event.id] = position
             case Marker.AFTER_API:
                 assert isinstance(event, ControllerNonK8sWrite)
+                if event.id not in api_starts or event.id in finished_apis:
+                    raise record.error(
+                        f"unmatched or duplicate annotated call end {event.id}"
+                    )
+                finished_apis.add(event.id)
                 for key in trivial:
                     trivial[key] = False
                 if (
@@ -127,16 +135,26 @@ def assemble_trace(
                     event.invocation_id,
                 ) not in current and not loosen_boundary:
                     continue
-                if event.id not in api_starts:
-                    raise record.error(f"annotated call {event.id} has no start")
                 event.start_timestamp = api_starts[event.id]
                 event.end_timestamp = position
                 if (event.reconcile_fun, event.invocation_id) in current:
-                    # The previous engine called a missing set_range method here.
-                    # Supporting this path would change behavior, not just types.
-                    raise record.error(
-                        "annotated writes within reconciliation have no supported range semantics"
-                    )
+                    key = (event.reconcile_fun, event.invocation_id)
+                    begin = current[key]
+                    if (
+                        event.invocation_id is not None
+                        and event.start_timestamp < begin.end_timestamp
+                    ):
+                        raise record.error(
+                            "annotated call starts before its invocation"
+                        )
+                    prev = previous[key]
+                    event.range_start_timestamp = prev.end_timestamp if prev else -1
+                    event.range_end_timestamp = position
+                    event.reconcile_id = begin.reconcile_id
+                    if event.invocation_id is not None:
+                        instance_intervals[
+                            (event.reconcile_fun, begin.instance_id)
+                        ].trivial = False
                 by_position[event.start_timestamp] = event
             case Marker.CACHE_READ | Marker.REST_READ:
                 assert isinstance(event, ControllerRead)

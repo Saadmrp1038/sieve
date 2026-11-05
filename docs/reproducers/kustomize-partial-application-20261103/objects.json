@@ -1,0 +1,175 @@
+{
+  "ConfigMap/sieve-partial-source": {
+    "apiVersion": "v1",
+    "kind": "ConfigMap",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial-source",
+      "namespace": "default"
+    }
+  },
+  "Service/sieve-partial-source": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial-source",
+      "namespace": "default"
+    },
+    "spec": {
+      "ports": [
+        {
+          "port": 8080,
+          "targetPort": 8080
+        }
+      ],
+      "selector": {
+        "app": "sieve-partial-source"
+      }
+    }
+  },
+  "Deployment/sieve-partial-source": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial-source",
+      "namespace": "default"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "sieve-partial-source"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "sieve-partial-source"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "command": [
+                "httpd",
+                "-f",
+                "-p",
+                "8080",
+                "-h",
+                "/www"
+              ],
+              "image": "busybox:1.37.0",
+              "name": "http",
+              "volumeMounts": [
+                {
+                  "mountPath": "/www",
+                  "name": "data"
+                }
+              ]
+            }
+          ],
+          "volumes": [
+            {
+              "configMap": {
+                "name": "sieve-partial-source"
+              },
+              "name": "data"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "GitRepository/sieve-partial": {
+    "apiVersion": "source.toolkit.fluxcd.io/v1",
+    "kind": "GitRepository",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial",
+      "namespace": "default"
+    },
+    "spec": {
+      "interval": "1h",
+      "url": "https://synthetic.invalid/disposable.git"
+    }
+  },
+  "Kustomization/sieve-partial": {
+    "apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+    "kind": "Kustomization",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial",
+      "namespace": "default"
+    },
+    "spec": {
+      "deletionPolicy": "Delete",
+      "interval": "1h",
+      "path": "./",
+      "prune": true,
+      "retryInterval": "2s",
+      "sourceRef": {
+        "kind": "GitRepository",
+        "name": "sieve-partial"
+      },
+      "timeout": "30s"
+    }
+  },
+  "ValidatingAdmissionPolicy/sieve-partial-deny": {
+    "apiVersion": "admissionregistration.k8s.io/v1",
+    "kind": "ValidatingAdmissionPolicy",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial-deny"
+    },
+    "spec": {
+      "failurePolicy": "Fail",
+      "matchConditions": [
+        {
+          "expression": "request.namespace == 'default' && request.name == 'sieve-partial-blocked'",
+          "name": "blocked"
+        }
+      ],
+      "matchConstraints": {
+        "resourceRules": [
+          {
+            "apiGroups": [
+              ""
+            ],
+            "apiVersions": [
+              "v1"
+            ],
+            "operations": [
+              "CREATE",
+              "UPDATE"
+            ],
+            "resources": [
+              "configmaps"
+            ]
+          }
+        ]
+      },
+      "validations": [
+        {
+          "expression": "false",
+          "message": "sieve synthetic apply deny"
+        }
+      ]
+    }
+  },
+  "ValidatingAdmissionPolicyBinding/sieve-partial-deny": {
+    "apiVersion": "admissionregistration.k8s.io/v1",
+    "kind": "ValidatingAdmissionPolicyBinding",
+    "metadata": {
+      "annotations": {},
+      "name": "sieve-partial-deny"
+    },
+    "spec": {
+      "policyName": "sieve-partial-deny",
+      "validationActions": [
+        "Deny"
+      ]
+    }
+  }
+}
