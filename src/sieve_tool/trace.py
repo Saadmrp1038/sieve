@@ -113,8 +113,16 @@ def _read(fields: list[str], cached: bool) -> ControllerRead:
     else:
         decoded = json.loads(raw)
         if decoded is not None:
+            if isinstance(decoded, dict):
+                if "items" not in decoded:
+                    raise ValueError("Kubernetes List read requires an items field")
+                decoded = decoded["items"]
+                if decoded is None:
+                    decoded = []
             if not isinstance(decoded, list):
-                raise ValueError("List read requires a JSON array or null")
+                raise ValueError(
+                    "List read requires a JSON array, Kubernetes List object, or null"
+                )
             for obj in decoded:
                 if not isinstance(obj, dict):
                     raise ValueError("List entries must be objects")
