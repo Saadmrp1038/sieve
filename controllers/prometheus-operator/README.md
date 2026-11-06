@@ -2,15 +2,22 @@
 
 The profile pins Prometheus Operator v0.94.2 at commit
 `0db90444c4e6fa5672be5bf7d2b15ca9dd1c5ace`. It keeps the upstream Go 1.26
-toolchain, client-go v0.37.0, command line settings, RBAC, CRDs, and runtime
-base image. The profile does not add worker processes. Prometheus Operator uses
-one queue worker for each native resource controller.
+toolchain, client-go v0.37.0, controller logic, RBAC, CRDs, and runtime base
+image. The profile does not add worker processes. Prometheus Operator uses one
+queue worker for each native resource controller.
+
+The isolated test deployment watches only the default namespace, disables
+kubelet endpoint management and cross namespace references, uses debug logging,
+and pins the config reloader by digest. It also gives the instrumented process a
+larger memory limit. These are test scope, evidence, and resource changes. They
+do not replace the native reconciliation logic or dependency graph.
 
 The deployment downloads the upstream `bundle.yaml` from the pinned commit and
-checks its SHA256 value before applying it. The custom deployment replaces only
-the upstream operator image. Prometheus v3.14.0 and the v0.94.2 config reloader
-use pinned multi-platform image digests. The deployment records the platform
-images loaded into the Kind node.
+checks its SHA256 value before applying it. It removes only the upstream
+operator Deployment from that bundle, then applies the isolated test Deployment
+described above. Prometheus v3.14.0 and the v0.94.2 config reloader use pinned
+multi-platform image digests. The deployment records the platform images loaded
+into the Kind node.
 
 ## Ownership handoff experiment
 

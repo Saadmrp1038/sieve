@@ -340,3 +340,46 @@ fail("unexpected fixture command: " + repr(args))
         assert evidence["policy_probe"] is None
         assert evidence["handoff"]["statefulset_uid"] == "statefulset-2"
     assert evidence["final"]["statefulset_owner_uid"] == "prometheus-2"
+
+    command_records = [
+        json.loads(line)
+        for line in (output.parent / "kubectl-commands/commands.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    assert command_records
+    assert all("args" not in record for record in command_records)
+    started_records = [
+        record for record in command_records if record["status"] == "started"
+    ]
+    assert started_records
+    assert all(record["cwd"] == str(output.parent) for record in started_records)
+
+
+@pytest.mark.parametrize(
+    ("option", "value"),
+    [
+        ("--timeout", "nan"),
+        ("--poll-seconds", "inf"),
+        ("--settle-seconds", "nan"),
+    ],
+)
+def test_workload_rejects_non_finite_limits(tmp_path, option, value):
+    output = tmp_path / "results/workload.log"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "controllers/prometheus-operator/workloads/workload.py"),
+            "owner-handoff-control",
+            str(output),
+            option,
+            value,
+        ],
+        env={**os.environ, "PATH": str(tmp_path)},
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 2
+    assert "finite" in result.stderr
+    assert not output.exists()

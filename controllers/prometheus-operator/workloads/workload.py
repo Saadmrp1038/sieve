@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
+import math
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+
+from sieve_tool.process import Result, execution
+from sieve_tool.process import run as run_process
 
 NAMESPACE = "default"
 PARENT = "sieve-handoff"
@@ -27,7 +30,6 @@ class Recorder:
     def __init__(self, output: Path) -> None:
         self.output = output
         self.output.parent.mkdir(parents=True, exist_ok=True)
-        self.commands = output.with_name("kubectl-commands.jsonl")
         self.observations = output.with_name("ownership-observations.jsonl")
 
     @staticmethod
@@ -43,25 +45,16 @@ class Recorder:
         *args: str,
         stdin: dict[str, Any] | None = None,
         check: bool = True,
-    ) -> subprocess.CompletedProcess[str]:
-        started = time.monotonic()
-        result = subprocess.run(
+    ) -> Result:
+        operation_parts = ["kubectl", *args[:2]]
+        result = run_process(
             ["kubectl", *args],
+            operation=" ".join(operation_parts),
             input=None if stdin is None else json.dumps(stdin),
-            text=True,
+            cwd=self.output.parent,
             capture_output=True,
+            check=False,
             timeout=60,
-        )
-        self.append(
-            self.commands,
-            {
-                "args": list(args),
-                "duration_seconds": time.monotonic() - started,
-                "returncode": result.returncode,
-                "stderr": result.stderr,
-                "stdout": result.stdout,
-                "time": self.now(),
-            },
         )
         if check and result.returncode:
             raise WorkloadError(
@@ -515,6 +508,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--settle-seconds", type=float, default=5.0)
     args = parser.parse_args()
+    limits = (args.timeout, args.poll_seconds, args.settle_seconds)
+    if not all(math.isfinite(value) for value in limits):
+        parser.error("timeouts must be finite")
     if args.timeout <= 0 or args.poll_seconds <= 0 or args.settle_seconds < 0:
         parser.error(
             "timeouts must be positive and settle-seconds must be non-negative"
@@ -526,7 +522,8 @@ def main() -> int:
     args = parse_args()
     evidence_path = args.output.with_name("ownership-handoff.json")
     try:
-        run(args)
+        with execution(log_dir=args.output.parent / "kubectl-commands"):
+            run(args)
     except Exception as exc:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         failed: dict[str, Any] = {

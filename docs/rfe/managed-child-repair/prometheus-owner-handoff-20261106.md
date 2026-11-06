@@ -10,6 +10,27 @@ workload executions and one scheduled controller restart. All completed result
 trees were copied from the VM and every file was checked against a SHA256 value
 calculated on the VM.
 
+## Implementation status
+
+The repository now has a pinned Prometheus Operator profile with native build,
+deployment, control workload, rejected deletion workload, semantic checks, and
+external process fixtures. The workload uses the shared bounded process layer
+for every `kubectl` call and writes movable command receipts without recording
+full arguments.
+
+The deployment loader preserves the upstream CRD text while removing only the
+upstream operator Deployment. This corrects the first deployment failure without
+changing the pinned CRDs.
+
+The Learn postprocess exposed a public trace decoder gap. A failing behavior test
+was added before the decoder change. The decoder now accepts Kubernetes List
+objects with either a populated `items` field or a null `items` field. It still
+accepts the prior array and null forms.
+
+The protected preexisting change in `tests/test_trace_errors.py` was not edited
+or staged. Its SHA256 value remained
+`b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287`.
+
 ## Finding
 
 Prometheus Operator can keep using a StatefulSet that belongs to a deleted
