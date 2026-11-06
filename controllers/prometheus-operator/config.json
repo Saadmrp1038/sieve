@@ -1,0 +1,41 @@
+{
+    "name": "prometheus-operator",
+    "github_link": "https://github.com/prometheus-operator/prometheus-operator.git",
+    "commit": "0db90444c4e6fa5672be5bf7d2b15ca9dd1c5ace",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.37.0",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-prometheus-operator:latest",
+    "test_command": [
+        "python3",
+        "controllers/prometheus-operator/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "alertmanager",
+        "alertmanagerconfig",
+        "podmonitor",
+        "probe",
+        "prometheus",
+        "prometheusagent",
+        "prometheusrule",
+        "scrapeconfig",
+        "servicemonitor",
+        "thanosruler"
+    ],
+    "annotated_reconcile_functions": {
+        "pkg/prometheus/server/operator.go": "github.com/prometheus-operator/prometheus-operator/pkg/prometheus/server.(*Operator).Sync"
+    },
+    "controller_pod_label": "prometheus-operator",
+    "container_name": "prometheus-operator",
+    "controller_deployment_file_path": "controllers/prometheus-operator/deploy/operator.yaml",
+    "test_setting": {
+        "owner-handoff-control": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "owner-handoff-rejected": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        }
+    }
+}
