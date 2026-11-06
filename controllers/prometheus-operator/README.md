@@ -67,3 +67,26 @@ The workload writes every `kubectl` receipt, every independent API sample, and
 the final semantic checks next to the completion marker. A completed workload
 can have `semantic_status: failed`. That result means the process completed and
 the ownership rule failed. It is separate from a harness failure.
+
+## Validated result
+
+The experiment was validated on Prometheus Operator v0.94.2. The normal control
+passed. Kubernetes removed the old StatefulSet before the replacement
+Prometheus resource was created, and the new StatefulSet referred to the new
+Prometheus UID.
+
+The rejected case exposed an ownership handoff defect. When deletion of the old
+StatefulSet was rejected, a replacement Prometheus resource with the same name
+and spec received `Reconciled=True` and `Available=True`. The StatefulSet and
+Pod still belonged to the deleted Prometheus UID. The operator logged that the
+StatefulSet input hash matched and skipped all actions. Removing the policy let
+garbage collection and reconciliation recover.
+
+Two Learn executions reproduced the result. A Test image run with no fault
+matched them. A scheduled controller restart also reproduced the result after
+the replacement controller process had started and synced its caches. This
+shows that the stale state is held in Kubernetes objects and is not only in the
+controller process.
+
+The full validation report is in
+`docs/rfe/managed-child-repair/prometheus-owner-handoff-20261106.md`.
