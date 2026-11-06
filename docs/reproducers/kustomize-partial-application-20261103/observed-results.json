@@ -1,0 +1,92 @@
+{
+  "source": "Previously sealed campaign, not execution of this standalone packaging",
+  "release": "v1.10.1",
+  "commit": "746d9d2d360bbc7a5ee75ab79dadcf05e48ab927",
+  "original_evidence_index_sha256": "5f8d3838fb17d59a62384221434190bf128979eb633d82944814668593494681",
+  "cases": {
+    "control-2": {
+      "qualified": true,
+      "workload_completed": true,
+      "native_workers": 10,
+      "scheduling_faults": 0,
+      "semantic_status": "passed",
+      "operator_failure_established": false,
+      "failure": null,
+      "parent_uid": "dda1c271-3499-428c-82d5-963440d17521",
+      "namespace_uid": "30d4c360-7cbb-4b95-832a-ec5b9c08c6a3",
+      "controller_pod_uids": [
+        "590fc5a7-6781-44a7-a760-ac26f6ba089a"
+      ],
+      "controller_image_ids": [
+        "docker.io/library/import-2026-11-03@sha256:7f4cbafd12b9db85f0a2fd0c47c606881ca88cbc6daec5c3761a19cf4bb38cca"
+      ],
+      "cleanup_reconciliations": 3,
+      "qualified_expanded_samples": 7,
+      "post_parent_absence_observation_seconds": 6.416689231,
+      "namespace_observed_lifetime_seconds": 48.277933884,
+      "artifact_sha256": {
+        "initial.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901",
+        "expanded.tgz": "85b21d60c526b686379648d8b901b2e5ce50fa71626948b0f10b1f5dc34ff6bf",
+        "removed.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901"
+      },
+      "raw_api_evidence_sha256": "96f42cb7bc3b991c7a2805f7fde72ed7690042726c1feb4d5f4a3a9e16027a3b",
+      "scope": "Pinned v1.10.1; bounded persistent orphaning, not a novelty claim"
+    },
+    "rejected-1": {
+      "qualified": true,
+      "workload_completed": true,
+      "native_workers": 10,
+      "scheduling_faults": 0,
+      "semantic_status": "failed",
+      "operator_failure_established": true,
+      "failure": "partial apply namespace not tracked; persists after three acknowledged cleanup reconciliations and parent finalization",
+      "parent_uid": "123c0265-2df0-41f9-9a8e-fbfce6163a3e",
+      "namespace_uid": "ca782452-20a9-4b75-b2bc-01fb385e96b8",
+      "controller_pod_uids": [
+        "5816f799-0b0b-498f-8369-e69933a24288"
+      ],
+      "controller_image_ids": [
+        "docker.io/library/import-2026-11-03@sha256:7f4cbafd12b9db85f0a2fd0c47c606881ca88cbc6daec5c3761a19cf4bb38cca"
+      ],
+      "cleanup_reconciliations": 3,
+      "qualified_expanded_samples": 7,
+      "post_parent_absence_observation_seconds": 6.37599352,
+      "namespace_observed_lifetime_seconds": 47.502697585,
+      "artifact_sha256": {
+        "initial.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901",
+        "expanded.tgz": "85b21d60c526b686379648d8b901b2e5ce50fa71626948b0f10b1f5dc34ff6bf",
+        "removed.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901"
+      },
+      "raw_api_evidence_sha256": "a239752a248ce369b17c7706d5bf9bc04971ca8c30dbe7277e39aa8b40d6207e",
+      "scope": "Pinned v1.10.1; bounded persistent orphaning, not a novelty claim"
+    },
+    "rejected-2": {
+      "qualified": true,
+      "workload_completed": true,
+      "native_workers": 10,
+      "scheduling_faults": 0,
+      "semantic_status": "failed",
+      "operator_failure_established": true,
+      "failure": "partial apply namespace not tracked; persists after three acknowledged cleanup reconciliations and parent finalization",
+      "parent_uid": "9b10ee2d-9262-447c-9f26-7b4c677fc7ff",
+      "namespace_uid": "5dc73834-8bab-4711-8ac4-6773dd4735b1",
+      "controller_pod_uids": [
+        "2c066e08-0b11-450c-a9d6-fb7743cf5bc8"
+      ],
+      "controller_image_ids": [
+        "docker.io/library/import-2026-11-03@sha256:7f4cbafd12b9db85f0a2fd0c47c606881ca88cbc6daec5c3761a19cf4bb38cca"
+      ],
+      "cleanup_reconciliations": 3,
+      "qualified_expanded_samples": 7,
+      "post_parent_absence_observation_seconds": 6.49276534,
+      "namespace_observed_lifetime_seconds": 47.986877915,
+      "artifact_sha256": {
+        "initial.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901",
+        "expanded.tgz": "85b21d60c526b686379648d8b901b2e5ce50fa71626948b0f10b1f5dc34ff6bf",
+        "removed.tgz": "2b82bc7033cda3eb797071e22594281c991f039806754ae92045b4c0a3ae6901"
+      },
+      "raw_api_evidence_sha256": "c949df5a764632ef998b92b3faf079b271f722f98275f43efc5ba802445da4a9",
+      "scope": "Pinned v1.10.1; bounded persistent orphaning, not a novelty claim"
+    }
+  }
+}

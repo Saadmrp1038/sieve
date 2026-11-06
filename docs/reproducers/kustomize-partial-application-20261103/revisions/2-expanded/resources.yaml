@@ -1,0 +1,20 @@
+apiVersion: v1
+data:
+  value: synthetic-anchor
+kind: ConfigMap
+metadata:
+  name: sieve-partial-anchor
+  namespace: default
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sieve-partial-created
+---
+apiVersion: v1
+data:
+  value: synthetic-rejected
+kind: ConfigMap
+metadata:
+  name: sieve-partial-blocked
+  namespace: default

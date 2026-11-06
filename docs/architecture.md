@@ -224,6 +224,17 @@ compression can retain a checkpoint without changing real invocation identities.
 Overlapping calls share a conservative checkpoint until that instance is
 quiescent, with read dependencies still isolated per invocation.
 
+Completed annotated API calls use the same conservative reconciliation range
+as Kubernetes writes: the previous instance checkpoint through the return
+observation. They retain the current invocation's reconciliation identity, and
+an API-only invocation is nontrivial for subsequent checkpoint selection.
+Opaque API effects do not infer resource-specific read dependencies. Their
+restart occurrences count return observations, scoped by module, file, receiver,
+function and reconciler, matching the runtime selector even when concurrent
+calls return out of entry order. Duplicate/unmatched API pairs and explicit calls
+starting before or ending outside their invocation are located input errors;
+an unfinished call at EOF remains a valid interrupted history.
+
 Cache-store interfaces have no context argument. The observer therefore obtains
 the current goroutine identity from the runtime stack header and maintains a
 stack for nested annotated calls. Unsupported headers produce an observer error
@@ -235,13 +246,11 @@ does not change worker counts, watches, scheduling, or operator state. Public RP
 overlapping-hook, 32-worker cold-start race and compiled-instrumentation tests
 cover identity propagation and unchanged function return behavior.
 
-Two existing limitations are deliberately preserved. The decoded `from_cache`
+One existing limitation is deliberately preserved. The decoded `from_cache`
 flag remains false for both cache and REST records because the previous decoder
 compared a boolean with a string; `TraceRecord.marker` retains the actual source.
-Annotated writes inside reconciliation remain unsupported because their previous
-implementation called a missing range-setting method. They now report a located
-error. Adding range semantics or changing read provenance in analysis requires a
-separate behavior change and validation.
+The annotated-call range behavior above was added and validated through the
+public learning CLI, sealed Flux trace replays and fresh native qualification.
 
 `fixtures/traces/` freezes decoded fields, intervals, graph contents, derived
 values, pruning counts and full plan contents from the engine before this

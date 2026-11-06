@@ -71,6 +71,7 @@ func auxiliaryImportMap() map[string]string {
 	importMap := map[string]string{}
 	importMap["k8s.io/klog/v2"] = "klog"
 	importMap["github.com/robfig/cron/v3"] = "cron"
+	importMap["github.com/opencontainers/go-digest"] = "digest"
 	return importMap
 }
 

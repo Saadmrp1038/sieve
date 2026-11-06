@@ -214,7 +214,10 @@ class EventGraph:
         for edge in self.controller_hear_controller_write_edges:
             assert isinstance(edge.source, EventVertex)
             assert isinstance(edge.sink, EventVertex)
-            assert edge.source.is_controller_hear() and edge.sink.is_controller_write()
+            assert edge.source.is_controller_hear() and (
+                edge.sink.is_controller_write()
+                or edge.sink.is_controller_non_k8s_write()
+            )
             assert _start(edge.source) < _start(edge.sink)
         for edge in self.controller_write_controller_hear_edges:
             assert isinstance(edge.source, EventVertex)
@@ -417,11 +420,19 @@ class EventGraph:
                 ]
 
         non_k8s_signature_counter_map = {}
-        for controller_non_k8s_write in self.controller_non_k8s_write_vertices:
+        # Restart conditions observe API returns. Concurrent calls may return in
+        # a different order from entry, and the runtime matches this full selector.
+        for controller_non_k8s_write in sorted(
+            self.controller_non_k8s_write_vertices,
+            key=lambda vertex: vertex.content.end_timestamp,
+        ):
+            event = controller_non_k8s_write.content
             signature = (
-                controller_non_k8s_write.content.recv_type
-                + "/"
-                + controller_non_k8s_write.content.fun_name
+                event.module,
+                event.file_path,
+                event.recv_type,
+                event.fun_name,
+                event.reconcile_fun,
             )
             if signature not in non_k8s_signature_counter_map:
                 non_k8s_signature_counter_map[signature] = 0

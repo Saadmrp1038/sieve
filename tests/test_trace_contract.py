@@ -14,7 +14,7 @@ from sieve_tool.analysis.analyze import (
 )
 from sieve_tool.analysis.trace import assemble_trace
 from sieve_tool.common.config import get_common_config, load_controller_config
-from sieve_tool.trace import TraceError, read_trace
+from sieve_tool.trace import read_trace
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = (
@@ -166,11 +166,12 @@ def test_trace_interpretation_matches_the_original_engine(
     assert snapshot(case, tmp_path, compress, loosen) == expected
 
 
-def test_annotated_writes_inside_reconciliation_are_currently_unsupported():
+def test_legacy_annotated_call_and_interrupted_tail_generate_a_restart_plan(tmp_path):
+    from tests.test_annotated_learning_cli import postprocess
+
     case = ROOT / "fixtures/traces/annotated"
-    with pytest.raises(TraceError, match="range semantics"):
-        assemble_trace(
-            read_trace(case / "unsupported-in-reconcile.log"),
-            compress_trivial=True,
-            loosen_boundary=False,
-        )
+    result, output = postprocess(
+        tmp_path, (case / "unsupported-in-reconcile.log").read_text()
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert len(list((output / "intermediate-state").glob("*.yaml"))) == 1
