@@ -25,24 +25,31 @@ curl --fail --location --max-time 120 \
 
 python3 - <<'PY'
 import hashlib
+import os
+import re
 from pathlib import Path
 
-import yaml
-
 source = Path("bundle.yaml")
-expected = "045754c91469cccb27d7832168a5b5f0448188bcb3513f74a13c76c9079d654b"
+expected = os.environ.get(
+    "SIEVE_PROMETHEUS_BUNDLE_SHA256",
+    "045754c91469cccb27d7832168a5b5f0448188bcb3513f74a13c76c9079d654b",
+)
 actual = hashlib.sha256(source.read_bytes()).hexdigest()
 if actual != expected:
     raise SystemExit(f"Prometheus Operator bundle checksum mismatch: {actual}")
 
-objects = []
-for obj in yaml.safe_load_all(source.read_text()):
-    if not obj:
+documents = []
+for document in re.split(r"(?m)^---\s*$\n?", source.read_text()):
+    if not document.strip():
         continue
-    if obj.get("kind") == "Deployment" and obj.get("metadata", {}).get("name") == "prometheus-operator":
+    if re.search(r"(?m)^kind:\s*Deployment\s*$", document) and re.search(
+        r"(?m)^  name:\s*prometheus-operator\s*$", document
+    ):
         continue
-    objects.append(obj)
-Path("resources.yaml").write_text(yaml.safe_dump_all(objects, sort_keys=False))
+    documents.append(document.lstrip("\n"))
+Path("resources.yaml").write_text(
+    "".join("---\n" + document for document in documents)
+)
 PY
 
 kubectl apply --server-side -f resources.yaml

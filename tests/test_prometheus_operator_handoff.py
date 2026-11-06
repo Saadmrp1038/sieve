@@ -1,5 +1,6 @@
 """Prometheus ownership handoff is adjudicated through the public workload CLI."""
 
+import hashlib
 import json
 import os
 import subprocess
@@ -39,6 +40,95 @@ def test_profile_pins_native_release_graph_and_reconcile_loop():
     assert "GOTOOLCHAIN=go1.26.0" in build
     assert "./cmd/operator" in build
     assert "SIEVE_SUBJECT_COMMIT" in build
+
+
+def test_deployment_preserves_upstream_crd_yaml_while_removing_operator(tmp_path):
+    profile = ROOT / "controllers/prometheus-operator"
+    deploy = tmp_path / "deploy"
+    deploy.mkdir()
+    (deploy / "deploy.sh").write_bytes((profile / "deploy/deploy.sh").read_bytes())
+    (deploy / "operator.yaml").write_bytes(
+        (profile / "deploy/operator.yaml").read_bytes()
+    )
+
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    bundle = """---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: fixtures.example.test
+spec:
+  schema:
+    openAPIV3Schema:
+      enum:
+      - =
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator
+"""
+    curl = tools / "curl"
+    curl.write_text(
+        f"#!{sys.executable}\n"
+        "import sys\nfrom pathlib import Path\n"
+        f"Path(sys.argv[sys.argv.index('--output') + 1]).write_text({bundle!r})\n"
+    )
+    curl.chmod(0o700)
+    kubectl = tools / "kubectl"
+    kubectl.write_text(
+        f"#!{sys.executable}\n"
+        "import os,sys\nfrom pathlib import Path\n"
+        "with Path(os.environ['DEPLOY_CALLS']).open('a') as f: "
+        "f.write(' '.join(sys.argv[1:]) + '\\n')\n"
+    )
+    kubectl.chmod(0o700)
+
+    package = tmp_path / "fixture-python/sieve_tool"
+    (package / "runtime").mkdir(parents=True)
+    (package / "__init__.py").touch()
+    (package / "runtime/__init__.py").touch()
+    (package / "process.py").write_text(
+        "from contextlib import contextmanager\n"
+        "@contextmanager\n"
+        "def execution(**kwargs):\n yield\n"
+    )
+    (package / "runtime/cluster.py").write_text(
+        "def pull_node_image(image):\n return 'fixture-digest'\n"
+    )
+    calls = tmp_path / "calls.log"
+    result = subprocess.run(
+        ["sh", "./deploy.sh"],
+        cwd=deploy,
+        env={
+            **os.environ,
+            "PATH": str(tools) + os.pathsep + os.environ["PATH"],
+            "PYTHONPATH": str(package.parent),
+            "DEPLOY_CALLS": str(calls),
+            "SIEVE_PROMETHEUS_BUNDLE_SHA256": hashlib.sha256(
+                bundle.encode()
+            ).hexdigest(),
+        },
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    resources = (deploy / "resources.yaml").read_text()
+    assert "kind: CustomResourceDefinition" in resources
+    assert "      - =" in resources
+    assert "kind: ServiceAccount" in resources
+    assert "kind: Deployment" not in resources
+    assert calls.read_text().splitlines() == [
+        "apply --server-side -f resources.yaml",
+        "apply -f operator.yaml",
+    ]
 
 
 @pytest.mark.parametrize("mode", ["control", "rejected"])
