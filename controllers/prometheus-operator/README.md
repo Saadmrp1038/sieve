@@ -97,3 +97,12 @@ controller process.
 
 The full validation report is in
 `docs/rfe/managed-child-repair/prometheus-owner-handoff-20261106.md`.
+
+A follow-up campaign reproduced the same behavior on upstream main commit
+`854d33a40caad1dd773f73deb55726732803bcb8`, which reports Prometheus Operator
+0.95.1. The matched control passed, and the rejected deletion case again left
+the StatefulSet with the deleted Prometheus UID while the replacement reported
+`Reconciled=True` and `Available=True`. The follow-up used two workload
+executions, no scheduling faults, and no automatic retries. The defect is
+reported in upstream issue
+[`#8960`](https://github.com/prometheus-operator/prometheus-operator/issues/8960).

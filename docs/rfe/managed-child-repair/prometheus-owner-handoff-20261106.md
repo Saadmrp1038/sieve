@@ -2,13 +2,16 @@
 
 ## Status
 
-The behavior is established on Prometheus Operator v0.94.2 at upstream commit
-`0db90444c4e6fa5672be5bf7d2b15ca9dd1c5ace`.
+The initial campaign established the behavior on Prometheus Operator v0.94.2 at
+upstream commit `0db90444c4e6fa5672be5bf7d2b15ca9dd1c5ace`. A follow-up
+campaign reproduced it on upstream main at commit
+`854d33a40caad1dd773f73deb55726732803bcb8`, which reports version 0.95.1.
 
-The campaign used synthetic resources in a disposable Kind cluster. It ran six
-workload executions and one scheduled controller restart. All completed result
-trees were copied from the VM and every file was checked against a SHA256 value
-calculated on the VM.
+The campaigns used synthetic resources in disposable Kind clusters. The first
+campaign ran six workload executions and one scheduled controller restart. The
+follow-up ran two workload executions without a scheduling fault. All completed
+result trees were copied from the VM, and every file was checked against a
+SHA256 value calculated on the VM.
 
 ## Implementation status
 
@@ -94,6 +97,30 @@ The operator log recorded the message `new statefulset generation inputs match
 current, skipping any actions` after the replacement resource was created. The
 input hash was `4351411403356834157` before and after the handoff.
 
+## Current main validation
+
+The follow-up campaign built the native operator from upstream main commit
+`854d33a40caad1dd773f73deb55726732803bcb8`. The qualified image reported
+Prometheus Operator 0.95.1, Go 1.26.10, and client-go 0.37.2. It had no Sieve
+instrumentation hooks. The remote main reference was checked again after the
+executions and still pointed to the tested commit.
+
+The matched control passed. Kubernetes deleted the old StatefulSet, and the
+replacement StatefulSet referred to the replacement Prometheus UID.
+
+The rejected deletion case reproduced the defect. The policy physically
+rejected deletion of the old StatefulSet. The replacement Prometheus UID was
+`39f5e00f-5ffc-4e22-a26d-5246e53f1930`, while the StatefulSet still referred
+to the deleted Prometheus UID
+`b4f28650-c9ae-4bfe-a6a0-7badcccb3264`. The replacement reported
+`Reconciled=True` and `Available=True`. Removing the policy allowed the
+StatefulSet to be replaced with the correct owner UID.
+
+The follow-up used two workload executions, no scheduling faults, and no
+automatic retries. The control result tree contained 347 files, and the
+rejected deletion result tree contained 371 files. Every file matched the
+SHA256 value recorded on the VM. The VM was idle after the campaign.
+
 ## Physical restart evidence
 
 The fault plan restarted the controller after its second CREATE of
@@ -148,8 +175,10 @@ matches. The problem is the ownership UID.
 
 ## Upstream review
 
-A bounded public issue and pull request search found no report of this exact
-same name parent replacement and stale owner UID case.
+A public issue and pull request search found no earlier report of this exact
+same name parent replacement and stale owner UID case. The search covered
+titles, bodies, and comments. The result is now reported in upstream issue
+[`#8960`](https://github.com/prometheus-operator/prometheus-operator/issues/8960).
 
 Pull request
 [`#8309`](https://github.com/prometheus-operator/prometheus-operator/pull/8309)
@@ -158,11 +187,22 @@ concerns stale informer state around an immutable StatefulSet update. Issue
 concerns a version upgrade that produced StatefulSet not found and already
 exists errors. Neither covers this ownership handoff.
 
-The current upstream main branch still contains the same hash skip and a hash
-input that does not include the parent UID. Its status reporter still accepts
-Pod ownership by kind and name without checking the UID. This source check was
-made on November 6, 2026. Main was not tested at runtime, so this report does not
-claim a runtime reproduction on main.
+Git history points to pull request
+[`#4798`](https://github.com/prometheus-operator/prometheus-operator/pull/4798)
+and commit `bd658c582c697e256b0c17b329b9d46fdc452eb9` as the change that
+introduced the defect. The change replaced a hash of the full Prometheus
+object, which included `metadata.uid`, with selected fields that omitted the
+UID. The first affected release was v0.56.3.
+
+Pull request `#1333` introduced the hash shortcut, but the hash still included
+the full Prometheus object and its UID. Pull request `#4762` removed status from
+the hash but kept the UID. Pull request `#4806` later changed the selected input
+from the spec to the generation, but it did not restore the UID.
+
+The runtime validation on main confirms that the current implementation still
+has the same behavior. Its hash omits the parent UID, a hash match skips the
+StatefulSet update, and the status path can accept the old ownership chain by
+kind and name without checking the UID.
 
 ## Harness failures
 
@@ -202,6 +242,11 @@ details are preserved under `runs/prometheus-build-20261106-vm` and
 The VM hash manifests, frozen plans, frozen oracle hashes, runner inputs, and
 failed launch records are preserved under
 `.cache/prometheus/operator-reliability-20261105`.
+
+The current main build, qualification, control, and rejected deletion evidence
+is preserved under `.cache/prometheus/main-validation-20261106`. The directory
+contains the two complete result tree archives, their VM SHA256 manifests, the
+final result summary, the source history review, and the failed setup attempts.
 
 ## Limits
 
