@@ -20,6 +20,7 @@ PARENT = "sieve-handoff"
 STATEFULSET = "prometheus-sieve-handoff"
 POD = f"{STATEFULSET}-0"
 POLICY = "sieve-prometheus-handoff-delete"
+FINALIZER = "sieve.io/hold-statefulset-deletion"
 
 
 class WorkloadError(RuntimeError):
@@ -162,6 +163,12 @@ def acknowledged_available(sample: dict[str, Any]) -> bool:
     )
 
 
+def reported_healthy(sample: dict[str, Any]) -> bool:
+    return condition_true(sample["parent"], "Reconciled") and condition_true(
+        sample["parent"], "Available"
+    )
+
+
 def wait_for(
     recorder: Recorder,
     phase: str,
@@ -271,12 +278,24 @@ def compact(sample: dict[str, Any]) -> dict[str, Any]:
     parent = sample["parent"]
     statefulset = sample["statefulset"]
     pod = sample["pod"]
+    current_owned_statefulsets = int(
+        statefulset is not None
+        and not statefulset.get("metadata", {}).get("deletionTimestamp")
+        and controller_owner_uid(statefulset, kind="Prometheus", name=PARENT)
+        == metadata_uid(parent)
+    )
+    status = (parent or {}).get("status", {})
     return {
         "time": sample["time"],
         "parent_uid": metadata_uid(parent),
         "parent_generation": (parent or {}).get("metadata", {}).get("generation"),
         "reconciled": condition_true(parent, "Reconciled"),
         "available": condition_true(parent, "Available"),
+        "replicas": status.get("replicas", 0),
+        "available_replicas": status.get("availableReplicas", 0),
+        "updated_replicas": status.get("updatedReplicas", 0),
+        "unavailable_replicas": status.get("unavailableReplicas", 0),
+        "current_owned_statefulsets": current_owned_statefulsets,
         "statefulset_uid": metadata_uid(statefulset),
         "statefulset_owner_uid": controller_owner_uid(
             statefulset, kind="Prometheus", name=PARENT
@@ -288,6 +307,9 @@ def compact(sample: dict[str, Any]) -> dict[str, Any]:
         "statefulset_deletion_timestamp": (statefulset or {})
         .get("metadata", {})
         .get("deletionTimestamp"),
+        "statefulset_finalizers": (statefulset or {})
+        .get("metadata", {})
+        .get("finalizers", []),
         "statefulset_ready": statefulset_ready(statefulset),
         "pod_uid": metadata_uid(pod),
         "pod_owner_uid": controller_owner_uid(
@@ -314,9 +336,24 @@ def remove_policy(recorder: Recorder) -> None:
     )
 
 
+def set_statefulset_finalizers(recorder: Recorder, finalizers: list[str]) -> None:
+    recorder.kubectl(
+        "patch",
+        "statefulset",
+        STATEFULSET,
+        "-n",
+        NAMESPACE,
+        "--type=merge",
+        "--patch-file=/dev/stdin",
+        "-o",
+        "json",
+        stdin={"metadata": {"finalizers": finalizers or None}},
+    )
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     mode = args.workload.removeprefix("owner-handoff-")
-    if mode not in {"control", "rejected"}:
+    if mode not in {"control", "rejected", "finalizer"}:
         raise WorkloadError(f"unsupported workload {args.workload!r}")
 
     recorder = Recorder(args.output)
@@ -336,6 +373,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "workload": args.workload,
         "operator_deployment": deployment,
         "policy_probe": None,
+        "deletion_probe": None,
     }
     evidence_path = args.output.with_name("ownership-handoff.json")
     evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
@@ -358,6 +396,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     old_parent_uid = initial["parent_uid"]
     old_statefulset_uid = initial["statefulset_uid"]
+    original_finalizers = list(
+        initial_sample["statefulset"].get("metadata", {}).get("finalizers", [])
+    )
 
     if mode == "rejected":
         policy, binding = policy_manifests()
@@ -395,6 +436,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     "synthetic StatefulSet delete policy did not activate"
                 )
             time.sleep(args.poll_seconds)
+    elif mode == "finalizer":
+        set_statefulset_finalizers(
+            recorder, [*dict.fromkeys([*original_finalizers, FINALIZER])]
+        )
+        wait_for(
+            recorder,
+            "synthetic-finalizer-established",
+            args.timeout,
+            args.poll_seconds,
+            lambda sample: (
+                metadata_uid(sample["statefulset"]) == old_statefulset_uid
+                and FINALIZER
+                in sample["statefulset"].get("metadata", {}).get("finalizers", [])
+                and not sample["statefulset"]
+                .get("metadata", {})
+                .get("deletionTimestamp")
+            ),
+        )
 
     recorder.kubectl("delete", "prometheus", PARENT, "-n", NAMESPACE, "--wait=false")
 
@@ -410,7 +469,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 and sample["pod"] is None
             ),
         )
-    else:
+    elif mode == "rejected":
         wait_for(
             recorder,
             "old-parent-deleted-retained-child",
@@ -428,19 +487,64 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 .get("deletionTimestamp")
             ),
         )
+    else:
+        terminating_sample = stable_for(
+            recorder,
+            "old-parent-deleted-terminating-child",
+            args.timeout,
+            args.poll_seconds,
+            args.settle_seconds,
+            lambda sample: (
+                sample["parent"] is None
+                and metadata_uid(sample["statefulset"]) == old_statefulset_uid
+                and controller_owner_uid(
+                    sample["statefulset"], kind="Prometheus", name=PARENT
+                )
+                == old_parent_uid
+                and bool(
+                    sample["statefulset"].get("metadata", {}).get("deletionTimestamp")
+                )
+                and FINALIZER
+                in sample["statefulset"].get("metadata", {}).get("finalizers", [])
+            ),
+        )
+        evidence["deletion_probe"] = {
+            "accepted": True,
+            "finalizer": FINALIZER,
+            "statefulset_uid": metadata_uid(terminating_sample["statefulset"]),
+        }
 
     apply(recorder, prometheus_manifest())
-    handoff_sample = stable_for(
-        recorder,
-        "replacement-acknowledged",
-        args.timeout,
-        args.poll_seconds,
-        args.settle_seconds,
-        lambda sample: (
-            metadata_uid(sample["parent"]) not in {None, old_parent_uid}
-            and acknowledged_available(sample)
-        ),
-    )
+    if mode == "finalizer":
+        handoff_sample = stable_for(
+            recorder,
+            "replacement-acknowledged-terminating-child",
+            args.timeout,
+            args.poll_seconds,
+            args.settle_seconds,
+            lambda sample: (
+                metadata_uid(sample["parent"]) not in {None, old_parent_uid}
+                and reported_healthy(sample)
+                and metadata_uid(sample["statefulset"]) == old_statefulset_uid
+                and bool(
+                    sample["statefulset"].get("metadata", {}).get("deletionTimestamp")
+                )
+                and FINALIZER
+                in sample["statefulset"].get("metadata", {}).get("finalizers", [])
+            ),
+        )
+    else:
+        handoff_sample = stable_for(
+            recorder,
+            "replacement-acknowledged",
+            args.timeout,
+            args.poll_seconds,
+            args.settle_seconds,
+            lambda sample: (
+                metadata_uid(sample["parent"]) not in {None, old_parent_uid}
+                and acknowledged_available(sample)
+            ),
+        )
     handoff = compact(handoff_sample)
 
     current_owner = handoff["statefulset_owner_uid"] == handoff["parent_uid"]
@@ -448,6 +552,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     if mode == "rejected":
         remove_policy(recorder)
+    elif mode == "finalizer":
+        set_statefulset_finalizers(recorder, original_finalizers)
 
     final_sample = stable_for(
         recorder,
@@ -478,13 +584,41 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "replacement_parent_has_new_uid": (
             handoff["parent_uid"] not in {None, initial["parent_uid"]}
         ),
-        "handoff_child_owned_by_replacement_parent": current_owner,
-        "handoff_status_rejects_stale_ownership": not stale_status_accepted,
         "final_child_owned_by_replacement_parent": (
             final["statefulset_owner_uid"] == final["parent_uid"]
             and final["pod_owner_uid"] == final["statefulset_uid"]
         ),
     }
+    if mode == "finalizer":
+        zero_current_replicas = (
+            handoff["current_owned_statefulsets"] == 0
+            and handoff["replicas"] == 0
+            and handoff["available_replicas"] == 0
+        )
+        checks.update(
+            {
+                "terminating_child_deletion_accepted": bool(
+                    evidence["deletion_probe"]
+                    and handoff["statefulset_deletion_timestamp"]
+                    and FINALIZER in handoff["statefulset_finalizers"]
+                ),
+                "handoff_has_no_current_owned_statefulset": (
+                    not current_owner and handoff["current_owned_statefulsets"] == 0
+                ),
+                "handoff_status_rejects_zero_current_replicas": not (
+                    handoff["reconciled"]
+                    and handoff["available"]
+                    and zero_current_replicas
+                ),
+            }
+        )
+    else:
+        checks.update(
+            {
+                "handoff_child_owned_by_replacement_parent": current_owner,
+                "handoff_status_rejects_stale_ownership": not stale_status_accepted,
+            }
+        )
     evidence.update(
         {
             "status": "completed",
