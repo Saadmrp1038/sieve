@@ -131,7 +131,7 @@ metadata:
     ]
 
 
-@pytest.mark.parametrize("mode", ["control", "rejected"])
+@pytest.mark.parametrize("mode", ["control", "rejected", "finalizer"])
 def test_same_name_parent_recreation_checks_child_uid_ownership(tmp_path, mode):
     kubectl = tmp_path / "kubectl"
     kubectl.write_text(
@@ -228,13 +228,20 @@ if args[:2] == ["apply", "-f"]:
         state["parent"].setdefault("metadata", {}).update({
             "namespace": "default", "uid": uid, "generation": 1,
         })
+        terminating = bool(
+            state["statefulset"]
+            and state["statefulset"]["metadata"].get("deletionTimestamp")
+        )
         state["parent"]["status"] = {
             "observedGeneration": 1,
             "conditions": [
                 {"type": "Reconciled", "status": "True", "observedGeneration": 1},
                 {"type": "Available", "status": "True", "observedGeneration": 1},
             ],
-            "replicas": 1, "availableReplicas": 1, "updatedReplicas": 1,
+            "replicas": 0 if terminating else 1,
+            "availableReplicas": 0 if terminating else 1,
+            "updatedReplicas": 0 if terminating else 1,
+            "unavailableReplicas": 0,
         }
         if state["statefulset"] is None:
             create_statefulset()
@@ -253,10 +260,29 @@ if args[:2] == ["delete", "prometheus"]:
     if state["parent"] is None:
         done()
     state["parent"] = None
-    if not state["policy"]:
+    finalizers = state["statefulset"]["metadata"].get("finalizers", [])
+    if "sieve.io/hold-statefulset-deletion" in finalizers:
+        state["statefulset"]["metadata"]["deletionTimestamp"] = (
+            "2026-11-08T06:00:00Z"
+        )
+    elif not state["policy"]:
         state["statefulset"] = None
         state["pod"] = None
     done()
+
+if args[:2] == ["patch", "statefulset"]:
+    patch = json.load(sys.stdin)
+    finalizers = patch["metadata"].get("finalizers") or []
+    was_terminating = bool(
+        state["statefulset"]["metadata"].get("deletionTimestamp")
+    )
+    state["statefulset"]["metadata"]["finalizers"] = finalizers
+    if was_terminating and "sieve.io/hold-statefulset-deletion" not in finalizers:
+        state["statefulset"] = None
+        state["pod"] = None
+        if state["parent"]:
+            state["pending_replacement"] = 1
+    done(state["statefulset"])
 
 if args[:2] == ["delete", "validatingadmissionpolicybinding"]:
     state["policy"] = False
@@ -319,14 +345,30 @@ fail("unexpected fixture command: " + repr(args))
     assert output.read_text() == "FINISH-SIEVE-TEST\n"
     evidence = json.loads(output.with_name("ownership-handoff.json").read_text())
     assert evidence["status"] == "completed"
-    assert evidence["semantic_status"] == ("failed" if mode == "rejected" else "passed")
-    assert evidence["checks"] == {
+    assert evidence["semantic_status"] == (
+        "failed" if mode in {"rejected", "finalizer"} else "passed"
+    )
+    expected_checks = {
         "initial_child_owned_by_initial_parent": True,
         "replacement_parent_has_new_uid": True,
-        "handoff_child_owned_by_replacement_parent": mode == "control",
-        "handoff_status_rejects_stale_ownership": mode == "control",
         "final_child_owned_by_replacement_parent": True,
     }
+    if mode == "finalizer":
+        expected_checks.update(
+            {
+                "terminating_child_deletion_accepted": True,
+                "handoff_has_no_current_owned_statefulset": True,
+                "handoff_status_rejects_zero_current_replicas": False,
+            }
+        )
+    else:
+        expected_checks.update(
+            {
+                "handoff_child_owned_by_replacement_parent": mode == "control",
+                "handoff_status_rejects_stale_ownership": mode == "control",
+            }
+        )
+    assert evidence["checks"] == expected_checks
     assert evidence["initial"]["parent_uid"] == "prometheus-1"
     assert evidence["handoff"]["parent_uid"] == "prometheus-2"
     if mode == "rejected":
@@ -335,6 +377,26 @@ fail("unexpected fixture command: " + repr(args))
         assert evidence["handoff"]["statefulset_owner_uid"] == "prometheus-1"
         assert evidence["handoff"]["pod_uid"] == "pod-1"
         assert evidence["handoff"]["available"] is True
+        assert evidence["final"]["statefulset_uid"] == "statefulset-2"
+    elif mode == "finalizer":
+        assert evidence["policy_probe"] is None
+        assert evidence["deletion_probe"] == {
+            "accepted": True,
+            "finalizer": "sieve.io/hold-statefulset-deletion",
+            "statefulset_uid": "statefulset-1",
+        }
+        assert evidence["handoff"]["statefulset_uid"] == "statefulset-1"
+        assert evidence["handoff"]["statefulset_owner_uid"] == "prometheus-1"
+        assert evidence["handoff"]["statefulset_deletion_timestamp"]
+        assert (
+            "sieve.io/hold-statefulset-deletion"
+            in evidence["handoff"]["statefulset_finalizers"]
+        )
+        assert evidence["handoff"]["reconciled"] is True
+        assert evidence["handoff"]["available"] is True
+        assert evidence["handoff"]["replicas"] == 0
+        assert evidence["handoff"]["available_replicas"] == 0
+        assert evidence["handoff"]["current_owned_statefulsets"] == 0
         assert evidence["final"]["statefulset_uid"] == "statefulset-2"
     else:
         assert evidence["policy_probe"] is None

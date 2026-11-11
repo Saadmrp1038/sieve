@@ -36,6 +36,10 @@
         "owner-handoff-rejected": {
             "num_workers": 0,
             "write_trigger": "occurrence"
+        },
+        "owner-handoff-finalizer": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
         }
     }
 }

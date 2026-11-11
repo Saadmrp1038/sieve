@@ -106,3 +106,30 @@ the StatefulSet with the deleted Prometheus UID while the replacement reported
 executions, no scheduling faults, and no automatic retries. The defect is
 reported in upstream issue
 [`#8960`](https://github.com/prometheus-operator/prometheus-operator/issues/8960).
+
+## Terminating StatefulSet status experiment
+
+The `owner-handoff-finalizer` workload tests a different part of the same name
+replacement sequence. It adds a synthetic finalizer to the first StatefulSet,
+deletes the first Prometheus resource, and waits for Kubernetes to accept the
+StatefulSet deletion. The finalizer keeps the StatefulSet in the terminating
+state. The workload then creates a Prometheus resource with the same name and
+spec.
+
+The workload records whether the replacement owns a StatefulSet and whether
+its status reports any replicas. A replacement with no owned StatefulSet and
+zero replicas must not report `Available=True`. The workload removes the
+finalizer after taking repeated samples, then checks that Kubernetes and the
+operator create a new StatefulSet with the replacement Prometheus UID.
+
+The experiment was validated on upstream main commit
+`854d33a40caad1dd773f73deb55726732803bcb8`, which reports Prometheus Operator
+0.95.1. The normal control passed. Two fresh finalizer cases both reported
+`Reconciled=True` and `Available=True` while the replacement owned no
+StatefulSet and its status reported zero replicas. Each result recovered after
+the finalizer was removed.
+
+The controller log showed the `object deletion in progress` path. The status
+reporter skips a terminating StatefulSet, and an empty list of shard statuses
+is combined into `Available=True`. The full report is in
+`docs/rfe/managed-child-repair/prometheus-terminating-statefulset-status-20261108.md`.
