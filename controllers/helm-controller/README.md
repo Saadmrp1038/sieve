@@ -35,16 +35,17 @@ revision 1.
 ## Scheduling point
 
 Helm stores a pending upgrade before it changes live resources. After the late
-hook fails, Helm stores the failed release. helm-controller observes those
-storage writes in memory and copies them into `.status.history` before it
+hook fails, Helm changes that stored release to failed. helm-controller observes
+the storage writes in memory and copies them into `.status.history` before it
 patches the HelmRelease status.
 
-The source-informed scheduling point is the first update of
-`Secret/default/sh.helm.release.v1.sieve-upgrade.v2`, after the controller
-writes the failed release. A controller restart at that point can leave the
-failed Helm release and revision 2 resources durable while the HelmRelease
-status still records revision 1. The next controller process must recover that
-state and complete the configured rollback.
+The learning traces established the first creation of
+`Secret/default/sh.helm.release.v1.sieve-upgrade.v2` as the stable scheduling
+point. The Secret has the `pending-upgrade` status when the write completes. A
+controller restart at that point leaves the pending Helm release durable before
+the upgrade has finished. The replacement process must recover the pending
+release and complete the configured remediation without making status, storage,
+live resources, and the Service response disagree.
 
 The scheduling point must appear in two fresh learning traces before it can be
 used. A generated or hand-written plan is not enough evidence. The test-image
