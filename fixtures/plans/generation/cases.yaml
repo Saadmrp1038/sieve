@@ -5,6 +5,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1
@@ -24,6 +25,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1
@@ -43,6 +45,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1
@@ -64,6 +67,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1
@@ -85,6 +89,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1
@@ -106,6 +111,7 @@ plan:
   actions:
   - actionType: restartController
     controllerLabel: operator
+    async: true
     trigger:
       definitions:
       - triggerName: trigger1

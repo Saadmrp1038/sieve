@@ -127,6 +127,7 @@ def generate_intermediate_state_test_plan_for_controller_write(
             RestartControllerAction(
                 action_type="restartController",
                 controller_label=test_context.controller_config.controller_pod_label,
+                async_=True,
                 trigger=single_trigger(
                     "trigger1",
                     condition
