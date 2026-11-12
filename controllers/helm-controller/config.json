@@ -1,0 +1,29 @@
+{
+    "name": "helm-controller",
+    "github_link": "https://github.com/fluxcd/helm-controller.git",
+    "commit": "da037f220ee3e97eb91a70506b5c5f169e46bb68",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.37.1",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-helm-controller:latest",
+    "test_command": [
+        "python3",
+        "controllers/helm-controller/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "helmrelease",
+        "helmchart"
+    ],
+    "annotated_reconcile_functions": {
+        "internal/controller/helmrelease_controller.go": "github.com/fluxcd/helm-controller/internal/controller.(*HelmReleaseReconciler).Reconcile"
+    },
+    "controller_pod_label": "helm-controller",
+    "container_name": "manager",
+    "controller_deployment_file_path": "controllers/helm-controller/deploy/operator.yaml",
+    "test_setting": {
+        "failed-upgrade-remediation": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        }
+    }
+}
