@@ -365,6 +365,77 @@ def final_converged(sample: dict[str, Any]) -> bool:
     )
 
 
+def evaluate_semantics(
+    initial: dict[str, Any], final: dict[str, Any]
+) -> dict[str, bool]:
+    storage_versions = {item.get("version") for item in final.get("storage", [])}
+    history = final.get("history", [])
+    history_versions = {item.get("version") for item in history}
+    ready = final.get("ready") or {}
+    parent = final.get("helmRelease") or {}
+    storage = final.get("storage", [])
+    latest = storage[-1] if storage else {}
+    return {
+        "initial_status_storage_live_service_agree": initial_consistent(initial),
+        "failed_upgrade_is_not_reported_ready": (
+            ready.get("status") == "False"
+            and ready.get("observedGeneration")
+            == parent.get("metadata", {}).get("generation")
+        ),
+        "rollback_storage_and_status_agree": (
+            latest.get("status") == "deployed"
+            and latest.get("chartVersion") == VERSION_1
+            and latest.get("version") in history_versions
+        ),
+        "rollback_live_resources_and_service_agree": (
+            deployment_revision(final) == REVISION_1
+            and (final.get("configMap") or {}).get("data", {}).get("index.html")
+            == REVISION_1
+            and final.get("service") == {"ok": True, "value": REVISION_1}
+        ),
+        "durable_storage_revisions_are_in_status_history": (
+            storage_versions <= history_versions
+        ),
+    }
+
+
+def record_outcome(
+    output: Path, evidence: dict[str, Any], *, error: str | None = None
+) -> None:
+    if error is not None:
+        evidence["error"] = error
+        observations = evidence.get("observations", [])
+        initial = evidence.get("initial")
+        if initial is not None and observations:
+            evidence["final"] = observations[-1]
+            evidence["checks"] = evaluate_semantics(initial, evidence["final"])
+            evidence["semantic_status"] = (
+                "passed" if all(evidence["checks"].values()) else "failed"
+            )
+    output.with_name("helm-upgrade.json").write_text(
+        json.dumps(evidence, indent=2, sort_keys=True) + "\n"
+    )
+    if checks := evidence.get("checks"):
+        output.with_name("semantic-outcome.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "checks": [
+                        {"name": name, "passed": passed}
+                        for name, passed in checks.items()
+                    ],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+    if error is None:
+        output.write_text("FINISH-SIEVE-TEST\n")
+    elif evidence.get("observations"):
+        output.write_text("FAILED-SIEVE-TEST: " + error + "\n")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workload", choices=["failed-upgrade-remediation"])
@@ -615,35 +686,7 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
         raise RuntimeError("Timed out: failed upgrade rollback convergence")
 
     evidence["final"] = final
-    storage_versions = {item.get("version") for item in final["storage"]}
-    history_versions = {item.get("version") for item in final["history"]}
-    ready = final.get("ready") or {}
-    parent = final.get("helmRelease") or {}
-    latest = final["storage"][-1]
-    evidence["checks"] = {
-        "initial_status_storage_live_service_agree": initial_consistent(
-            evidence["initial"]
-        ),
-        "failed_upgrade_is_not_reported_ready": (
-            ready.get("status") == "False"
-            and ready.get("observedGeneration")
-            == parent.get("metadata", {}).get("generation")
-        ),
-        "rollback_storage_and_status_agree": (
-            latest.get("status") == "deployed"
-            and latest.get("chartVersion") == VERSION_1
-            and latest.get("version") in history_versions
-        ),
-        "rollback_live_resources_and_service_agree": (
-            deployment_revision(final) == REVISION_1
-            and (final.get("configMap") or {}).get("data", {}).get("index.html")
-            == REVISION_1
-            and final.get("service") == {"ok": True, "value": REVISION_1}
-        ),
-        "durable_storage_revisions_are_in_status_history": (
-            storage_versions <= history_versions
-        ),
-    }
+    evidence["checks"] = evaluate_semantics(evidence["initial"], final)
     evidence["semantic_status"] = (
         "passed" if all(evidence["checks"].values()) else "failed"
     )
@@ -653,7 +696,6 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
 def main() -> int:
     args = parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    evidence_path = args.output.with_name("helm-upgrade.json")
     evidence: dict[str, Any] = {
         "workload": args.workload,
         "status": "configuration-failed",
@@ -664,9 +706,6 @@ def main() -> int:
         "observations": [],
     }
 
-    def save() -> None:
-        evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
-
     try:
         with execution(
             {"request": 45, "workload": 900},
@@ -674,27 +713,11 @@ def main() -> int:
         ):
             run(args, evidence)
     except Exception as error:
-        evidence["error"] = str(error)
-        save()
+        record_outcome(args.output, evidence, error=str(error))
         print(str(error), file=sys.stderr)
         return 1
 
-    save()
-    args.output.with_name("semantic-outcome.json").write_text(
-        json.dumps(
-            {
-                "schema_version": 1,
-                "checks": [
-                    {"name": name, "passed": passed}
-                    for name, passed in evidence["checks"].items()
-                ],
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n"
-    )
-    args.output.write_text("FINISH-SIEVE-TEST\n")
+    record_outcome(args.output, evidence)
     return 0
 
 
