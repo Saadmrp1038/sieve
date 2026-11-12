@@ -255,7 +255,7 @@ def service_response() -> dict[str, Any]:
         response = kubectl(
             "get",
             "--raw",
-            f"/api/v1/namespaces/default/services/http:{RELEASE}/proxy/",
+            f"/api/v1/namespaces/default/services/http:{RELEASE}:http/proxy/",
         ).strip()
         return {"ok": True, "value": response}
     except ProcessError as error:
