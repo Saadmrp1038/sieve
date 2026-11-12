@@ -70,6 +70,7 @@ func findTypeDecl(f *dst.File, typeName string) (int, int, *dst.TypeSpec) {
 func auxiliaryImportMap() map[string]string {
 	importMap := map[string]string{}
 	importMap["k8s.io/klog/v2"] = "klog"
+	importMap["github.com/Masterminds/semver/v3"] = "semver"
 	importMap["github.com/robfig/cron/v3"] = "cron"
 	importMap["github.com/opencontainers/go-digest"] = "digest"
 	return importMap
