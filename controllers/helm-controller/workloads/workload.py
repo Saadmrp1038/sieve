@@ -516,6 +516,7 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
                             "reason": "ChartPullSucceeded",
                             "message": "synthetic chart is ready",
                             "observedGeneration": source["metadata"]["generation"],
+                            "lastTransitionTime": "2026-11-11T00:00:00Z",
                         }
                     ],
                     "artifact": {
