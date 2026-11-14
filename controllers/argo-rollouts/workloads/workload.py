@@ -38,7 +38,7 @@ def apply(manifest: dict[str, Any]) -> dict[str, Any]:
 
 def list_resources(kind: str, *arguments: str) -> list[dict[str, Any]]:
     value = json.loads(kubectl("get", kind, *arguments, "-o", "json"))
-    return cast(list[dict[str, Any]], value.get("items", []))
+    return cast(list[dict[str, Any]], value.get("items") or [])
 
 
 def parse_args() -> argparse.Namespace:
@@ -99,7 +99,7 @@ def controller_identity() -> dict[str, Any] | None:
     status = next(
         (
             item
-            for item in pod.get("status", {}).get("containerStatuses", [])
+            for item in pod.get("status", {}).get("containerStatuses") or []
             if item.get("name") == "argo-rollouts"
         ),
         {},
@@ -158,7 +158,7 @@ def endpoint_revisions(
     }
     revisions = []
     for endpoint_slice in endpoint_slices:
-        for endpoint in endpoint_slice.get("endpoints", []):
+        for endpoint in endpoint_slice.get("endpoints") or []:
             if endpoint.get("conditions", {}).get("ready") is False:
                 continue
             uid = endpoint.get("targetRef", {}).get("uid")
