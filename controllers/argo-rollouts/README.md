@@ -75,15 +75,21 @@ returned to revision 1.
 Both learning traces recorded the same scheduling boundary. Rollout update
 occurrence 13 stored the abort while the status and active Service still
 selected revision 2. The controller changed the active Service to revision 1
-two controller writes later. A restart plan for that boundary was frozen, but
-it was not executed because two earlier harness failures consumed the five run
-budget.
+two controller writes later.
+
+The final run started an asynchronous restart action after occurrence 13. The
+controller Pod was deleted and replaced, and all seven semantic checks passed.
+However, the old controller changed the Service back to revision 1 before
+Kubernetes deleted its Pod. The run proves that the workload recovered after a
+physical restart, but it did not interrupt the gap between the status and
+Service writes.
 
 The first harness failure joined two upstream manifest documents after a
 namespace rewrite. The second did not handle an EndpointSlice with a null
 `endpoints` field. Both harness defects were fixed, and the later runs passed.
-The campaign did not establish behavior during a controller restart, and it
-did not establish an Argo Rollouts defect.
+The campaign established the expected final state after the physical restart.
+It did not establish behavior when a restart interrupts the narrow write gap,
+and it did not establish an Argo Rollouts defect.
 
 ## Commands
 
