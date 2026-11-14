@@ -63,6 +63,28 @@ timeout, command error, or missing completion marker is a workload or harness
 failure. Source inspection and a generated fault plan do not establish an
 operator defect.
 
+## Validation status
+
+Two fresh learning passes and one test image run without a restart passed all
+independent semantic checks on v1.10.2. In every completed run, revision 2 was
+served through the active Service before the analysis failed. The Rollout then
+stored `abort: true`, kept revision 1 as `stableRS`, and changed the active
+Service back to revision 1. The active EndpointSlice and an HTTP request also
+returned to revision 1.
+
+Both learning traces recorded the same scheduling boundary. Rollout update
+occurrence 13 stored the abort while the status and active Service still
+selected revision 2. The controller changed the active Service to revision 1
+two controller writes later. A restart plan for that boundary was frozen, but
+it was not executed because two earlier harness failures consumed the five run
+budget.
+
+The first harness failure joined two upstream manifest documents after a
+namespace rewrite. The second did not handle an EndpointSlice with a null
+`endpoints` field. Both harness defects were fixed, and the later runs passed.
+The campaign did not establish behavior during a controller restart, and it
+did not establish an Argo Rollouts defect.
+
 ## Commands
 
 Run builds and workloads through the public Sieve CLI. Native builds and
