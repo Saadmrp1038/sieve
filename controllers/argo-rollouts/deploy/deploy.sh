@@ -51,7 +51,7 @@ for document in re.split(r"(?m)^---\s*$\n?", source.read_text()):
         )
     documents.append(document.lstrip("\n"))
 Path("resources.yaml").write_text(
-    "".join("---\n" + document for document in documents)
+    "".join("---\n" + document.rstrip() + "\n" for document in documents)
 )
 PY
 
