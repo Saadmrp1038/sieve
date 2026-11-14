@@ -2,11 +2,32 @@ package sieve
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"path"
 	"strings"
 	"sync"
 )
+
+func normalizeRESTListItems(serializedObject []byte) ([]byte, error) {
+	var list struct {
+		Items json.RawMessage `json:"items"`
+	}
+	if err := json.Unmarshal(serializedObject, &list); err != nil {
+		return nil, fmt.Errorf("decode Kubernetes List: %w", err)
+	}
+	if len(list.Items) == 0 {
+		return nil, fmt.Errorf("decode Kubernetes List: missing items")
+	}
+	if string(list.Items) == "null" {
+		return []byte("[]"), nil
+	}
+	var items []json.RawMessage
+	if err := json.Unmarshal(list.Items, &items); err != nil {
+		return nil, fmt.Errorf("decode Kubernetes List items: %w", err)
+	}
+	return list.Items, nil
+}
 
 func NotifyTestBeforeControllerRecv(operationType string, object interface{}) int {
 	if err := loadSieveConfigFromEnv(true); err != nil {
@@ -494,11 +515,16 @@ func NotifyTestAfterRestCall(controllerOperationID int, verb string, pathPrefix 
 		if !checkKVPairInTriggerObservationPoint(resourceType, "by", reconcileFun, true) {
 			return
 		}
-		log.Printf("NotifyTestAfterRestList %s %s", resourceType, string(serializedObj))
+		serializedItems, err := normalizeRESTListItems(serializedObj)
+		if err != nil {
+			printSerializationError(err)
+			return
+		}
+		log.Printf("NotifyTestAfterRestList %s %s", resourceType, string(serializedItems))
 		request := &NotifyTestAfterControllerListRequest{
 			ResourceType: resourceType,
 			ReconcileFun: reconcileFun,
-			ObjectList:   string(serializedObj),
+			ObjectList:   string(serializedItems),
 		}
 		var response Response
 		err = rpcClient.Call("TestCoordinator.NotifyTestAfterControllerList", request, &response)

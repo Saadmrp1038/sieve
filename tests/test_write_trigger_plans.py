@@ -153,6 +153,7 @@ def test_operation_planning_counts_all_successful_writes_per_consumer_and_select
         )
         for i in range(1, len(expected_occurrences) + 1)
     ]
+    assert all(plan.actions[0].async_ for plan in plans)
     conditions = [p.actions[0].trigger.definitions[0].condition for p in plans]
     assert [c.occurrence for c in conditions] == expected_occurrences
     assert all(

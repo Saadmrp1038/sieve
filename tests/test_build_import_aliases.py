@@ -23,9 +23,23 @@ def test_instrumented_build_preserves_a_dependency_whose_package_name_differs(tm
     upstream.mkdir()
     (upstream / "go.mod").write_text(
         "module example\ngo 1.27.0\n"
-        "require github.com/opencontainers/go-digest v1.0.0\n"
+        "require (\n"
+        "github.com/Masterminds/semver/v3 v3.4.0\n"
+        "github.com/opencontainers/go-digest v1.0.0\n"
+        ")\n"
+        "replace github.com/Masterminds/semver/v3 => ./semver\n"
         "replace github.com/opencontainers/go-digest => ./digest\n"
         "replace sieve.client => ./vendor/sieve.client\n"
+    )
+    semver = upstream / "semver"
+    semver.mkdir()
+    (semver / "go.mod").write_text(
+        "module github.com/Masterminds/semver/v3\ngo 1.27.0\n"
+    )
+    (semver / "semver.go").write_text(
+        "package semver\n"
+        "type Version struct{}\n"
+        "func NewVersion(string) (*Version, error) { return &Version{}, nil }\n"
     )
     digest = upstream / "digest"
     digest.mkdir()
@@ -34,10 +48,10 @@ def test_instrumented_build_preserves_a_dependency_whose_package_name_differs(tm
     )
     (digest / "digest.go").write_text("package digest\ntype Digest string\n")
     (upstream / "main.go").write_text(
-        'package main\nimport ("fmt"; "github.com/opencontainers/go-digest")\n'
+        'package main\nimport ("fmt"; "github.com/Masterminds/semver/v3"; "github.com/opencontainers/go-digest")\n'
         "type Reconciler struct{}\n"
         'func (r *Reconciler) Reconcile() digest.Digest {return digest.Digest("sha256:synthetic")}\n'
-        "func main(){fmt.Print((&Reconciler{}).Reconcile())}\n"
+        'func main(){_,_ = semver.NewVersion("1.0.0"); fmt.Print((&Reconciler{}).Reconcile())}\n'
     )
     client = upstream / "vendor/k8s.io/client-go"
     for fixture, name in (

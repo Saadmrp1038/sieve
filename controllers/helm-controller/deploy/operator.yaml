@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      sievetag: helm-controller
+  template:
+    metadata:
+      labels:
+        sievetag: helm-controller
+    spec:
+      serviceAccountName: helm-controller
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: manager
+          image: ${SIEVE-DR}/helm-controller:${SIEVE-DT}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --concurrent=10
+            - --watch-all-namespaces=false
+            - --log-level=debug
+            - --log-encoding=json
+          env:
+            - name: RUNTIME_NAMESPACE
+              value: default
+            - name: sieveTestPlan
+              valueFrom:
+                configMapKeyRef:
+                  name: sieve-testing-global-config
+                  key: sieveTestPlan
+            - name: KUBERNETES_SERVICE_HOST
+              value: kind-control-plane
+            - name: KUBERNETES_SERVICE_PORT
+              value: "6443"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+      volumes:
+        - name: temp
+          emptyDir: {}
