@@ -74,5 +74,5 @@ PY
 kubectl apply --server-side -f resources.yaml
 kubectl apply -f operator.yaml
 kubectl rollout status deployment/keda-operator --timeout=300s
-kubectl rollout status deployment/keda-admission-webhooks --timeout=300s
+kubectl rollout status deployment/keda-admission --timeout=300s
 kubectl rollout status deployment/keda-metrics-apiserver --timeout=300s

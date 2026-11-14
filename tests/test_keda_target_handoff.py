@@ -46,6 +46,9 @@ def test_target_handoff_compares_current_target_with_its_own_original_count(
     assert "GOTOOLCHAIN=go1.26.0" in build
     assert "SIEVE_SUBJECT_COMMIT" in build
     assert "./cmd/operator" in build
+    deploy = (profile / "deploy/deploy.sh").read_text()
+    assert "rollout status deployment/keda-admission --timeout=300s" in deploy
+    assert "rollout status deployment/keda-admission-webhooks" not in deploy
 
     kubectl = tmp_path / "kubectl"
     kubectl.write_text(
