@@ -157,3 +157,43 @@ def test_timeout_records_the_last_observation_as_a_semantic_failure(tmp_path):
     saved = json.loads(output.with_name("helm-upgrade.json").read_text())
     assert saved["final"] == stalled
     assert saved["semantic_status"] == "failed"
+
+
+def test_control_convergence_requires_every_storage_revision_in_history():
+    workload = load_workload_module()
+    final = {
+        "helmRelease": {
+            "metadata": {"generation": 2},
+            "status": {"conditions": [{"type": "Stalled", "status": "True"}]},
+        },
+        "ready": {"status": "False", "observedGeneration": 2},
+        "storage": [
+            {"version": 1, "status": "superseded", "chartVersion": "0.1.0"},
+            {"version": 2, "status": "failed", "chartVersion": "0.2.0"},
+            {"version": 3, "status": "deployed", "chartVersion": "0.1.0"},
+        ],
+        "history": [
+            {"version": 3, "status": "deployed", "chartVersion": "0.1.0"},
+            {"version": 2, "status": "failed", "chartVersion": "0.2.0"},
+            {"version": 1, "status": "superseded", "chartVersion": "0.1.0"},
+        ],
+        "deployment": {
+            "metadata": {"generation": 3},
+            "spec": {
+                "template": {
+                    "metadata": {"annotations": {"sieve.io/revision": "revision-1"}}
+                }
+            },
+            "status": {
+                "observedGeneration": 3,
+                "readyReplicas": 1,
+                "updatedReplicas": 1,
+            },
+        },
+        "configMap": {"data": {"index.html": "revision-1"}},
+        "service": {"ok": True, "value": "revision-1"},
+    }
+
+    assert workload.final_converged(final)
+    final["history"] = [final["history"][0]]
+    assert not workload.final_converged(final)

@@ -61,11 +61,12 @@ analyzer now writes `workload.log`, `helm-upgrade.json`, and
 `semantic-outcome.json` on a semantic failure. The new behavior test failed
 before the implementation and passed after it.
 
-Final local validation passed 733 tests and 10 subtests, with one test skipped.
-The protected `tests/test_trace_errors.py` file was excluded. Ruff check, Ruff
-format verification, strict mypy for the workload, and `git diff --check` also
-passed. The focused VM tests passed six tests. The qualified controller image
-remained
+The original local validation passed 733 tests and 10 subtests, with one test
+skipped. Merge cleanup later passed 735 tests and 10 subtests. The protected
+`tests/test_trace_errors.py` file was excluded. Ruff check, Ruff format
+verification, strict mypy, all three Go race-test suites, wheel construction,
+the local dependency audit, and `git diff --check` also passed. The focused VM
+tests passed six tests. The qualified controller image remained
 `sha256:c588c25b6639c2d4c70d20b7fca8ffd1b8d2fca46fd3347fc4148b81e0686649`.
 The node image remained
 `sha256:00cf9484987a342b4544499f3d2491a456bba1bf34c15665a17bd9eb8b78df7e`.
@@ -177,8 +178,8 @@ Upstream main was reviewed at commit
 and that commit in `internal/reconcile/atomic_release.go`,
 `internal/reconcile/state.go`, `internal/reconcile/upgrade.go`, or
 `api/v2/snapshot_types.go`. The same vulnerable state transition is therefore
-present in current source, although this campaign did not build and run a
-current main image.
+present in current source. The original campaign did not build and run a
+current main image. A later native validation is recorded below.
 
 The status based state model and history tracking date back to the changes
 released in v0.37.0. The cancellation patch was added in the same development
@@ -192,6 +193,29 @@ different. In this experiment, the same HelmRelease installed revision 1, and
 the controller lost its own observed history during shutdown. No exact report
 for this restart path was found in the searched helm-controller issues and pull
 requests.
+
+## Follow-up validation on current main
+
+On November 13, 2026, a separate bounded validation built and ran upstream
+commit `b7b9652a823ae6824b236a87b7e67a3e34ddb27a` with the same native
+`--concurrent=10` setting. The validation used two workload executions and one
+scheduling fault, with no automatic retries.
+
+The no-restart control passed all five semantic checks. Helm storage contained
+superseded revision 1, failed revision 2, and deployed rollback revision 3. The
+live Service returned `revision-1`.
+
+The scheduled-restart execution physically replaced the controller Pod and
+reproduced the failure. Helm storage contained deployed revision 1, failed
+revision 2 with `context canceled`, and failed revision 3. Status history
+contained only failed revision 3, the HelmRelease stalled with
+`MissingRollbackTarget`, and the live Service continued to return `revision-2`.
+The same three independent semantic checks failed as in the release validation.
+
+The complete copied evidence is under
+`.cache/helm-controller/main-restart-validation-20261113/`. VM SHA256 values
+verified all 367 files in the control result and all 2,299 files in the fault
+result before review.
 
 ## Harness and infrastructure failures
 
@@ -263,5 +287,6 @@ The protected dirty file `tests/test_trace_errors.py` was not modified or
 staged. Its SHA256 remains
 `b41c28229b13ec00e5f9eef524943f5348463a10618a9db0c57ead40d1491287`.
 The five existing untracked Kustomize draft files were not modified, moved,
-deleted, or staged. No local Docker, image pruning, credential inspection,
-generative evaluation, push, pull request, or upstream publication occurred.
+deleted, or staged. During the original campaign, no local Docker, image
+pruning, credential inspection, generative evaluation, push, pull request, or
+upstream publication occurred.

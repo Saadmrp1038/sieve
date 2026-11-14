@@ -341,6 +341,7 @@ def final_converged(sample: dict[str, Any]) -> bool:
     parent = sample.get("helmRelease") or {}
     ready = sample.get("ready") or {}
     storage = sample.get("storage") or []
+    storage_versions = {item.get("version") for item in storage}
     latest = storage[-1] if storage else {}
     history = sample.get("history") or []
     history_versions = {item.get("version") for item in history}
@@ -357,6 +358,7 @@ def final_converged(sample: dict[str, Any]) -> bool:
         and latest.get("status") == "deployed"
         and latest.get("chartVersion") == VERSION_1
         and latest.get("version") in history_versions
+        and storage_versions <= history_versions
         and deployment_revision(sample) == REVISION_1
         and deployment_ready(sample)
         and (sample.get("configMap") or {}).get("data", {}).get("index.html")
