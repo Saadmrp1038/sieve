@@ -34,16 +34,25 @@ workload independently records the accepted parent deletion, a denied dry-run
 child deletion, old and new UIDs, owner references, native status, underlying
 workload readiness, and controller Pod identity.
 
+Creating an admission policy does not prove that API-server enforcement is
+active. Before deleting the parent, the workload polls a server-side dry run
+until it observes the policy's exact denial message. After changing the binding
+to Audit, it polls the same dry run until deletion is allowed before checking
+recovery.
+
 A replacement parent may report Ready only if all three direct children have
 its UID as their controller owner. A stable terminal disagreement is a semantic
 failure, not a harness timeout. The policy binding is changed to Audit after the
 measurement so garbage collection can retry. Recovery requires new or adopted
 children owned by the replacement parent.
 
-The bounded campaign permits five workload executions and one deletion-denial
-fault, with zero automatic retries: one vanilla qualification, two fresh
-learning runs, one matched test-image control, and one fault run. Every launched
-workload counts, including setup failures.
+The initial bounded campaign permits five workload executions and one
+deletion-denial fault, with zero automatic retries: one vanilla qualification,
+two fresh learning runs, one matched test-image control, and one fault run.
+Every launched workload counts, including setup failures. If the fault stops
+before the parent is deleted because admission enforcement has not yet become
+active, a preserved budget amendment may authorize one deliberate replacement
+run after the propagation check is fixed. This is not an automatic retry.
 
 ```sh
 uv run --locked sieve build -c opentelemetry-operator -m all -r sieve-lab

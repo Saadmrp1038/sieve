@@ -26,6 +26,7 @@ state = json.loads(state_path.read_text()) if state_path.exists() else {
     "policy": False,
     "binding": False,
     "audit": False,
+    "probe_attempts": 0,
 }
 args = sys.argv[1:]
 if args[:2] == ["--namespace", "default"]:
@@ -164,8 +165,15 @@ if a[:3] == ["delete", "clusterobservability", "sieve-cluster-observability"]:
     state["parent"] = "deleted"
     emit({"status": "Success"})
 if a[:3] == ["delete", "opentelemetrycollector", "sieve-cluster-observability-agent"]:
+    if state["audit"]:
+        emit({"status": "Success"})
+    state["probe_attempts"] += 1
+    if state["probe_attempts"] < 3:
+        save()
+        print("opentelemetrycollector.opentelemetry.io/sieve-cluster-observability-agent deleted (server dry run)")
+        raise SystemExit(0)
     save()
-    print("collector deletion denied by sieve ownership policy", file=sys.stderr)
+    print("sieve synthetic OpenTelemetryCollector delete denial", file=sys.stderr)
     raise SystemExit(1)
 if a[:3] == ["get", "clusterobservability", "sieve-cluster-observability"]:
     if state["parent"] == "deleted":
@@ -236,6 +244,8 @@ raise SystemExit("unexpected kubectl command: " + repr(args))
     assert evidence["oldParentUID"] == "parent-old"
     assert evidence["newParentUID"] == "parent-new"
     assert evidence["deletionProbe"]["denied"] is True
+    assert evidence["deletionProbe"]["attempts"] == 3
+    assert evidence["auditProbe"]["denied"] is False
     assert evidence["checks"]["replacement_parent_has_new_uid"] is True
     assert evidence["checks"]["instrumentation_owned_by_replacement"] is True
     assert evidence["checks"]["agent_collector_owned_by_replacement"] is False

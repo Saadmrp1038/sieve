@@ -341,28 +341,51 @@ def validate_controller(recorder: Recorder) -> dict[str, Any]:
     return deployment
 
 
-def deletion_denial_probe(recorder: Recorder) -> dict[str, Any]:
-    result = recorder.kubectl(
-        "delete",
-        "opentelemetrycollector",
-        AGENT,
-        "--dry-run=server",
-        "--wait=false",
-        check=False,
-    )
-    denied = result.returncode != 0 and (
-        "sieve synthetic OpenTelemetryCollector delete denial" in result.stderr
-        or "denied" in result.stderr.lower()
-    )
-    if not denied:
-        raise WorkloadError(
-            "synthetic collector deletion was not denied: " + result.stderr.strip()
+def wait_for_deletion_behavior(
+    recorder: Recorder,
+    *,
+    denied: bool,
+    timeout: float,
+    poll_seconds: float,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    attempts = 0
+    while True:
+        attempts += 1
+        result = recorder.kubectl(
+            "delete",
+            "opentelemetrycollector",
+            AGENT,
+            "--dry-run=server",
+            "--wait=false",
+            check=False,
         )
-    return {
-        "denied": True,
-        "returncode": result.returncode,
-        "stderr": result.stderr,
-    }
+        synthetic_denial = (
+            result.returncode != 0
+            and "sieve synthetic OpenTelemetryCollector delete denial"
+            in (result.stdout + result.stderr)
+        )
+        if synthetic_denial == denied and (denied or result.returncode == 0):
+            return {
+                "denied": denied,
+                "attempts": attempts,
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        if result.returncode != 0 and not synthetic_denial:
+            raise WorkloadError(
+                "collector deletion dry run failed for an unrelated reason: "
+                + (result.stderr or result.stdout).strip()
+            )
+        if time.monotonic() >= deadline:
+            expected = "denial" if denied else "allowance"
+            raise WorkloadError(
+                f"timed out waiting for synthetic collector deletion {expected}; "
+                f"last return code {result.returncode}: "
+                + (result.stderr or result.stdout).strip()
+            )
+        time.sleep(min(poll_seconds, max(0, deadline - time.monotonic())))
 
 
 def remove_policy(recorder: Recorder) -> None:
@@ -446,7 +469,12 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
         policy, binding = policy_manifests()
         apply(recorder, policy)
         apply(recorder, binding)
-        evidence["deletionProbe"] = deletion_denial_probe(recorder)
+        evidence["deletionProbe"] = wait_for_deletion_behavior(
+            recorder,
+            denied=True,
+            timeout=args.timeout,
+            poll_seconds=args.poll_seconds,
+        )
 
     recorder.kubectl(
         "delete", "clusterobservability", PARENT, "--wait=false", "--timeout", "60s"
@@ -541,6 +569,12 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
     if block_deletion:
         _, audit_binding = policy_manifests("Audit")
         apply(recorder, audit_binding)
+        evidence["auditProbe"] = wait_for_deletion_behavior(
+            recorder,
+            denied=False,
+            timeout=args.timeout,
+            poll_seconds=args.poll_seconds,
+        )
         recovery = wait_for(
             recorder,
             "current-ownership-recovery",
@@ -565,6 +599,7 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
         remove_policy(recorder)
     else:
         evidence["deletionProbe"] = None
+        evidence["auditProbe"] = None
         evidence["recovery"] = {
             "all_children_owned_by_replacement": all_children_owned(handoff),
             "sample": handoff,
