@@ -86,8 +86,7 @@ def validate_controller(evidence: dict[str, Any]) -> None:
     }
     if missing_definitions := required - installed:
         raise RuntimeError(
-            "Missing native watched APIs: "
-            + ", ".join(sorted(missing_definitions))
+            "Missing native watched APIs: " + ", ".join(sorted(missing_definitions))
         )
 
 
@@ -116,8 +115,7 @@ def service_response() -> dict[str, Any]:
         value = kubectl(
             "get",
             "--raw",
-            "/api/v1/namespaces/default/services/"
-            f"http:{ACTIVE_SERVICE}:http/proxy/",
+            f"/api/v1/namespaces/default/services/http:{ACTIVE_SERVICE}:http/proxy/",
         ).strip()
         return {"ok": True, "value": value}
     except ProcessError as error:
@@ -287,8 +285,7 @@ def evaluate_semantics(
         ),
         "active_service_and_status_returned_to_stable": (
             final.get("activeHash") == initial_hash
-            and final_status.get("blueGreen", {}).get("activeSelector")
-            == initial_hash
+            and final_status.get("blueGreen", {}).get("activeSelector") == initial_hash
         ),
         "live_traffic_returned_to_revision_one": (
             final.get("activeRevision") == REVISION_1
@@ -351,9 +348,7 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
                     "metadata": {"name": name},
                     "spec": {
                         "selector": {"app": ROLLOUT},
-                        "ports": [
-                            {"name": "http", "port": 80, "targetPort": "http"}
-                        ],
+                        "ports": [{"name": "http", "port": 80, "targetPort": "http"}],
                     },
                 }
             )
@@ -417,9 +412,7 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
                             "previewService": PREVIEW_SERVICE,
                             "autoPromotionEnabled": True,
                             "postPromotionAnalysis": {
-                                "templates": [
-                                    {"templateName": ANALYSIS_TEMPLATE}
-                                ]
+                                "templates": [{"templateName": ANALYSIS_TEMPLATE}]
                             },
                         }
                     },
@@ -442,12 +435,8 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
                                         "printf '%s' \"$REVISION\" > /www/index.html; "
                                         "exec httpd -f -p 8080 -h /www"
                                     ],
-                                    "env": [
-                                        {"name": "REVISION", "value": REVISION_1}
-                                    ],
-                                    "ports": [
-                                        {"name": "http", "containerPort": 8080}
-                                    ],
+                                    "env": [{"name": "REVISION", "value": REVISION_1}],
+                                    "ports": [{"name": "http", "containerPort": 8080}],
                                     "readinessProbe": {
                                         "httpGet": {"path": "/", "port": "http"},
                                         "periodSeconds": 1,
