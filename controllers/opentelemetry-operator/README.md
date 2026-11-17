@@ -21,6 +21,10 @@ for its agent Collector, cluster Collector, Instrumentation object, DaemonSet,
 and StatefulSet to become ready with a complete ownership chain. It then deletes
 and recreates the parent under the same name.
 
+The workload also creates the standalone TargetAllocator required by the
+upstream ClusterObservability end-to-end fixture. Its image is pinned to the
+operator release and loaded into the isolated node before the workload starts.
+
 The normal control waits for Kubernetes to delete every old child before it
 creates the replacement parent. The fault form sets
 `SIEVE_OTEL_BLOCK_COLLECTOR_DELETE=1`. It installs a synthetic

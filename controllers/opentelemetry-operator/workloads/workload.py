@@ -23,6 +23,10 @@ AGENT = f"{PARENT}-agent"
 CLUSTER = f"{PARENT}-cluster"
 AGENT_WORKLOAD = f"{AGENT}-collector"
 CLUSTER_WORKLOAD = f"{CLUSTER}-collector"
+TARGET_ALLOCATOR = f"{PARENT}-targetallocator"
+TARGET_ALLOCATOR_IMAGE = (
+    "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0"
+)
 POLICY = "sieve-otel-collector-delete"
 
 
@@ -268,6 +272,20 @@ def parent_manifest() -> dict[str, Any]:
     }
 
 
+def target_allocator_manifest() -> dict[str, Any]:
+    return {
+        "apiVersion": "opentelemetry.io/v1alpha1",
+        "kind": "TargetAllocator",
+        "metadata": {"name": TARGET_ALLOCATOR},
+        "spec": {
+            "image": TARGET_ALLOCATOR_IMAGE,
+            "scrapeConfigs": [
+                {"job_name": "sieve-noop", "static_configs": [{"targets": []}]}
+            ],
+        },
+    }
+
+
 def policy_manifests(action: str = "Deny") -> tuple[dict[str, Any], dict[str, Any]]:
     policy = {
         "apiVersion": "admissionregistration.k8s.io/v1",
@@ -400,6 +418,9 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
     block_deletion = os.environ.get("SIEVE_OTEL_BLOCK_COLLECTOR_DELETE") == "1"
     evidence["faultMode"] = "deny-collector-delete" if block_deletion else "none"
 
+    evidence["targetAllocatorPrerequisite"] = apply(
+        recorder, target_allocator_manifest()
+    )
     apply(recorder, parent_manifest())
     initial = wait_for(
         recorder,

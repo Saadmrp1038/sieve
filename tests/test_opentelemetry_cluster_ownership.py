@@ -22,6 +22,7 @@ from pathlib import Path
 state_path = Path(os.environ["OTEL_OWNERSHIP_STATE"])
 state = json.loads(state_path.read_text()) if state_path.exists() else {
     "parent": "absent",
+    "target_allocator": None,
     "policy": False,
     "binding": False,
     "audit": False,
@@ -146,6 +147,9 @@ if a[:2] == ["get", "pods"]:
 if a[:2] == ["apply", "-f"]:
     value = json.load(sys.stdin)
     kind = value["kind"]
+    if kind == "TargetAllocator":
+        state["target_allocator"] = value
+        emit(value)
     if kind == "ClusterObservability":
         state["parent"] = "old" if state["parent"] == "absent" else "new"
         emit(parent())
@@ -222,6 +226,12 @@ raise SystemExit("unexpected kubectl command: " + repr(args))
         output.with_name("opentelemetry-cluster-ownership.json").read_text()
     )
     assert evidence["status"] == "completed"
+    assert evidence["targetAllocatorPrerequisite"]["metadata"]["name"] == (
+        "sieve-cluster-observability-targetallocator"
+    )
+    assert evidence["targetAllocatorPrerequisite"]["spec"]["image"] == (
+        "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0"
+    )
     assert evidence["semantic_status"] == "failed"
     assert evidence["oldParentUID"] == "parent-old"
     assert evidence["newParentUID"] == "parent-new"

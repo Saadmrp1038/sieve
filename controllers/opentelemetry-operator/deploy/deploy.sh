@@ -71,9 +71,12 @@ from pathlib import Path
 from sieve_tool.process import execution
 from sieve_tool.runtime.cluster import pull_node_image
 
-image = "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.162.0"
+images = [
+    "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.162.0",
+    "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.162.0",
+]
 with execution(log_dir=Path.cwd() / "operand-image-load-commands"):
-    resolved = {image: pull_node_image(image)}
+    resolved = {image: pull_node_image(image) for image in images}
 Path("node-operand-images.json").write_text(
     json.dumps(resolved, indent=2, sort_keys=True) + "\n"
 )
