@@ -1,0 +1,36 @@
+{
+    "name": "keda",
+    "github_link": "https://github.com/kedacore/keda.git",
+    "commit": "626ded5d783108bedf647e20bbc83f8e458e02e4",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.36.4",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-keda:latest",
+    "test_command": [
+        "python3",
+        "controllers/keda/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "scaledobject"
+    ],
+    "annotated_reconcile_functions": {
+        "controllers/keda/scaledobject_controller.go": "github.com/kedacore/keda/v2/controllers/keda.(*ScaledObjectReconciler).Reconcile"
+    },
+    "controller_pod_label": "keda-operator",
+    "container_name": "keda-operator",
+    "controller_deployment_file_path": "controllers/keda/deploy/operator.yaml",
+    "test_setting": {
+        "restore-control-a": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "restore-control-b": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        },
+        "target-handoff": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        }
+    }
+}
