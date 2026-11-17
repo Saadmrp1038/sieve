@@ -1,0 +1,32 @@
+{
+    "name": "argo-rollouts",
+    "github_link": "https://github.com/argoproj/argo-rollouts.git",
+    "commit": "be8a6221c6c9751cd14497f31a2cb3c33690375a",
+    "kubernetes_version": "v1.36.4",
+    "client_go_version": "v0.34.5",
+    "dockerfile_path": "Dockerfile",
+    "controller_image_name": "sieve-argo-rollouts:latest",
+    "test_command": [
+        "python3",
+        "controllers/argo-rollouts/workloads/workload.py"
+    ],
+    "custom_resource_definitions": [
+        "rollout",
+        "analysisrun",
+        "analysistemplate",
+        "clusteranalysistemplate",
+        "experiment"
+    ],
+    "annotated_reconcile_functions": {
+        "rollout/controller.go": "github.com/argoproj/argo-rollouts/rollout.(*Controller).syncHandler"
+    },
+    "controller_pod_label": "argo-rollouts",
+    "container_name": "argo-rollouts",
+    "controller_deployment_file_path": "controllers/argo-rollouts/deploy/operator.yaml",
+    "test_setting": {
+        "bluegreen-post-analysis": {
+            "num_workers": 0,
+            "write_trigger": "occurrence"
+        }
+    }
+}
