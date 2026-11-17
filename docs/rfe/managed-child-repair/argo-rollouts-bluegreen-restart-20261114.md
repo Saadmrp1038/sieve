@@ -44,6 +44,15 @@ CloudNativePG test used the system Python from `PATH` and could not import
 PyYAML. The affected test passed when `PATH` included the repository virtual
 environment. The Argo Rollouts test and Ruff check passed in the final check.
 
+The branch was later rebased onto the current `main`. Review found that the
+workload waited for a successful Service rollback before writing its semantic
+checks, so a settled operator failure would have been reported as a workload
+timeout. The workload now waits for the failed analysis and terminal Rollout
+status, then records whether the Service, EndpointSlice, and live response
+returned to the stable revision. A public workload fixture verifies that a
+settled disagreement completes with failed semantic checks. Setup errors,
+command errors, and an incomplete Rollout status remain workload failures.
+
 ## Experiment behavior
 
 Revision 1 serves `revision-1` through the active Service. After the workload
@@ -53,9 +62,10 @@ seconds and exits with status 1.
 
 The expected fallback keeps the revision 1 ReplicaSet as `stableRS`. The
 Rollout records the failed analysis and abort, then changes the active Service
-selector back to revision 1. The workload accepts the final state only after
-the status, selector, active EndpointSlice, selected ReplicaSet, and HTTP
-response agree for five seconds.
+selector back to revision 1. Successful behavior requires the status,
+selector, active EndpointSlice, selected ReplicaSet, and HTTP response to agree
+for five seconds. A stable disagreement after the failed analysis and terminal
+Rollout status completes as a semantic failure.
 
 ## Verified coverage
 

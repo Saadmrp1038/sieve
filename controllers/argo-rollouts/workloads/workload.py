@@ -248,20 +248,11 @@ def failed_analysis(sample: dict[str, Any]) -> bool:
     )
 
 
-def final_converged(sample: dict[str, Any], initial_hash: str) -> bool:
+def final_state_observed(sample: dict[str, Any]) -> bool:
     status = rollout_status(sample)
-    bluegreen = status.get("blueGreen", {})
     return bool(
         observed_current_generation(sample)
         and status.get("phase") == "Degraded"
-        and status.get("abort") is True
-        and status.get("stableRS") == initial_hash
-        and status.get("currentPodHash") != initial_hash
-        and bluegreen.get("activeSelector") == initial_hash
-        and sample.get("activeHash") == initial_hash
-        and sample.get("activeRevision") == REVISION_1
-        and sample.get("endpointRevisions") == [REVISION_1]
-        and sample.get("service") == {"ok": True, "value": REVISION_1}
         and failed_analysis(sample)
     )
 
@@ -457,25 +448,30 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
         description: str,
         *,
         settle_seconds: float = 0,
+        stability_key: Callable[[dict[str, Any]], object] | None = None,
     ) -> dict[str, Any]:
         end = time.monotonic() + args.timeout
         stable_since: float | None = None
-        stable_controller: str | None = None
+        stable_value: object | None = None
         last = None
         while time.monotonic() < end:
             last = observe(phase)
             evidence["observations"].append(last)
             save_evidence(args.output, evidence)
-            controller_uid = (last.get("controller") or {}).get("uid")
+            value = (
+                stability_key(last)
+                if stability_key is not None
+                else (last.get("controller") or {}).get("uid")
+            )
             if predicate(last):
-                if stable_since is None or stable_controller != controller_uid:
+                if stable_since is None or stable_value != value:
                     stable_since = time.monotonic()
-                    stable_controller = controller_uid
+                    stable_value = value
                 if time.monotonic() - stable_since >= settle_seconds:
                     return last
             else:
                 stable_since = None
-                stable_controller = controller_uid
+                stable_value = None
             time.sleep(args.poll_seconds)
         raise RuntimeError(f"Timed out: {description}; last={last!r}")
 
@@ -487,7 +483,6 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
         settle_seconds=args.settle_seconds,
     )
     evidence["initial"] = initial
-    initial_hash = cast(str, rollout_status(initial)["stableRS"])
 
     evidence["status"] = "promotion-incomplete"
     patch = [
@@ -523,18 +518,20 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
 
     evidence["status"] = "abort-recovery-incomplete"
     final = sample_until(
-        lambda sample: final_converged(sample, initial_hash),
+        final_state_observed,
         "abort-recovery",
-        "failed analysis fallback to revision 1",
+        "failed analysis and terminal Rollout status",
         settle_seconds=args.settle_seconds,
+        stability_key=lambda sample: (
+            (sample.get("controller") or {}).get("uid"),
+            tuple(evaluate_semantics(initial, promoted, sample).items()),
+        ),
     )
     evidence["final"] = final
     evidence["checks"] = evaluate_semantics(initial, promoted, final)
     evidence["semantic_status"] = (
         "passed" if all(evidence["checks"].values()) else "failed"
     )
-    if evidence["semantic_status"] != "passed":
-        raise RuntimeError("Independent semantic checks failed")
     evidence["status"] = "completed"
 
 
