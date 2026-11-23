@@ -1,0 +1,31 @@
+{
+  "name": "opentelemetry-operator",
+  "github_link": "https://github.com/open-telemetry/opentelemetry-operator.git",
+  "commit": "989089bf5c75d78fdc6004147f97d972fc436bd4",
+  "kubernetes_version": "v1.36.4",
+  "client_go_version": "v0.37.1",
+  "dockerfile_path": "Dockerfile",
+  "controller_image_name": "sieve-opentelemetry-operator:latest",
+  "test_command": [
+    "python3",
+    "controllers/opentelemetry-operator/workloads/workload.py"
+  ],
+  "custom_resource_definitions": [
+    "clusterobservability",
+    "opentelemetrycollector",
+    "instrumentation"
+  ],
+  "annotated_reconcile_functions": {
+    "internal/controllers/clusterobservability_controller.go": "github.com/open-telemetry/opentelemetry-operator/internal/controllers.(*ClusterObservabilityReconciler).Reconcile",
+    "internal/controllers/opentelemetrycollector_controller.go": "github.com/open-telemetry/opentelemetry-operator/internal/controllers.(*OpenTelemetryCollectorReconciler).Reconcile"
+  },
+  "controller_pod_label": "opentelemetry-operator",
+  "container_name": "manager",
+  "controller_deployment_file_path": "controllers/opentelemetry-operator/deploy/operator.yaml",
+  "test_setting": {
+    "cluster-ownership-handoff": {
+      "num_workers": 0,
+      "write_trigger": "occurrence"
+    }
+  }
+}
