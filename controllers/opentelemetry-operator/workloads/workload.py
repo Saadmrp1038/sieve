@@ -77,10 +77,9 @@ class Recorder:
             "--ignore-not-found",
             "-o",
             "json",
-            check=False,
             namespaced=namespaced,
         )
-        if result.returncode or not result.stdout.strip():
+        if not result.stdout.strip():
             return None
         return json.loads(result.stdout)
 
@@ -388,31 +387,26 @@ def wait_for_deletion_behavior(
         time.sleep(min(poll_seconds, max(0, deadline - time.monotonic())))
 
 
-def remove_policy(recorder: Recorder) -> None:
-    recorder.kubectl(
-        "delete",
-        "validatingadmissionpolicybinding",
-        POLICY,
-        "--ignore-not-found",
-        namespaced=False,
-        check=False,
-    )
-    recorder.kubectl(
-        "delete",
-        "validatingadmissionpolicy",
-        POLICY,
-        "--ignore-not-found",
-        namespaced=False,
-        check=False,
-    )
+def remove_policy(recorder: Recorder) -> list[str]:
+    errors = []
+    for kind in ("validatingadmissionpolicybinding", "validatingadmissionpolicy"):
+        result = recorder.kubectl(
+            "delete",
+            kind,
+            POLICY,
+            "--ignore-not-found",
+            namespaced=False,
+            check=False,
+        )
+        if result.returncode:
+            errors.append(
+                f"kubectl delete {kind} {POLICY} failed ({result.returncode}): "
+                + (result.stderr or result.stdout).strip()
+            )
+    return errors
 
 
-def record_outcome(
-    output: Path, evidence: dict[str, Any], *, error: str | None = None
-) -> None:
-    if error is not None:
-        evidence["error"] = error
-        evidence["traceback"] = traceback.format_exc()
+def record_outcome(output: Path, evidence: dict[str, Any], *, completed: bool) -> None:
     output.with_name("opentelemetry-cluster-ownership.json").write_text(
         json.dumps(evidence, indent=2, sort_keys=True) + "\n"
     )
@@ -431,7 +425,7 @@ def record_outcome(
             )
             + "\n"
         )
-    if error is None:
+    if completed:
         output.write_text("FINISH-SIEVE-TEST\n")
 
 
@@ -596,7 +590,6 @@ def run(args: argparse.Namespace, evidence: dict[str, Any]) -> None:
             "all_children_owned_by_replacement": all_children_owned(recovery),
             "sample": recovery,
         }
-        remove_policy(recorder)
     else:
         evidence["deletionProbe"] = None
         evidence["auditProbe"] = None
@@ -634,6 +627,7 @@ def main() -> int:
         "status": "configuration-failed",
         "semantic_status": "not-evaluated",
     }
+    error_message: str | None = None
     try:
         with execution(
             {"request": 60, "workload": 1200},
@@ -641,20 +635,27 @@ def main() -> int:
         ):
             run(args, evidence)
     except Exception as error:
-        record_outcome(args.output, evidence, error=str(error))
-        print(str(error), file=sys.stderr)
-        return 1
+        error_message = str(error)
+        evidence["error"] = error_message
+        evidence["traceback"] = traceback.format_exc()
     finally:
         if os.environ.get("SIEVE_OTEL_BLOCK_COLLECTOR_DELETE") == "1":
-            try:
-                recorder = Recorder(args.output)
-                _, audit_binding = policy_manifests("Audit")
-                apply(recorder, audit_binding)
-                remove_policy(recorder)
-            except Exception:
-                pass
+            cleanup_errors = remove_policy(Recorder(args.output))
+            if cleanup_errors:
+                evidence["cleanupErrors"] = cleanup_errors
+                for cleanup_error in cleanup_errors:
+                    print(cleanup_error, file=sys.stderr)
+                if error_message is None:
+                    error_message = "failed to remove synthetic admission policy"
+                    evidence["error"] = error_message
+                    evidence["status"] = "cleanup-failed"
 
-    record_outcome(args.output, evidence)
+    if error_message is not None:
+        record_outcome(args.output, evidence, completed=False)
+        print(error_message, file=sys.stderr)
+        return 1
+
+    record_outcome(args.output, evidence, completed=True)
     return 0
 
 
